@@ -1,12 +1,11 @@
 # src/quicc_dynavis/spectra.py
 import os
 import matplotlib.pyplot as plt
-from .io import read_single_spectrum, read_spectra
-from .io import F_avgSpectra_new  # assuming you have it in io or move it here
+from .io import get_parameters, read_spectra
+from .io import read_single_spectrum, avgSpectra_new  # assuming you have it in io or move it here
 
 
-def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
-                 save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True):
+def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True):
     """
     Plot kinetic and magnetic spectra (single or averaged).
     Top row: kinetic, Bottom row: magnetic.
@@ -15,14 +14,16 @@ def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
     if mode == 'single':
         lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
         lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        label_k = f"Single (t={time_k:.2f})"
-        label_m = f"Single (t={time_m:.2f})"
+        label_k = f"Single t={time_k:.2e}"
+        label_m = f"Single t={time_m:.2e}"
 
-    elif mode == 'average':
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = F_avgSpectra_new(folderFile, 'kinetic', start_time, stop_time)
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m = F_avgSpectra_new(folderFile, 'magnetic', start_time, stop_time)
-        label_k = f"Average [{start_time}, {stop_time}]"
-        label_m = f"Average [{start_time}, {stop_time}]"
+    elif mode == "average":
+        # --- kinetic ---
+        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = avgSpectra_new(folderFile, "kinetic", start_time, stop_time)
+        # --- magnetic ---
+        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m = avgSpectra_new(folderFile, "magnetic", start_time, stop_time)
+        label_k = f"average over t [{start_time}, {stop_time}]"
+        label_m = f"average over t [{start_time}, {stop_time}]"
 
     else:
         raise ValueError("mode must be 'single' or 'average'")
@@ -40,7 +41,7 @@ def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
     ax1.set_xlabel('$l$')
     ax1.set_ylabel('Energy')
     ax1.set_xscale('log'); ax1.set_yscale('log')
-    ax1.set_title(f'Kinetic spectrum vs $l$ ({label_k})')
+    ax1.set_title(f'Kinetic $l$-spectrum({label_k})')
     ax1.legend()
 
     ax2.plot(mk, mtot_k, '.-', label='total')
@@ -49,7 +50,7 @@ def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
     ax2.set_xlabel('$m$')
     ax2.set_ylabel('Energy')
     ax2.set_xscale('log'); ax2.set_yscale('log')
-    ax2.set_title(f'Kinetic spectrum vs $m$ ({label_k})')
+    ax2.set_title(f'Kinetic $m$-spectrum({label_k})')
 
     # Magnetic (bottom row)
     ax3, ax4 = axes[1]
@@ -59,7 +60,7 @@ def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
     ax3.set_xlabel('$l$')
     ax3.set_ylabel('Energy')
     ax3.set_xscale('log'); ax3.set_yscale('log')
-    ax3.set_title(f'Magnetic spectrum vs $l$ ({label_m})')
+    ax3.set_title(f'Magnetic $l$-spectrum ({label_m})')
     ax3.legend()
 
     ax4.plot(mm, mtot_m, '.-', label='total')
@@ -68,11 +69,14 @@ def plot_spectra(folderFile, foldername, Ekman_value, Ra_value, q_value,
     ax4.set_xlabel('$m$')
     ax4.set_ylabel('Energy')
     ax4.set_xscale('log'); ax4.set_yscale('log')
-    ax4.set_title(f'Magnetic spectrum vs $m$ ({label_m})')
+    ax4.set_title(f'Magnetic $m$-spectrum({label_m})')
 
     # Save figure
     tag = 'single' if mode == 'single' else 'average'
-    save_path = os.path.join(save_dir, f'{Ekman_value}_{Ra_value}_{q_value}_{tag}_spectra.png')
+
+    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
+
+    save_path = os.path.join(save_dir, f'{Ek}_{Ra}_{q}_{tag}_spectra.png')
     plt.savefig(save_path, dpi=270)
 
     if show:
