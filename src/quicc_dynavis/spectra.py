@@ -76,7 +76,7 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
 
     Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
 
-    save_path = os.path.join(save_dir, f'{Ek}_{Ra}_{q}_{tag}_spectra.png')
+    save_path = os.path.join(save_dir, f'Ek_{Ek}_Ra{Ra}_q{q}_spectra.png')
     plt.savefig(save_path, dpi=270)
 
     if show:
