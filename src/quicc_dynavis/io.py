@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import fnmatch
 
-#------------------------------------------#
+#--------------Parameters and Resolutions -----------#
 def get_parameters(filepath,output):
     """
     Function to extract input  values form parameter file:
@@ -103,9 +103,7 @@ def get_resolution(filepath,output):
         print('n:',n,'l:',l,'m:',m)	    
     return(n,l,m)
 
-#------------------------------------------#
-#--------------Time series-----------------#
-#------------------------------------------# 
+#-------------- Timeseries -----------#
 
 def F_read_energyQCC(filepath):
     """
@@ -365,9 +363,7 @@ def F_conc_timeseries(RunFolders,filetype):
         return(time,Dtot,Dtor,Dpol)
     
 
-#-------------------------------------#
-#--------------Spectra-----------------#
-#-------------------------------------# 
+#-------------- Spectra -----------#
        
 def read_spectra(filepath):
     """
@@ -541,4 +537,6 @@ def avgSpectra_new(folderpath,spec_type,start_time,stop_time):
     return(l,m,ltot,ltor,lpol,mtot,mtor,mpol)
 
 
-# TODO: later add read_timeseries() and read_field_snapshot()
+# TODO:  read_field_snapshot()
+
+

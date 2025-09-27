@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 from .io import get_parameters, get_resolution
 from .io import F_conc_timeseries, F_read_dipolarity, F_read_energyQCC, F_read_Nusselt
 
+import matplotlib
+matplotlib.rcParams['font.family'] = 'Times New Roman'
+matplotlib.rcParams['mathtext.fontset'] = 'cm'   # use Computer Modern for math
+matplotlib.rcParams['mathtext.rm'] = 'Times New Roman'
+matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
+matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
 
 def plot_energy_timeseries(folderFile, save_dir, show=True):
     """
@@ -43,7 +49,7 @@ def plot_energy_timeseries(folderFile, save_dir, show=True):
     # ------ Create figure------#
 
     plt.close('all')
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8.5, 11), sharex=True)
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi =180)
     ax1.set_title(f'$Ek: {Ek:.1e}, Ra: {Ra:.3e}, q: {q:.1f}, (N,L,M): ({Nres:.0f},{Mres:.0f},{Lres:.0f})$')
 
     # Energy plot
@@ -91,8 +97,14 @@ def plot_energy_timeseries(folderFile, save_dir, show=True):
     
     return fig, (ax1, ax2, ax3, ax4)
 
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Plot timeseries from QuICC runs.")
+    parser.add_argument("folder", help="Path to the start folder containing run subfolders")
+    parser.add_argument("--save", help="Path to save the figure", default=None)
+    args = parser.parse_args()
 
-
-
-
-
+    plot_energy_timeseries(start_folder=args.folder, show=True, save_path=args.save)
+    
+    # TO RUN it in terminal:
+    #python -m quicc_dynavis.timeseries /path/to/my/simulation --save timeseries.png
