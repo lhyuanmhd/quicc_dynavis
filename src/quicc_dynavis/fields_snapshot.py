@@ -29,7 +29,7 @@ def plot_equatorial(data, field_name, title="Equatorial slice", cmap="RdBu_r", a
     ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
     if savefig is not None:
-        plt.savefig(savefig, dpi=300, bbox_inches="tight")
+        plt.savefig(savefig+'/'+field_name+'_equ_slice_.png', dpi=300, bbox_inches="tight")
 
 
 def plot_meridional(data, field_name, title="Meridional slice", cmap="RdBu_r", ax=None, savefig=None):
@@ -48,15 +48,13 @@ def plot_meridional(data, field_name, title="Meridional slice", cmap="RdBu_r", a
     im = ax.pcolormesh(X, Z, field, shading="auto", cmap=cmap)
     ax.set_aspect("equal")
     ax.axis("off")
-
     # LaTeX label mapping
     label_str = field_latex.get(field_name, field_name)
-
     plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
     if savefig is not None:
-        plt.savefig(savefig, dpi=300, bbox_inches="tight")
+       plt.savefig(savefig+'/'+field_name+'_merid_slice_.png', dpi=300, bbox_inches="tight")
 
 
 
@@ -76,4 +74,4 @@ def plot_cmb(data, field_name, title="CMB", cmap="RdBu_r", ax=None, savefig=None
     ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
     if savefig is not None:
-        plt.savefig(savefig, dpi=300, bbox_inches="tight")
+        plt.savefig(savefig+'/'+field_name+'_cmb_.png', dpi=300, bbox_inches="tight")

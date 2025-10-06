@@ -89,6 +89,8 @@ def plot_energy_timeseries(folderFile, save_dir, show=True):
     
     #save figure
     Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
+    #Ek in format 1e-4
+    Ek = f'{Ek:.1e}'
     save_path = os.path.join(save_dir, f'Ek_{Ek}_Ra{Ra}_q{q}_timeseries.png')
     plt.savefig(save_path, dpi=270)
 
