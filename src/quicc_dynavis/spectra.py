@@ -14,8 +14,8 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
     if mode == 'single':
         lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
         lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        label_k = f"Single t={time_k:.1E}"
-        label_m = f"Single t={time_m:.1E}"
+        label_k = f"Single t={time_k:.3E}"
+        label_m = f"Single t={time_m:.3E}"
 
     elif mode == "average":
         # --- kinetic ---
