@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--save", help="Path to save the figure", default=None)
     args = parser.parse_args()
 
-    plot_energy_timeseries(start_folder=args.folder, show=True, save_path=args.save)
+    plot_timeseries(start_folder=args.folder, show=True, save_path=args.save)
     
     # TO RUN it in terminal:
     #python -m quicc_dynavis.timeseries /path/to/my/simulation --save timeseries.png
