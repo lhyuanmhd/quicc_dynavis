@@ -1,4 +1,5 @@
-# src/quicc_dynavis/io.py
+#src/quicc_dynavis/io.py
+
 import os
 import fnmatch
 import numpy as np
@@ -52,16 +53,23 @@ def get_parameters(filepath,output):
             ll = line.rfind('<')
             Ro = float(line[ss+1:ll])
     f.close()
+    
+    # Calculating missing nondim numbers:
+    # if q not given and Pm and Pr are given, set q=Pm/pr
+    if (q==0) & (Pm!=0) & (Pr!=0):
+        q= Pm/Pr
+
     # Here comes the output:
     if output=='print':	    
         print('#################################')
-        print('## Input parameters ##')
-        print('Ekman:',Ek)
+        print('## -- Input parameters -- ##')
+        print('Ekman:   ',Ek)
         print('Rayleigh:',Ra)
         print('magnetic Prandtl:',Pm)
-        print('Prandtl:',Pr)
+        print('Prandtl: ',Pr)
         print('magnetic Ekman:', Ek/Pm)
         print('convective Rosby:', np.sqrt(Ek*Ra/Pr))
+        print('#---------------------------------#')
     	 
     return(Ek,Pm,Pr,q,Ra,Ro) 
 
@@ -102,6 +110,173 @@ def get_resolution(filepath,output):
         print('Resolution:')
         print('n:',n,'l:',l,'m:',m)	    
     return(n,l,m)
+
+
+def get_boundary_conditions(filepath, output='none'):
+    """
+    Extract boundary condition settings from parameter file.
+
+    Args:
+    ---------
+    filepath: Path to the parameter file.
+    output: 'print' to display the results.
+
+    Returns:
+    ---------
+    bc_magnetic   : Magnetic boundary condition (e.g., insulating or conducting)
+    bc_temperature: Temperature boundary condition (e.g., fixed_flux or fixed_temperature)
+    bc_velocity   : Velocity boundary condition (e.g., no_slip or stress_free)
+    """
+    bc_magnetic = bc_temperature = bc_velocity = "undefined"
+    
+    with open(filepath, 'r') as f:
+        for line in f:
+            if '<magnetic>' in line:
+                ss, ll = line.find('>'), line.rfind('<')
+                bc_magnetic = line[ss+1:ll].strip()
+            elif '<temperature>' in line:
+                ss, ll = line.find('>'), line.rfind('<')
+                bc_temperature = line[ss+1:ll].strip()
+            elif '<velocity>' in line:
+                ss, ll = line.find('>'), line.rfind('<')
+                bc_velocity = line[ss+1:ll].strip()
+
+    if output == 'print':
+        #print('#################################')
+        print('## Boundary Conditions ##')
+        print('Magnetic    BC:', bc_magnetic)
+        print('Temperature BC:', bc_temperature)
+        print('Velocity    BC:', bc_velocity)
+    
+    return bc_magnetic, bc_temperature, bc_velocity
+
+
+def get_framework_and_setup_info(filepath, output='none'):
+    """
+    Extract timestepping scheme, timestep type, boundary scheme, and model setup flags
+    from a QUICC parameters.cfg file.
+
+    Returns:
+        timestep (float)
+        timestep_type ('adaptive' or 'fixed')
+        scheme (str) - time integration scheme
+        boundary_scheme (str)
+        split_equation (bool)
+    """
+    timestep = None
+    scheme = None
+    boundary_scheme = None
+    split_equation = False
+
+    current_section = None
+
+    with open(filepath, 'r') as f:
+        for line in f:
+            line = line.strip()
+
+            # Detect which section we are in
+            if '<framework>' in line:
+                current_section = 'framework'
+            elif '</framework>' in line:
+                current_section = None
+            elif '<setup>' in line:
+                current_section = 'setup'
+            elif '</setup>' in line:
+                current_section = None
+            elif '<model>' in line:
+                current_section = 'model'
+            elif '</model>' in line:
+                current_section = None
+
+            # --- Framework: timestepping info ---
+            if current_section == 'framework':
+                if '<timestep>' in line:
+                    ss, ll = line.find('>'), line.rfind('<')
+                    try:
+                        timestep = float(line[ss+1:ll])
+                    except ValueError:
+                        timestep = None
+                elif '<scheme>' in line and '</scheme>' in line:
+                    ss, ll = line.find('>'), line.rfind('<')
+                    scheme = line[ss+1:ll].strip()
+
+            # --- Setup: boundary scheme ---
+            elif current_section == 'setup':
+                if '<scheme>' in line and '</scheme>' in line:
+                    ss, ll = line.find('>'), line.rfind('<')
+                    boundary_scheme = line[ss+1:ll].strip()
+
+            # --- Model: equation split ---
+            elif current_section == 'model':
+                if '<split_equation>' in line:
+                    ss, ll = line.find('>'), line.rfind('<')
+                    value = line[ss+1:ll].strip().lower()
+                    split_equation = (value == 'on')
+
+    # Interpret timestep meaning
+    timestep_type = 'adaptive' if timestep == -1 else 'fixed'
+
+    if output == 'print':
+        print('#################################')
+        print('## Framework and Setup Info ##')
+        print(f'Timestep type:     {timestep_type}')
+        if timestep != -1 and timestep is not None:
+            print(f'Fixed timestep:    {timestep}')
+        print(f'Time scheme:       {scheme}')
+        print(f'Boundary scheme:   {boundary_scheme}')
+        print(f'Split equation:    {"on" if split_equation else "off"}')
+
+    return timestep, timestep_type, scheme, boundary_scheme, split_equation
+
+
+
+#----------------------------------------
+# 3 NEW — print_simulation_summary()
+#----------------------------------------
+def print_simulation_summary(filepath):
+    """
+    Print a clean summary of simulation configuration from parameters.cfg.
+    Combines physical parameters, numerical schemes, and boundary info.
+    """
+    print('========================================')
+    print(' Simulation Configuration Summary ')
+    print('========================================')
+    # Physical parameters
+    Ek, Pm, Pr, q, Ra, Ro = get_parameters(filepath, output='none')
+    print('\n--- Physical Parameters ---')
+    print(f"Ekman number:          {Ek}")
+    print(f"Rayleigh number:       {Ra}")
+    print(f"Prandtl number:        {Pr}")
+    print(f"Magnetic Prandtl:      {Pm}")
+    print(f"Magnetic Ekman:        {Ek/Pm:.3e}" if Pm != 0 else "Magnetic Ekman:  undefined")
+    print(f"Convective Rossby:     {np.sqrt(Ek*Ra/Pr):.3e}" if (Ek>0 and Ra>0 and Pr>0) else "Convective Rossby: undefined")
+    print(f"Roberts number (q):    {q}")
+    if Ro != 0:
+        print(f"Rossby number:         {Ro}")
+    
+    #boundary conditions
+    bc_magnetic, bc_temperature, bc_velocity = get_boundary_conditions(filepath, output='none')
+    print('\n--- Boundary Conditions ---')
+    print(f"Velocity BC:           {bc_velocity}")
+    print(f"Magnetic BC:           {bc_magnetic}")
+    print(f"Temperature BC:        {bc_temperature}")
+
+    # Framework and setup
+    timestep, timestep_type, scheme, boundary_scheme, split_eq = get_framework_and_setup_info(filepath, output='none')
+    print('\n--- Numerical Setup ---')
+    print(f"Timestep type:         {timestep_type}")
+    if timestep != -1 and timestep is not None:
+        print(f"Δt (fixed timestep):   {timestep}")
+    print(f"Time integration:      {scheme}")
+    print(f"Boundary scheme:       {boundary_scheme}")
+    print(f"Equation splitting:    {'on' if split_eq else 'off'}")
+
+    print('\n========================================')
+    print('            End of Summary                 ')
+    print('========================================')
+
+
+
 
 #-------------- Timeseries -----------#
 
@@ -364,77 +539,111 @@ def F_conc_timeseries(RunFolders,filetype):
     
 
 #-------------- Spectra -----------#
-       
+import os
+import fnmatch
+import numpy as np
+
+
 def read_spectra(filepath):
     """
-    Reading a single kinetic or magnetic spectra file
+    Reading a single kinetic, magnetic, or temperature spectra file.
     
     Args:
     ---------
-    filepath= Path to the spectra file.
+    filepath: str
+        Path to the spectra file.
     
     Returns:
     ---------
-    lm: l or m (depending on type of spectra)
-    lmtot: total energy at l or m (depending on degree or order)
-    lmtor: toroidal energy at l or m (depending on degree or order)
-    lmpol: poloidal energy at l or m (depending on degree or order)
-    time: time stamp of the spectra   
+    lm: array
+        l or m (depending on type of spectra)
+    lmtot: array
+        total energy at l or m
+    lmtor: array or None
+        toroidal energy (if available)
+    lmpol: array or None
+        poloidal energy (if available)
+    time: float
+        time stamp of the spectra   
     """
 
     path, filename = os.path.split(filepath)
-    f = open(filepath, 'r')
-    lm = []
-    lmtot = []
-    lmtor = []
-    lmpol = []
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
 
-    gateline_1 = f.readline()
-    aa_1 = f.readline()
-    bb_1 = f.readline()
-    cc_1 = f.readline()
-    cc = cc_1.split()
-    time = np.double(cc[2])
-    dd = f.readline().split()
-    kinEtot= dd[2]; kinEtor= dd[3]; kinEpol= dd[4]
-    aa_1 = f.readline()
-    bb_1 = f.readline()
+    # Determine file type
+    is_temperature = ('temperature_l' in filename) or ('temperature_m' in filename)
+    is_kinetic = ('kinetic_l' in filename) or ('kinetic_m' in filename)
+    is_magnetic = ('magnetic_l' in filename) or ('magnetic_m' in filename)
 
+    # Extract time
+    for line in lines:
+        if line.startswith("# time:"):
+            time = float(line.split()[2])
+            break
+    else:
+        raise ValueError(f"No time info found in {filename}")
 
-    # Getting rid of the extra line in l-spectra header
-    if (filename[0:9] == 'kinetic_l') or (filename[0:10] == 'magnetic_l'):
-        aa_1 = f.readline()
+    # Skip header lines
+    data_start = 0
+    for i, line in enumerate(lines):
+        if not line.startswith("#"):
+            data_start = i
+            break
 
-    for line in f:
-        line = line.strip()       #Creating lines
-        columns = line.split()    #Splitting into colums 
-        lm.append(np.double(columns[0]))
-        lmtot.append(np.double(columns[1]))
-        lmtor.append(np.double(columns[2]))
-        lmpol.append(np.double(columns[3]))
+    # Initialize containers
+    lm, lmtot, lmtor, lmpol = [], [], [], []
 
-    f.close()    
+    # Read data
+    for line in lines[data_start:]:
+        parts = line.split()
+        if len(parts) == 0:
+            continue
 
-    lm = np.asarray(lm)
-    lmtot= np.asarray(lmtot)
-    lmtor = np.asarray(lmtor)
-    lmpol = np.asarray(lmpol)    
-    return(lm,lmtot,lmtor,lmpol,time)
-    
+        # Temperature: only l and total
+        if is_temperature:
+            if len(parts) < 2:
+                continue
+            lm.append(float(parts[0]))
+            lmtot.append(float(parts[1]))
+        else:
+            # Kinetic or Magnetic: total, toroidal, poloidal
+            if len(parts) < 4:
+                continue
+            lm.append(float(parts[0]))
+            lmtot.append(float(parts[1]))
+            lmtor.append(float(parts[2]))
+            lmpol.append(float(parts[3]))
+
+    lm = np.array(lm)
+    lmtot = np.array(lmtot)
+    lmtor = np.array(lmtor) if lmtor else None
+    lmpol = np.array(lmpol) if lmpol else None
+
+    return lm, lmtot, lmtor, lmpol, time
+
 
 def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
     """
     Return the last/first/selected single spectrum from folder.
 
+    spec_type: 'kinetic', 'magnetic', or 'temperature'
+
     Returns:
         l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
+        (Note: for temperature spectra, ltor/lpol/mtor/mpol = None)
     """
-    indexList = ['_m*','_l*']
+    indexList = ['_m*', '_l*']
+    l = m = None
+    ltot = ltor = lpol = None
+    mtot = mtor = mpol = None
+    time = None
+
     for h in range(2):
         pattern = spec_type + indexList[h]
         FileList = []
         for path, subdirs, files in sorted(os.walk(folderpath)):
-            if fnmatch.fnmatch(path,'*run*'):
+            if fnmatch.fnmatch(path, '*run*'):
                 for name in files:
                     if fnmatch.fnmatch(name, pattern):
                         FileList.append(os.path.join(path, name))
@@ -455,7 +664,7 @@ def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
         lm_vals, ltot_vals, ltor_vals, lpol_vals, time = read_spectra(chosen_file)
 
         if h == 0:
-            m = lm_vals + 1
+            m = lm_vals
             mtot = ltot_vals
             mtor = ltor_vals
             mpol = lpol_vals
@@ -466,6 +675,7 @@ def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
             lpol = lpol_vals
 
     return l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
+
 
 def avgSpectra_new(folderpath,spec_type,start_time,stop_time):
     """
@@ -540,3 +750,112 @@ def avgSpectra_new(folderpath,spec_type,start_time,stop_time):
 # TODO:  read_field_snapshot()
 
 
+
+def read_single_n_spectrum(folderpath, spec_type='kinetic', which='last', plot=False):
+    """
+    Read a single n-spectrum (for kinetic, magnetic, or temperature field).
+
+    Returns:
+        n_vals, l_vals, e_tot_2d, e_tor_2d, e_pol_2d, time
+    where e_*_2d has shape (n, l)
+
+    If plot=True, creates a scatter (or pcolormesh) plot of total energy vs (n, l).
+    """
+    import re
+    import fnmatch
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import os
+
+    pattern = spec_type + '_n*'
+    FileList = []
+    for path, subdirs, files in sorted(os.walk(folderpath)):
+        if fnmatch.fnmatch(path, '*run*'):
+            for name in files:
+                if fnmatch.fnmatch(name, pattern):
+                    FileList.append(os.path.join(path, name))
+
+    FileList = sorted(FileList)
+    if not FileList:
+        raise FileNotFoundError(f'No files matching {pattern} in {folderpath}')
+
+    # --- choose file ---
+    if which == 'last':
+        chosen_file = FileList[-1]
+    elif which == 'first':
+        chosen_file = FileList[0]
+    elif isinstance(which, int):
+        chosen_file = FileList[which]
+    else:
+        raise ValueError("`which` must be 'last', 'first', or an integer index")
+
+    with open(chosen_file, 'r') as f:
+        lines = f.readlines()
+
+    # --- locate the '# n     Total data' headers ---
+    section_indices = []
+    for i, line in enumerate(lines):
+        if re.match(r'#\s*n\s+Total', line):
+            section_indices.append(('total', i))
+        elif re.match(r'#\s*n\s+Toroidal', line):
+            section_indices.append(('tor', i))
+        elif re.match(r'#\s*n\s+Poloidal', line):
+            section_indices.append(('pol', i))
+    section_indices.append(('end', len(lines)))  # mark end
+
+    # Extract time if present
+    time = None
+    for line in lines:
+        if line.startswith("# time:"):
+            try:
+                time = float(line.split()[2])
+            except Exception:
+                pass
+            break
+
+    # --- helper to parse section ---
+    def parse_section(start, end):
+        block = []
+        for line in lines[start:end]:
+            if not line.strip().startswith("#") and line.strip():
+                vals = np.fromstring(line, sep=' ')
+                if len(vals) > 1:
+                    block.append(vals)
+        if not block:
+            return None, None, None
+        data = np.array(block)
+        n_vals = data[:, 0]
+        e_matrix = data[:, 1:]  # shape (n, l)
+        l_vals = np.arange(1, e_matrix.shape[1] + 1)
+        return n_vals, l_vals, e_matrix
+
+    # --- parse sections ---
+    n_tot = l_tot = e_tot = n_tor = l_tor = e_tor = n_pol = l_pol = e_pol = None
+    for idx, (stype, start_line) in enumerate(section_indices[:-1]):
+        next_line = section_indices[idx + 1][1]
+        if stype == 'total':
+            n_tot, l_tot, e_tot = parse_section(start_line + 1, next_line)
+        elif stype == 'tor':
+            n_tor, l_tor, e_tor = parse_section(start_line + 1, next_line)
+        elif stype == 'pol':
+            n_pol, l_pol, e_pol = parse_section(start_line + 1, next_line)
+
+    # --- temperature only has total data ---
+    if spec_type == 'temperature':
+        e_tor = e_pol = None
+
+    # --- optional scatter plot ---
+    if plot and e_tot is not None:
+        n_grid, l_grid = np.meshgrid(l_tot, n_tot)
+        plt.figure(figsize=(7, 5), dpi=150)
+        sc = plt.scatter(l_grid, n_grid, c=e_tot, s=10, cmap='viridis', norm='log')
+        plt.colorbar(sc, label='Energy')
+        plt.xlabel(r'Spherical degree $l$')
+        plt.ylabel(r'Radial mode $n$')
+        plt.title(f'{spec_type.capitalize()} total energy $E(n, l)$ at t={time:.2e}')
+        plt.yscale('log')
+        plt.xscale('log')
+        plt.tight_layout()
+        plt.show()
+
+    return n_tot, l_tot, e_tot, e_tor, e_pol, time

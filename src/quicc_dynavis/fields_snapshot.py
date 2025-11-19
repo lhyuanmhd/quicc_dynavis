@@ -47,7 +47,7 @@ def _add_dashed_circles(ax):
 
 
 def plot_equatorial(data, field_name, title="Equatorial slice", cmap="RdBu_r",
-                    ax=None, savefig=None, sym_cbar=True, include_background=False):
+                    ax=None, savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
         
@@ -67,8 +67,8 @@ def plot_equatorial(data, field_name, title="Equatorial slice", cmap="RdBu_r",
     field = data[field_name][:, eq_idx, :]
     field = apply_temperature_background(field_name, field, r, include_background)
 
-     
-    vmin, vmax = _get_color_limits(field, sym_cbar)
+    if vmin is None and vmax is None: 
+        vmin, vmax = _get_color_limits(field, sym_cbar)
 
     R, Phi = np.meshgrid(r, phi, indexing="ij")
     X, Y = R * np.cos(Phi), R * np.sin(Phi)
@@ -94,7 +94,7 @@ def plot_equatorial(data, field_name, title="Equatorial slice", cmap="RdBu_r",
 
 
 def plot_meridional(data, field_name, title="Meridional slice", cmap="RdBu_r", ax=None, 
-                    savefig=None, sym_cbar=True, include_background=False):
+                    savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
         
@@ -115,8 +115,8 @@ def plot_meridional(data, field_name, title="Meridional slice", cmap="RdBu_r", a
     field = data[field_name][:, :, mid_phi]
     field = apply_temperature_background(field_name, field, r, include_background)
 
-
-    vmin, vmax = _get_color_limits(field, sym_cbar)
+    if vmin is None and vmax is None:
+        vmin, vmax = _get_color_limits(field, sym_cbar)
 
     R, Theta = np.meshgrid(r, theta, indexing="ij")
     X, Z = R * np.sin(Theta), R * np.cos(Theta)
@@ -145,7 +145,7 @@ def plot_meridional(data, field_name, title="Meridional slice", cmap="RdBu_r", a
 
 
 def plot_cmb(data, field_name, title="CMB", cmap="RdBu_r", ax=None, 
-             savefig=None, sym_cbar=True, include_background=False):
+             savefig=None, sym_cbar=True, include_background=False,vmin=None, vmax=None):
     
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
@@ -165,8 +165,9 @@ def plot_cmb(data, field_name, title="CMB", cmap="RdBu_r", ax=None,
     r, theta, phi = data["r"], data["theta"], data["phi"]
     field = data[field_name][-1, :, :]
     field = apply_temperature_background(field_name, field, r, include_background)
-
-    vmin, vmax = _get_color_limits(field, sym_cbar)
+    
+    if vmin is None and vmax is None:
+        vmin, vmax = _get_color_limits(field, sym_cbar)
 
     lon, lat = phi - np.pi, np.pi/2 - theta
     Lon, Lat = np.meshgrid(lon, lat, indexing="ij")
