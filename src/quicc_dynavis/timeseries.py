@@ -1,4 +1,6 @@
 import os
+import re
+import csv
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +14,131 @@ matplotlib.rcParams['mathtext.fontset'] = 'cm'   # use Computer Modern for math
 matplotlib.rcParams['mathtext.rm'] = 'Times New Roman'
 matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
 matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
+
+def input_params_from_path(folderFile):
+    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
+    #Ek in format 1e-4
+    Ek = f'{Ek:.1e}'
+    Ra = f'{Ra:.1e}'
+    q = f'{q:.1f}'
+
+    return Ek,q,Ra
+
+def extract_Ek_root(path):
+    """
+    Extract the directory up to and including the Ek folder (e.g. E1e-5).
+
+    Example:
+    /.../CattaneoHuges/E1e-5/q_1.2/Ra2e3/run0
+        --> /.../CattaneoHuges/E1e-5
+    """
+    parts = os.path.normpath(path).split(os.sep)
+
+    for i, p in enumerate(parts):
+        if re.match(r"E\d+e[-+]?\d+", p):
+            return os.sep.join(parts[: i + 1])
+
+    raise ValueError(f"Could not find Ek folder in path:\n{path}")
+
+import os
+import csv
+import numpy as np
+
+def write_dynamo_summary_csv(
+    csv_path,
+    q, Ra, Ek,
+    dynamo,
+    dipolarity,
+    Elsasser,
+    reversal,
+    Rm,
+    rtol=1e-10
+):
+    """
+    Write or update dynamo diagnostics in a CSV file.
+
+    If (q, Ra, Ek) already exists (within tolerance), overwrite that row.
+    Otherwise, append a new row.
+
+    Final table is sorted by:
+        1) q
+        2) Ra
+    """
+
+    # -------- Compact, readable header --------
+    header = [
+        "q",
+        "Ra",
+        "Ek",
+        "dyn",
+        "fdip",
+        "Lambda",
+        "rev",
+        "Rm"
+    ]
+
+    new_row = [
+        f"{q:.2f}",
+        f"{Ra:.2e}",
+        f"{Ek:.2e}",
+        int(dynamo),
+        f"{dipolarity:.2f}",
+        f"{Elsasser:.2e}",
+        int(reversal),
+        f"{Rm:.2f}"
+    ]
+
+    rows = []
+
+    # ---------- Read existing file ----------
+    if os.path.exists(csv_path):
+        with open(csv_path, mode="r", newline="") as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+
+        if rows and rows[0] != header:
+            raise ValueError(f"CSV header mismatch in {csv_path}")
+    else:
+        rows.append(header)
+
+    # ---------- Search & overwrite ----------
+    updated = False
+    for i in range(1, len(rows)):
+        q_i,Ra_i, Ek_i = map(float, rows[i][:3])
+
+        if (
+            abs(Ra_i - Ra) / Ra < rtol and
+            abs(q_i - q) / max(1.0, q) < rtol and
+            abs(Ek_i - Ek) / Ek < rtol
+        ):
+            rows[i] = new_row
+            updated = True
+            break
+
+    # ---------- Append if new ----------
+    if not updated:
+        rows.append(new_row)
+
+    # ---------- Sort by q, then Ra ----------
+    data_rows = rows[1:]
+
+    data_rows.sort(
+        key=lambda r: (float(r[0]), float(r[1]))  # q first, then Ra
+    )
+
+    rows = [header] + data_rows
+
+    # ---------- Write back ----------
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    with open(csv_path, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(rows)
+    
+    print("========================================")
+    print(f"✅ Dynamo summary CSV updated & sorted: {csv_path}")
+
+
+
 
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     """
@@ -47,7 +174,7 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     t = tkin
     Ro = Ek * np.sqrt(2 * kinEtot)
     startindex = int(0.3 * len(Ro))
-    timeavg_Ro = np.round(np.mean(Ro[startindex:]), 4)
+    timeavg_Ro = np.round(np.mean(Ro[startindex:]), 2)
  
 
     #physcial kientic energy
@@ -59,10 +186,24 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     plt.close('all')
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi =180)
     ax1.set_title(f'$Ek: {Ek:.1e}, Ra: {Ra:.2e}, q: {q:.1f}, (N,L,M): ({Nres:.0f},{Mres:.0f},{Lres:.0f})$')
+    
+    # compute magnetic Reynolds number
+    Rm = np.sqrt(np.mean(kinEtot))
 
-    # Energy plot
+    print('Input parameters:')
+    print('Ek:', Ek)
+    print('Ra:', Ra)
+    print('q:', q)
+    print('-------------------------------')
+    print('output diagnostics:')
+    print('magnetic Reynolds number Rm=', int(Rm))
+
+    #print('Reynolds number', '%.2E' %(Rm/Pm))
+    #print('Rossby number', '%.2E' %((2*Rm*Ek)/Pm))
+
+
+    # kinetic Energy plot
     ax1.plot(tkin, kinEtot, label=r'$\mathcal{E}_{kin}$')
-    ax1.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
     ax1.set_yscale('log')
     ax1.set_ylabel('Energy density')
     if xlim is None:
@@ -75,54 +216,128 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
        ax1.set_ylim(ylim)    
     ax1.legend()
 
-    # Dipolarity
-    if len(tdip) > 0:
-        ax2.plot(tdip, fdip, color='red', label='g10', alpha=0.6)
-    ax2.set_ylabel('Dipolarity')
+
+     # magnetic Energy plot
+    ax2.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
+    ax2.set_yscale('log')
+    ax2.set_ylabel('Energy density')
     if xlim is None:
        xlim = (np.max(t) - np.min(t)) * 0.05
        ax2.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
     else:
-       ax2.set_xlim(xlim)  
-    ax2.set_ylim(0, 1)
+       ax2.set_xlim(xlim)        
 
-    # Dipole latitude
-    if len(g10) > 0:
-        ax3.plot(tdip, dipangle, 'k', alpha=0.7)
-    ax3.set_ylabel('Dipole angle (deg)')
-    ax3.set_ylim(-5, 185)
-    ax3.axhline(90, color='gray', linestyle='--', alpha=0.4, label=r'$90^{\circ}$')
-    #ax3.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
+    if ylim is not None:
+       ax2.set_ylim(ylim)    
+    ax2.legend()
+
+
+    #compute time-averaged Energy kinEtot
+    startindex = int(0.3 * len(kinEtot))
+    timeavg_kinEtot = np.mean(kinEtot[startindex:])
+    print(f"time-averaged kinetic energy  = {timeavg_kinEtot:.2e}")
+
+    #compute time-averaged Energy magEtot
+    timeavg_magEtot = np.mean(magEtot[startindex:])
+    print(f"time-averaged magnetic energy = {timeavg_magEtot:.2e}")
+
+    #Time averaged Elssaser number
+    Lambda = 2*timeavg_magEtot
+    print(f"Elsasser number Lambda= {Lambda:.2e}")
+
+    # Determine if dynamo is active
+    dynamo_threshold = 1e-4
+    if min(magEtot) > dynamo_threshold:
+        #if  timeavg_magEtot > dynamo_threshold:
+        dynamo =  1
+    else:
+        dynamo =  0
+    print(f"Dynamo active: {dynamo}")
+
+
+    # Dipolarity
+    if len(tdip) > 0:
+        ax3.plot(tdip, fdip, color='red', label='g10', alpha=0.6)
+    ax3.set_ylabel('Dipolarity')
     if xlim is None:
        xlim = (np.max(t) - np.min(t)) * 0.05
        ax3.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
     else:
        ax3.set_xlim(xlim)  
-    ax3.legend()
+    ax3.set_ylim(0, 1)
 
-    # Dissipations
-    if len(tkinDis) > 0:
-        ax4.plot(tkinDis, kinDtot, alpha=0.7, label='kinetic dissipation')
-        ax4.plot(tmagDis, magDtot, alpha=0.7, label='magnetic dissipation')
-    ax4.set_ylabel('Dissipation')
-    ax4.set_xlabel('Time')
-    ax4.set_yscale('log')
-    #ax4.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
+    # compute time-averaged Dipolarity
+    timeavg_fdip = np.mean(fdip[startindex:])
+    print(f"Time-averaged dipolarity: {timeavg_fdip:.2e}")
+
+
+    # Dipole latitude
+    if len(g10) > 0:
+        ax4.plot(tdip, dipangle, 'k', alpha=0.7)
+    ax4.set_ylabel('Dipole angle (deg)')
+    ax4.set_ylim(-5, 185)
+    ax4.axhline(90, color='gray', linestyle='--', alpha=0.4, label=r'$90^{\circ}$')
+    #ax3.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
     if xlim is None:
-      xlim = (np.max(t) - np.min(t)) * 0.05
-      ax4.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
+       xlim = (np.max(t) - np.min(t)) * 0.05
+       ax4.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
     else:
-      ax4.set_xlim(xlim)  
+       ax4.set_xlim(xlim)  
     ax4.legend()
-    
+
+    # Determine if reversal occurs by looking dipole angle crossing 90 degrees
+    # from < 90 to >90 or vice versa 
+    # only use data from startindex to the end
+    reversal = 0    
+    dipangle_subset = dipangle[startindex:]
+    for i in range(1, len(dipangle_subset)):
+        if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
+           (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
+            reversal = 1
+            break
+
+    # ---------- Write summary CSV ---------- #
+    # --- determine Ek root automatically ---
+    Ek_root = extract_Ek_root(folderFile)
+    os.makedirs(Ek_root, exist_ok=True)
+
+    csv_name = f"data_E_{Ek:.1e}.csv"
+    csv_path = os.path.join(Ek_root, csv_name)
+
+    write_dynamo_summary_csv(
+        csv_path=csv_path,
+        q=q,
+        Ra=Ra,
+        Ek=Ek,
+        dynamo=dynamo,
+        dipolarity=timeavg_fdip,
+        Elsasser=Lambda,
+        reversal=reversal,
+        Rm=Rm
+    )
+
+
+
+    # Dissipations (outputs are missed right now, we need implementation in the code)
+   
+    # if len(tkinDis) > 0:
+    #         ax4.plot(tkinDis, Ek*kinDtot, alpha=0.7, label='viscous dissipation')
+    #         ax4.plot(tmagDis, magDtot, alpha=0.7,    label='ohmic dissipation')
+    #ax5.set_ylabel('Dissipation')
+    #ax5.set_xlabel('Time')
+    #ax5.set_yscale('log')
+
+    # if xlim is None:
+    #     xlim = (np.max(t) - np.min(t)) * 0.05
+    #     ax5.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
+    # else:
+    #     ax5.set_xlim(xlim)  
+    #     ax5.legend()
+
     #save figure
-    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
-    #Ek in format 1e-4
-    Ek = f'{Ek:.1e}'
-    Ra = f'{Ra:.1e}'
-    q = f'{q:.1e}'
-    
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_Ra{Ra}_q{q}_timeseries.png')
+    Ek,Ra,q = input_params_from_path(folderFile)
+
+    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
     plt.savefig(save_path, dpi=270)
 
     if show:
@@ -257,13 +472,13 @@ def compare_energy_multi(run_paths, labels=None, save_dir=None, show=True, xlim=
             kinEtot = Ek/Pm * kinEtot 
 
         # ---------- Plot kinetic ----------
-        axes[0].plot(tkin, kinEtot,
+        axes[0].semilogy(tkin, kinEtot,
                      label=f"{labels[idx]} - Kinetic",
                      #color=colors[idx], 
                      lw=1.8)
 
         # ---------- Plot magnetic ----------
-        axes[1].plot(tmag, magEtot,
+        axes[1].semilogy(tmag, magEtot,
                      label=f"{labels[idx]} - Magnetic",
                      #color=colors[idx], 
                      lw=1.8)
@@ -282,8 +497,13 @@ def compare_energy_multi(run_paths, labels=None, save_dir=None, show=True, xlim=
         if ylim:
             ax.set_ylim(ylim)
 
-    if xlim:
+
+    if xlim is None:
+        xlim = (np.max(tkin) - np.min(tkin)) * 0.05
         axes[1].set_xlim(xlim)
+    else:
+        axes[1].set_xlim(xlim)
+
 
     # ---------- Save figure ----------
     if save_dir is not None:
@@ -300,7 +520,142 @@ def compare_energy_multi(run_paths, labels=None, save_dir=None, show=True, xlim=
     return fig, axes
 
 
+##### timestep ######
+def read_cfl_file(fname):
+    """
+    Read a cfl.dat file.
+    
+    Returns:
+        time: array
+        dt: array
+    """
+    time = []
+    dt = []
 
+    if not os.path.exists(fname):
+        return np.array([]), np.array([])
+
+    with open(fname, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("#") or len(line) == 0:
+                continue
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            time.append(float(parts[0]))
+            dt.append(float(parts[1]))
+
+    return np.array(time), np.array(dt)
+
+
+
+def F_conc_cfl(run_folders):
+    """
+    Concatenate cfl.dat time series across multiple restart folders.
+
+    This is the CFL analogue of F_conc_timeseries.
+    
+    Returns:
+        time, dt
+    """
+
+    time = np.array([])
+    dt = np.array([])
+
+    for i, folder in enumerate(run_folders):
+
+        lastval = time[-1] if time.size > 0 else -np.inf
+
+        tnew, dtnew = read_cfl_file(os.path.join(folder, "cfl.dat"))
+        if tnew.size == 0:
+            continue
+
+        mask = tnew > lastval
+        if not np.any(mask):
+            continue
+
+        start_idx = np.argmax(mask)
+
+        time = np.concatenate((time, tnew[start_idx:]))
+        dt = np.concatenate((dt, dtnew[start_idx:]))
+
+    return time, dt
+
+
+
+def compare_timestep_multi(run_paths, labels=None, save_dir=None, show=True, xlim=None, ylim=None):
+    """
+    Compare CFL time step evolution from multiple runs.
+
+    Args:
+        run_paths: list of paths (each can be a single run or a folder with run0, run1,...)
+        labels: legend labels
+        save_dir: optional output directory
+        show: show plot
+        xlim: (xmin, xmax)
+        ylim: (ymin, ymax)
+
+    Returns:
+        fig, ax
+    """
+
+    if not isinstance(run_paths, (list, tuple)):
+        raise ValueError("run_paths must be a list")
+
+    if labels and len(labels) != len(run_paths):
+        raise ValueError("labels length must match run_paths")
+
+    if labels is None:
+        labels = [os.path.basename(p.rstrip('/')) for p in run_paths]
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(run_paths)))
+
+    for idx, path in enumerate(run_paths):
+
+        # discover run folders
+        if os.path.isdir(path):
+            runs = sorted(glob.iglob(os.path.join(path, "run*")))
+            if len(runs) == 0:
+                runs = [path]
+        else:
+            runs = [path]
+
+        # read concatenated CFL
+        t, dt = F_conc_cfl(runs)
+
+        if t.size == 0:
+            print(f"Warning: no cfl.dat found in {path}")
+            continue
+
+        # plot
+        ax.semilogy(t, dt, lw=1.8, label=labels[idx])
+
+    # style
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Timestep (dt)")
+    ax.grid(alpha=0.35)
+    ax.legend(fontsize=7)
+
+    if ylim:
+        ax.set_ylim(ylim)
+    if xlim:
+        ax.set_xlim(xlim)
+
+    # save
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
+        fname = os.path.join(save_dir, "compare_timestep_multi.png")
+        fig.savefig(fname, dpi=300, bbox_inches="tight")
+        print(f"Saved: {fname}")
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return fig, ax
 
 
 

@@ -499,7 +499,13 @@ def F_conc_timeseries(RunFolders,filetype):
         if (filetype == 'kinE') or (filetype == 'magE'):
             if os.path.exists(RunFolders[i]+'/kinetic_energy.dat') == True:
                 dum,tt,eEtot,eEtor,eEpol = F_read_energyQCC(RunFolders[i]+'/'+filename)
-                start_index= np.argmax(tt>lastval)
+                #start_index= np.argmax(tt>lastval)
+                mask = tt > lastval
+                if np.any(mask):
+                    start_index = np.argmax(mask)
+                else:
+                    # No new time values; skip this file safely
+                    continue
                 time = np.concatenate((time,tt[start_index:]))
                 Etot = np.concatenate((Etot,eEtot[start_index:]))
                 Etor = np.concatenate((Etor,eEtor[start_index:]))
