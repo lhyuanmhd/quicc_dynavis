@@ -9,14 +9,31 @@ from .io import F_conc_timeseries, F_read_dipolarity, F_read_energyQCC, F_read_N
 
 
 import matplotlib
-matplotlib.rcParams['font.family'] = 'Times New Roman'
+#matplotlib.rcParams['font.family'] = 'Times New Roman'
 matplotlib.rcParams['mathtext.fontset'] = 'cm'   # use Computer Modern for math
-matplotlib.rcParams['mathtext.rm'] = 'Times New Roman'
-matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
-matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
+#matplotlib.rcParams['mathtext.rm'] = 'Times New Roman'
+#matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
+#matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
+
+def _discover_run_folders(folderFile):
+    # New layout: folderFile/runs/run*
+    runs_new = sorted(glob.iglob(os.path.join(folderFile, "runs", "run*")))
+    runs_new = [r for r in runs_new if os.path.isdir(r)]
+    # filter only run<digits> to avoid run0_abort etc.
+    runs_new = [r for r in runs_new if os.path.basename(r).startswith("run") and os.path.basename(r)[3:].isdigit()]
+
+    if len(runs_new) > 0:
+        return runs_new
+
+    # Old layout: folderFile/run*
+    runs_old = sorted(glob.iglob(os.path.join(folderFile, "run*")))
+    runs_old = [r for r in runs_old if os.path.isdir(r)]
+    runs_old = [r for r in runs_old if os.path.basename(r).startswith("run") and os.path.basename(r)[3:].isdigit()]
+    return runs_old
+
 
 def input_params_from_path(folderFile):
-    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
+    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/runs/run0/parameters.cfg','no')
     #Ek in format 1e-4
     Ek = f'{Ek:.1e}'
     Ra = f'{Ra:.1e}'
@@ -138,8 +155,6 @@ def write_dynamo_summary_csv(
     print(f"✅ Dynamo summary CSV updated & sorted: {csv_path}")
 
 
-
-
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     """
     Plot full timeseries of kinetic/magnetic energy, dipolarity, dipole angle, and dissipations.
@@ -154,7 +169,10 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         fig, axes
     """
     # Get all run folders
-    RunFolders = sorted(glob.iglob(os.path.join(folderFile, 'run*')))
+    #RunFolders = sorted(glob.iglob(os.path.join(folderFile, 'run*')))
+    
+    RunFolders = _discover_run_folders(folderFile)
+
 
     # Read timeseries
     tkin, kinEtot, kinEtor, kinEpol    = F_conc_timeseries(RunFolders, 'kinE')
@@ -288,20 +306,42 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     # Determine if reversal occurs by looking dipole angle crossing 90 degrees
     # from < 90 to >90 or vice versa 
     # only use data from startindex to the end
-    reversal = 0    
+    #reversal = 0    
+    #dipangle_subset = dipangle[startindex:]
+    #for i in range(1, len(dipangle_subset)):
+    #    if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
+    #       (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
+    #        reversal = 1
+    #        break
+    
+    reversal = 0
+    excursion = 0
+
+    # only use data from startindex to the end
     dipangle_subset = dipangle[startindex:]
+
+    # check for excursion
     for i in range(1, len(dipangle_subset)):
         if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
            (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
-            reversal = 1
+            excursion = 1
             break
+
+    # check for reversal
+    # Earth-like criteria: dipole angle goes beyond 150 deg and below 30 deg, and dipolarity >0.35 (empirical)
+    if excursion == 1:
+        if np.max(dipangle_subset) > 150 and np.min(dipangle_subset) < 30:
+            if  timeavg_fdip > 0.35:
+                reversal = 1
+
+    print('Reversal (Earth-like):', reversal)
 
     # ---------- Write summary CSV ---------- #
     # --- determine Ek root automatically ---
     Ek_root = extract_Ek_root(folderFile)
     os.makedirs(Ek_root, exist_ok=True)
 
-    csv_name = f"data_E_{Ek:.1e}.csv"
+    csv_name = "diagnostics/"+f"data_E_{Ek:.1e}.csv"
     csv_path = os.path.join(Ek_root, csv_name)
 
     write_dynamo_summary_csv(
@@ -315,8 +355,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         reversal=reversal,
         Rm=Rm
     )
-
-
 
     # Dissipations (outputs are missed right now, we need implementation in the code)
    
@@ -335,7 +373,7 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     #     ax5.legend()
 
     #save figure
-    Ek,Ra,q = input_params_from_path(folderFile)
+    Ek,q,Ra = input_params_from_path(folderFile)
 
     save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
     plt.savefig(save_path, dpi=270)

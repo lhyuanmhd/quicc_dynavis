@@ -19,9 +19,9 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
         lt, mt, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t, time_t = read_single_spectrum(folderFile, 'temperature', which=which)   
         
         # add temperature spectra here if needed
-        label_k = f"Single t={time_k:.3E}"
-        label_m = f"Single t={time_m:.3E}"
-        label_t = f"Single t={time_m:.3E}"
+        label_k = f"t={time_k:.3E}"
+        label_m = f"t={time_m:.3E}"
+        label_t = f"t={time_m:.3E}"
 
     elif mode == "average":
         # --- kinetic ---
@@ -53,7 +53,7 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
     ax1.set_ylabel('Energy')
     #ax1.set_xscale('log'); 
     ax1.set_yscale('log')
-    ax1.set_title(f'Kinetic $l$-spectrum({label_k})')
+    ax1.set_title(f'Kinetic ({label_k})')
     ax1.legend()
 
     ax2.plot(mk, mtot_k, '.-', label='total')
@@ -63,7 +63,7 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
     ax2.set_ylabel('Energy')
     #ax2.set_xscale('log'); 
     ax2.set_yscale('log')
-    ax2.set_title(f'Kinetic $m$-spectrum({label_k})')
+    ax2.set_title(f'Kinetic ({label_k})')
 
     # Magnetic (bottom row)
     ax3, ax4 = axes[1]
@@ -74,7 +74,7 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
     ax3.set_ylabel('Energy')
     #ax3.set_xscale('log'); 
     ax3.set_yscale('log')
-    ax3.set_title(f'Magnetic $l$-spectrum ({label_m})')
+    ax3.set_title(f'Magnetic ({label_m})')
     ax3.legend()
 
     ax4.plot(mm, mtot_m, '.-', label='total')
@@ -84,7 +84,7 @@ def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time
     ax4.set_ylabel('Energy')
     #ax4.set_xscale('log'); 
     ax4.set_yscale('log')
-    ax4.set_title(f'Magnetic $m$-spectrum({label_m})')
+    ax4.set_title(f'Magnetic ({label_m})')
 
     #tempeature spectra (added third row)
     ax5, ax6 = axes[2]
@@ -123,6 +123,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     Top row: kinetic, Bottom row: magnetic.
     """
     # --- load spectra ---
+    
     if mode == 'single':
         lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
         lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
@@ -134,6 +135,10 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
         #label_t = f"Single t={time_m:.3E}"
 
     elif mode == "average":
+        if start_time == None or stop_time == None:
+            start_time = 0
+            stop_time = 100
+            
         # --- kinetic ---
         lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = avgSpectra_new(folderFile, "kinetic", start_time, stop_time)
         # --- magnetic ---
@@ -196,18 +201,18 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     ax4.set_yscale('log')
     ax4.set_title(f'Magnetic $m$-spectrum({label_m})')
 
-
-
     # Save figure
     tag = 'single' if mode == 'single' else 'average'
 
-    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
+    Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/runs/run0/parameters.cfg','no')
     Ek = f"{Ek:.1e}"
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_Ra{Ra}_q{q}_spectra.png')
+    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_{tag}.png')
     plt.savefig(save_path, dpi=270)
 
     if show:
         plt.show()
+    else:
+        plt.close(fig)
 
     return fig, axes, save_path
 

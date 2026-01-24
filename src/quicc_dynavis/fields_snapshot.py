@@ -4,15 +4,42 @@ import matplotlib
 from scipy.interpolate import RegularGridInterpolator
 from .timeseries import input_params_from_path
 
+# field_latex = {
+#     "u_r": r"u_r",
+#     "u_theta": r"u_\theta",
+#     "u_phi": r"u_\phi",
+#     "B_r": r"B_r",
+#     "B_theta": r"B_\theta",
+#     "B_phi": r"B_\phi",
+#     "temperature": r"T"
+# }
+
 field_latex = {
+    # velocity
     "u_r": r"u_r",
     "u_theta": r"u_\theta",
     "u_phi": r"u_\phi",
+
+    # magnetic field
     "B_r": r"B_r",
     "B_theta": r"B_\theta",
     "B_phi": r"B_\phi",
-    "temperature": r"T"
+
+    # temperature
+    "temperature": r"T",
+
+    # vorticity / curl(u)
+    "curl_u_r": r"(\nabla\times\mathbf{u})_r",
+    "curl_u_theta": r"(\nabla\times\mathbf{u})_\theta",
+    "curl_u_phi": r"(\nabla\times\mathbf{u})_\phi",
+    "curl_u_axial": r"(\nabla\times\mathbf{u})_z",
+
+    # magnetic curl (if you plot these)
+    "curlB_r": r"(\nabla\times\mathbf{B})_r",
+    "curlB_theta": r"(\nabla\times\mathbf{B})_\theta",
+    "curlB_phi": r"(\nabla\times\mathbf{B})_\phi",
 }
+
 
 def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
    Ek,q,Ra = input_params_from_path(folderFile)
@@ -29,19 +56,42 @@ def cmap_for_field(field_name):
         return "PuOr"
     elif field_name == "temperature":
         return "gist_heat"
+    elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial"]:
+        return "PRGn"
 
 
-def _get_color_limits(field, sym_cbar):
+#def _get_color_limits(field, sym_cbar):
+#    """
+#        Return vmin, vmax (symmetric if requested).
+#    """
+#    if sym_cbar:
+#        absmax = np.nanmax(np.abs(field))
+#        if field in ["B_r", "B_theta", "B_phi"]:
+#            fc = 0.5
+#            return -fc*absmax, fc*absmax
+#        else:
+#            return -absmax, absmax
+#    else:
+#        return np.nanmin(field), np.nanmax(field)
+
+def _get_color_limits(field, sym_cbar, name=None, q=0.99):
     """
-        Return vmin, vmax (symmetric if requested).
+    Return vmin, vmax.
+    If sym_cbar: symmetric around zero.
+    q: quantile used to clip outliers (e.g. 0.98 or 0.95)
     """
+    data = field[np.isfinite(field)]
+
     if sym_cbar:
-        absmax = np.nanmax(np.abs(field))
-        return -absmax, absmax
-        
+        abs_q = np.quantile(np.abs(data), q)
+
+        if name in ["B_r", "B_theta", "B_phi"]:
+            fc = 1.0   
+            return -fc * abs_q, fc * abs_q
+        else:
+            return -abs_q, abs_q
     else:
-        return np.nanmin(field), np.nanmax(field)
-    
+        return np.quantile(data, 1 - q), np.quantile(data, q)
 
 def apply_temperature_background(field_name, field_data, r, include_background=False):
     """
