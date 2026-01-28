@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from .io import get_parameters, read_spectra
-from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new  # assuming you have it in io or move it here
+from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new  
 import re
 
 
