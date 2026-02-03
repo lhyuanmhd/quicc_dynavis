@@ -15,6 +15,27 @@ matplotlib.rcParams['mathtext.fontset'] = 'cm'   # use Computer Modern for math
 #matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
 #matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
 
+def safe_conc_timeseries(RunFolders, tag):
+    """
+    Call F_conc_timeseries; if the underlying files are missing, return empty arrays.
+    Assumes F_conc_timeseries returns (t, tot, tor, pol) for these tags.
+    """
+    try:
+        out = F_conc_timeseries(RunFolders, tag)
+        # 保护：有些实现会返回 None 或空
+        if out is None:
+            return np.array([]), np.array([]), np.array([]), np.array([])
+        t, tot, tor, pol = out
+        if t is None or len(t) == 0:
+            return np.array([]), np.array([]), np.array([]), np.array([])
+        return t, tot, tor, pol
+    except (FileNotFoundError, OSError, ValueError, IndexError) as e:
+        # 这里不要 raise，直接视为不存在
+        print(f"[WARN] timeseries '{tag}' not found in any run folder (or unreadable): {e}")
+        return np.array([]), np.array([]), np.array([]), np.array([])
+
+
+
 def _discover_run_folders(folderFile):
     # New layout: folderFile/runs/run*
     runs_new = sorted(glob.iglob(os.path.join(folderFile, "runs", "run*")))
@@ -64,9 +85,13 @@ import numpy as np
 def write_dynamo_summary_csv(
     csv_path,
     q, Ra, Ek,
+    E0mag, # New intial magnetic energy
     dynamo,
     dipolarity,
     Elsasser,
+    visDis,   # new viscous dissipation
+    ohmDis,   # new ohmic dissipation 
+    fohm,
     reversal,
     Rm,
     rtol=1e-10
@@ -76,6 +101,8 @@ def write_dynamo_summary_csv(
 
     If (q, Ra, Ek) already exists (within tolerance), overwrite that row.
     Otherwise, append a new row.
+
+    magEtoti is the intial magnetic energy
 
     Final table is sorted by:
         1) q
@@ -87,9 +114,13 @@ def write_dynamo_summary_csv(
         "q",
         "Ra",
         "Ek",
+        "E0mag",
         "dyn",
         "fdip",
         "Lambda",
+        "visDis", 
+        "ohmDis", 
+        "fohm",
         "rev",
         "Rm"
     ]
@@ -97,10 +128,14 @@ def write_dynamo_summary_csv(
     new_row = [
         f"{q:.2f}",
         f"{Ra:.2e}",
-        f"{Ek:.2e}",
+        f"{Ek:.1e}",
+        f"{E0mag:.2e}", # added
         int(dynamo),
         f"{dipolarity:.2f}",
         f"{Elsasser:.2e}",
+        f"{visDis:.2e}", # added
+        f"{ohmDis:.2e}", # added
+        f"{fohm:.2f}", # added
         int(reversal),
         f"{Rm:.2f}"
     ]
@@ -119,18 +154,43 @@ def write_dynamo_summary_csv(
         rows.append(header)
 
     # ---------- Search & overwrite ----------
+    # updated = False
+    # for i in range(1, len(rows)):
+    #     q_i, Ra_i, Ek_i, E0_i = map(float, rows[i][:4])
+
+    #     if (
+    #         abs(Ra_i - Ra) / Ra < rtol and
+    #         abs(q_i - q) / max(1.0, q) < rtol and
+    #         abs(Ek_i - Ek) / Ek < rtol and
+    #         abs(E0_i - E0mag) / E0mag < 1e-2
+    #     ):
+    #         rows[i] = new_row
+    #         updated = True
+    #         break
+        
     updated = False
     for i in range(1, len(rows)):
-        q_i,Ra_i, Ek_i = map(float, rows[i][:3])
+        q_i, Ra_i, Ek_i, E0_i = map(float, rows[i][:4])
 
-        if (
-            abs(Ra_i - Ra) / Ra < rtol and
-            abs(q_i - q) / max(1.0, q) < rtol and
-            abs(Ek_i - Ek) / Ek < rtol
-        ):
+        same_params = (
+            np.isclose(Ra_i, Ra, rtol=rtol, atol=0.0) and
+            np.isclose(q_i,  q,  rtol=rtol, atol=0.0) and
+            np.isclose(Ek_i, Ek, rtol=rtol, atol=0.0)
+        )
+        
+        # print("row key:", q_i, Ra_i, Ek_i, E0_i, "   new key:", q, Ra, Ek, E0mag)
+        # print("checks:",
+        #     abs(Ra_i - Ra)/Ra,
+        #     abs(q_i - q)/max(1.0,q),
+        #     abs(Ek_i - Ek)/Ek,
+        #     abs(E0_i - E0mag)/max(abs(E0mag), 1e-30))
+
+        same_E0 = np.isclose(E0_i, E0mag, rtol=1e-2, atol=1e-12)
+
+        if same_params and same_E0:
             rows[i] = new_row
             updated = True
-            break
+            break    
 
     # ---------- Append if new ----------
     if not updated:
@@ -178,8 +238,13 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     tkin, kinEtot, kinEtor, kinEpol    = F_conc_timeseries(RunFolders, 'kinE')
     tmag, magEtot, magEtor, magEpol    = F_conc_timeseries(RunFolders, 'magE')
     tdip, fdip, g10, g11, h11          = F_conc_timeseries(RunFolders, 'Dip')
-    tkinDis, kinDtot, kinDtor, kinDpol = F_conc_timeseries(RunFolders, 'kinE')
-    tmagDis, magDtot, magDtor, magDpol = F_conc_timeseries(RunFolders, 'magE')
+
+    # dissipation 
+    tkinDis, kinDtot, kinDtor, kinDpol = safe_conc_timeseries(RunFolders, 'kinDis')
+    tmagDis, magDtot, magDtor, magDpol = safe_conc_timeseries(RunFolders, 'magDis')
+
+    #tkinDis, kinDtot, kinDtor, kinDpol = F_conc_timeseries(RunFolders, 'kinDis')
+    #tmagDis, magDtot, magDtor, magDpol = F_conc_timeseries(RunFolders, 'magDis')
    
     # Calculate dipole angle
     dipangle = np.arccos(g10 / np.sqrt(g10**2 + g11**2 + h11**2)) * 180 / np.pi
@@ -191,7 +256,8 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     # Compute time-averaged Rossby number
     t = tkin
     Ro = Ek * np.sqrt(2 * kinEtot)
-    startindex = int(0.3 * len(Ro))
+    #startindex = int(0.3 * len(Ro))
+    startindex = np.where(t >= t[0] + 0.3 * (t[-1] - t[0]))[0][0]
     timeavg_Ro = np.round(np.mean(Ro[startindex:]), 2)
  
 
@@ -200,9 +266,19 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         kinEtot = Ek/Pm * kinEtot 
        
     # ------ Create figure------#
+    has_dis = (len(tkinDis) > 0) or (len(tmagDis) > 0)
 
     plt.close('all')
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi =180)
+    if has_dis:
+        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(8, 12), sharex=True, dpi=180)
+    else:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi=180)
+        ax5 = None
+
+    #plt.close('all')
+    #fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi =180)
+    
+    
     ax1.set_title(f'$Ek: {Ek:.1e}, Ra: {Ra:.2e}, q: {q:.1f}, (N,L,M): ({Nres:.0f},{Mres:.0f},{Lres:.0f})$')
     
     # compute magnetic Reynolds number
@@ -250,8 +326,12 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     ax2.legend()
 
 
+    #intial magnetic energy
+    magEtoti = magEtot[0]
+
     #compute time-averaged Energy kinEtot
-    startindex = int(0.3 * len(kinEtot))
+    #startindex = int(0.3 * len(kinEtot))
+    startindex = np.where(t >= t[0] + 0.3 * (t[-1] - t[0]))[0][0]
     timeavg_kinEtot = np.mean(kinEtot[startindex:])
     print(f"time-averaged kinetic energy  = {timeavg_kinEtot:.2e}")
 
@@ -268,10 +348,11 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     if min(magEtot) > dynamo_threshold:
         #if  timeavg_magEtot > dynamo_threshold:
         dynamo =  1
+        print(f"Dynamo is active ✅ : {dynamo} ")
     else:
         dynamo =  0
-    print(f"Dynamo active: {dynamo}")
-
+        print(f"Dynamo is dead : {dynamo}")
+   
 
     # Dipolarity
     if len(tdip) > 0:
@@ -327,6 +408,8 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
             excursion = 1
             break
 
+    print('Excursion:', excursion) 
+    
     # check for reversal
     # Earth-like criteria: dipole angle goes beyond 150 deg and below 30 deg, and dipolarity >0.35 (empirical)
     if excursion == 1:
@@ -336,12 +419,41 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
     print('Reversal (Earth-like):', reversal)
 
+  
+    if has_dis and ax5 is not None:
+        if len(tkinDis) > 0:
+            ax5.plot(tkinDis, Ek * kinDtot, alpha=0.7, label='viscous dissipation')
+        if len(tmagDis) > 0:
+            ax5.plot(tmagDis, magDtot, alpha=0.7, label='ohmic dissipation')
+
+        ax5.set_ylabel('Dissipation')
+        ax5.set_xlabel('Time')
+        ax5.set_yscale('log')
+
+        if xlim is None:
+            xlim5 = (np.max(t) - np.min(t)) * 0.05
+            ax5.set_xlim(np.min(t) - xlim5, np.max(t) + xlim5)
+        else:
+            ax5.set_xlim(xlim)
+
+        ax5.legend()
+
+    
+    # averaged viscous dissipation and ohmic dissipation
+    kinDtot_avg  =  Ek*np.mean(kinDtot[:])
+    magDtot_avg  =     np.mean(magDtot[:])
+    fohm =  magDtot_avg/( magDtot_avg+kinDtot_avg) 
+
+    print(f"viscous dissipation: {kinDtot_avg:.2e}" )
+    print(f"ohmic   dissipation: {magDtot_avg :.2e}" )
+    print(f"fraction of ohmic Dis: {fohm :.2e}" )
+
     # ---------- Write summary CSV ---------- #
     # --- determine Ek root automatically ---
     Ek_root = extract_Ek_root(folderFile)
     os.makedirs(Ek_root, exist_ok=True)
 
-    csv_name = "diagnostics/"+f"data_E_{Ek:.1e}.csv"
+    csv_name = "diagnostics/"+f"data_E_{Ek:.1e}_E0mag_Dis.csv"
     csv_path = os.path.join(Ek_root, csv_name)
 
     write_dynamo_summary_csv(
@@ -349,41 +461,36 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         q=q,
         Ra=Ra,
         Ek=Ek,
+        E0mag = magEtoti,
         dynamo=dynamo,
         dipolarity=timeavg_fdip,
         Elsasser=Lambda,
+        visDis = kinDtot_avg,
+        ohmDis = magDtot_avg,
+        fohm = fohm,
         reversal=reversal,
         Rm=Rm
     )
 
-    # Dissipations (outputs are missed right now, we need implementation in the code)
-   
-    # if len(tkinDis) > 0:
-    #         ax4.plot(tkinDis, Ek*kinDtot, alpha=0.7, label='viscous dissipation')
-    #         ax4.plot(tmagDis, magDtot, alpha=0.7,    label='ohmic dissipation')
-    #ax5.set_ylabel('Dissipation')
-    #ax5.set_xlabel('Time')
-    #ax5.set_yscale('log')
-
-    # if xlim is None:
-    #     xlim = (np.max(t) - np.min(t)) * 0.05
-    #     ax5.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    # else:
-    #     ax5.set_xlim(xlim)  
-    #     ax5.legend()
-
     #save figure
     Ek,q,Ra = input_params_from_path(folderFile)
-
+    
+    #save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
     save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
     plt.savefig(save_path, dpi=270)
 
     if show:
         plt.show()
     
-    return fig, (ax1, ax2, ax3, ax4)
+    if has_dis:
+        return fig, (ax1, ax2, ax3, ax4, ax5)
+    else:
+        return fig, (ax1, ax2, ax3, ax4)
 #-----------------------------------------
 
+
+
+#---------------------------------------
 def compare_energy(folderFile1, folderFile2, save_dir=None, show=True, xlim=None, ylim=None):
     """
     Compare kinetic and magnetic energies between two simulation runs.
