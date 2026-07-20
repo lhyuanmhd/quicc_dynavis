@@ -73,6 +73,8 @@ class TimeseriesData:
         return len(self.tkin_dis) > 0 or len(self.tmag_dis) > 0
 
 
+
+
 def load_timeseries_data(case_dir) -> TimeseriesData:
     """Load all time-series files and metadata for one simulation case."""
     case_path = Path(case_dir)
@@ -179,4 +181,115 @@ def load_timeseries_data(case_dir) -> TimeseriesData:
         bc_mag=bc_mag,
         bc_temp=bc_temp,
         bc_vel=bc_vel,
+    )
+
+
+@dataclass
+class HydroTimeseriesData:
+    """Raw time-series data and metadata for a hydro simulation."""
+
+    run_folders: list[str]
+
+    tkin: np.ndarray
+    kin_total: np.ndarray
+    kin_tor: np.ndarray
+    kin_pol: np.ndarray
+
+    ttem: np.ndarray
+    tem_total: np.ndarray
+
+    tnusselt: np.ndarray
+    nusselt: np.ndarray
+
+    tkin_dis: np.ndarray
+    kin_dis_total: np.ndarray
+    kin_dis_tor: np.ndarray
+    kin_dis_pol: np.ndarray
+
+    Ek: float
+    Pm: float
+    Pr: float
+    q: float
+    Ra: float
+    Ro_input: float
+
+    N: int
+    M: int
+    L: int
+
+    @property
+    def has_dissipation(self) -> bool:
+        return len(self.tkin_dis) > 0
+    
+
+def load_hydro_timeseries_data(case_dir) -> HydroTimeseriesData:
+    """Load time-series data for a purely hydrodynamic simulation."""
+    case_path = Path(case_dir)
+    run_folders = discover_run_folders(case_path)
+
+    if not run_folders:
+        raise FileNotFoundError(
+            f"No numeric run directories were found under {case_path}"
+        )
+
+    parameter_file = Path(run_folders[0]) / "parameters.cfg"
+
+    tkin, kin_total, kin_tor, kin_pol = F_conc_timeseries(
+        run_folders,
+        "kinE",
+    )
+
+    ttem, tem_total = F_conc_timeseries(
+        run_folders,
+        "temE",
+    )
+
+    tnusselt, nusselt = F_conc_timeseries(
+        run_folders,
+        "Nusselt",
+    )
+
+    (
+        tkin_dis,
+        kin_dis_total,
+        kin_dis_tor,
+        kin_dis_pol,
+    ) = safe_conc_timeseries(
+        run_folders,
+        "kinDis",
+    )
+
+    Ek, Pm, Pr, q, Ra, Ro_input = get_parameters(
+        str(parameter_file),
+        "no",
+    )
+
+    N, M, L = get_resolution(
+        str(parameter_file),
+        "no",
+    )
+
+    return HydroTimeseriesData(
+        run_folders=run_folders,
+        tkin=tkin,
+        kin_total=kin_total,
+        kin_tor=kin_tor,
+        kin_pol=kin_pol,
+        ttem=ttem,
+        tem_total=tem_total,
+        tnusselt=tnusselt,
+        nusselt=nusselt,
+        tkin_dis=tkin_dis,
+        kin_dis_total=kin_dis_total,
+        kin_dis_tor=kin_dis_tor,
+        kin_dis_pol=kin_dis_pol,
+        Ek=Ek,
+        Pm=Pm,
+        Pr=Pr,
+        q=q,
+        Ra=Ra,
+        Ro_input=Ro_input,
+        N=int(N),
+        M=int(M),
+        L=int(L),
     )

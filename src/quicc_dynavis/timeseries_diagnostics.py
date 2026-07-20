@@ -368,3 +368,106 @@ def print_dynamo_diagnostics(
         "Typical magnetic length scale = "
         f"{diagnostics.magnetic_length_scale:.2e}"
     )
+
+
+
+
+
+
+@dataclass
+class HydroDiagnostics:
+    """Time-averaged diagnostics for a hydro simulation."""
+
+    averaging_start_index: int
+    physical_kinetic_energy: np.ndarray
+    thermal_perturbation: np.ndarray
+
+    mean_kinetic_energy: float
+    mean_thermal_perturbation: float
+    mean_nusselt: float
+    mean_viscous_dissipation: float
+
+
+def compute_hydro_diagnostics(
+    data: HydroTimeseriesData,
+    averaging_fraction: float = 0.3,
+) -> HydroDiagnostics:
+    """Compute hydro time-series diagnostics."""
+    start_index = _averaging_start_index(
+        data.tkin,
+        fraction=averaging_fraction,
+    )
+
+    physical_kinetic_energy = np.asarray(
+        data.kin_total,
+        dtype=float,
+    ).copy()
+
+    if data.Pm != 0 and data.Pr != 0:
+        physical_kinetic_energy *= data.Ek / data.Pm
+
+    thermal_perturbation = (
+        3.0 / 5.0
+        * (data.q * data.Ra) ** 2
+        * data.tem_total
+    )
+
+    mean_kinetic_energy = _mean_after_start(
+        physical_kinetic_energy,
+        start_index,
+    )
+
+    mean_thermal_perturbation = _mean_after_start(
+        thermal_perturbation,
+        start_index,
+    )
+
+    mean_nusselt = _mean_after_start(
+        data.nusselt,
+        start_index,
+    )
+
+    if len(data.kin_dis_total) > 0:
+        mean_viscous_dissipation = float(
+            data.Ek * np.mean(data.kin_dis_total)
+        )
+    else:
+        mean_viscous_dissipation = float("nan")
+
+    return HydroDiagnostics(
+        averaging_start_index=start_index,
+        physical_kinetic_energy=physical_kinetic_energy,
+        thermal_perturbation=thermal_perturbation,
+        mean_kinetic_energy=mean_kinetic_energy,
+        mean_thermal_perturbation=mean_thermal_perturbation,
+        mean_nusselt=mean_nusselt,
+        mean_viscous_dissipation=mean_viscous_dissipation,
+    )
+
+
+def print_hydro_diagnostics(
+    data: HydroTimeseriesData,
+    diagnostics: HydroDiagnostics,
+) -> None:
+    """Print hydro diagnostics."""
+    print("Input parameters:")
+    print(f"Ek: {data.Ek}")
+    print(f"Ra: {data.Ra}")
+    print("-------------------------------")
+    print("Output diagnostics:")
+    print(
+        "Time-averaged kinetic energy = "
+        f"{diagnostics.mean_kinetic_energy:.2e}"
+    )
+    print(
+        "Time-averaged thermal perturbation = "
+        f"{diagnostics.mean_thermal_perturbation:.2e}"
+    )
+    print(
+        "Time-averaged Nusselt number = "
+        f"{diagnostics.mean_nusselt:.2e}"
+    )
+    print(
+        "Viscous dissipation = "
+        f"{diagnostics.mean_viscous_dissipation:.2e}"
+    )

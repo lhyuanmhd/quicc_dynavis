@@ -7,8 +7,8 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from .timeseries_data import TimeseriesData
-from .timeseries_diagnostics import DynamoDiagnostics
+from .timeseries_data import TimeseriesData, HydroTimeseriesData 
+from .timeseries_diagnostics import DynamoDiagnostics, HydroDiagnostics
 
 
 def resolve_time_limits(
@@ -65,6 +65,44 @@ def create_timeseries_figure(
     return fig, axes
 
 
+def create_dipolarity_figure():
+    """Create the compact magnetic-energy and dipole diagnostics figure."""
+    plt.close("all")
+
+    fig, axes_array = plt.subplots(
+        3,
+        1,
+        figsize=(12, 4.5),
+        sharex=True,
+        dpi=180,
+        squeeze=False,
+    )
+
+    axes = tuple(axes_array[:, 0])
+    return fig, axes
+
+
+def create_hydro_timeseries_figure(
+    has_dissipation: bool,
+) -> tuple[Figure, tuple[Axes, ...]]:
+    """Create the standard hydro time-series figure."""
+    plt.close("all")
+
+    panel_count = 3 if has_dissipation else 2
+    figure_height = 8 if has_dissipation else 6
+
+    fig, axes_array = plt.subplots(
+        panel_count,
+        1,
+        figsize=(8, figure_height),
+        sharex=True,
+        dpi=180,
+        squeeze=False,
+    )
+
+    return fig, tuple(axes_array[:, 0])
+
+
 def plot_kinetic_energy_panel(
     ax: Axes,
     data: TimeseriesData,
@@ -93,6 +131,32 @@ def plot_kinetic_energy_panel(
 
     ax.legend()
 
+def plot_magnetic_energy_panel(
+    ax: Axes,
+    data: TimeseriesData,
+    time_limits: tuple[float, float],
+    ylim=None,
+) -> None:
+    """Plot magnetic energy only."""
+    ax.plot(
+        data.tmag,
+        data.mag_total,
+        label=r"$\mathcal{E}_{mag}$",
+    )
+
+    ax.set_title(
+        rf"$E: {data.Ek:.1e}, Ra: {data.Ra:.2e}, "
+        rf"q: {data.q:.2f}, "
+        rf"(N,L,M): ({data.N},{data.L},{data.M})$"
+    )
+    ax.set_ylabel(r"$E_{mag}$")
+    ax.set_yscale("log")
+    ax.set_xlim(time_limits)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    ax.legend()
 
 def plot_magnetic_thermal_panel(
     ax: Axes,
@@ -128,6 +192,7 @@ def plot_dipolarity_panel(
     ax: Axes,
     data: TimeseriesData,
     time_limits: tuple[float, float],
+    ylabel: str = "Dipolarity",
 ) -> None:
     """Plot dipolarity."""
     if len(data.tdip) > 0 and len(data.fdip) > 0:
@@ -138,10 +203,9 @@ def plot_dipolarity_panel(
             alpha=0.6,
         )
 
-    ax.set_ylabel("Dipolarity")
+    ax.set_ylabel(ylabel)
     ax.set_ylim(0, 1)
     ax.set_xlim(time_limits)
-    ax.legend()
 
 
 def plot_dipole_angle_panel(
@@ -151,6 +215,7 @@ def plot_dipole_angle_panel(
     time_limits: tuple[float, float],
     *,
     set_xlabel: bool,
+    ylabel: str = "Dipole angle (deg)",
 ) -> None:
     """Plot dipole tilt angle."""
     if len(data.tdip) > 0 and len(diagnostics.dipole_angle) > 0:
@@ -167,7 +232,7 @@ def plot_dipole_angle_panel(
         alpha=0.4,
         label=r"$90^{\circ}$",
     )
-    ax.set_ylabel("Dipole angle (deg)")
+    ax.set_ylabel(ylabel)
     ax.set_ylim(-5, 185)
     ax.set_xlim(time_limits)
 
@@ -206,6 +271,85 @@ def plot_dissipation_panel(
     ax.legend()
 
 
+
+def plot_hydro_kinetic_panel(
+    ax: Axes,
+    data: HydroTimeseriesData,
+    diagnostics: HydroDiagnostics,
+    time_limits: tuple[float, float],
+    ylim=None,
+) -> None:
+    """Plot hydro kinetic energy."""
+    ax.plot(
+        data.tkin,
+        diagnostics.physical_kinetic_energy,
+        label=r"$\mathcal{E}_{kin}$",
+    )
+
+    ax.set_title(
+        rf"Hydro, $E: {data.Ek:.1e}, Ra: {data.Ra:.2e}, "
+        rf"(N,L,M): ({data.N},{data.L},{data.M})$"
+    )
+    ax.set_ylabel("Energy density")
+    ax.set_yscale("log")
+    ax.set_xlim(time_limits)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    ax.legend()
+
+def plot_hydro_thermal_panel(
+    ax: Axes,
+    data: HydroTimeseriesData,
+    diagnostics: HydroDiagnostics,
+    time_limits: tuple[float, float],
+    ylim=None,
+    *,
+    set_xlabel: bool,
+) -> None:
+    """Plot scaled thermal perturbation energy."""
+    ax.plot(
+        data.ttem,
+        data.Ek * diagnostics.thermal_perturbation,
+        label=r"$E\mathcal{E}_{t}$",
+    )
+
+    ax.set_ylabel("Energy density")
+    ax.set_yscale("log")
+    ax.set_xlim(time_limits)
+
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+    if set_xlabel:
+        ax.set_xlabel("Time")
+
+    ax.legend()
+
+def plot_hydro_dissipation_panel(
+    ax: Axes,
+    data: HydroTimeseriesData,
+    time_limits: tuple[float, float],
+) -> None:
+    """Plot viscous dissipation."""
+    if len(data.tkin_dis) > 0:
+        ax.plot(
+            data.tkin_dis,
+            data.Ek * data.kin_dis_total,
+            alpha=0.7,
+            label="Viscous dissipation",
+        )
+
+    ax.set_ylabel("Dissipation")
+    ax.set_xlabel("Time")
+    ax.set_yscale("log")
+    ax.set_xlim(time_limits)
+    ax.legend()
+
+
+# populate figures
+
 def populate_timeseries_figure(
     axes: Sequence[Axes],
     data: TimeseriesData,
@@ -229,7 +373,7 @@ def populate_timeseries_figure(
         ylim=ylim,
     )
 
-    plot_magnetic_thermal_panel(
+    plot_magnetic_energy_panel(
         axes[1],
         data,
         diagnostics,
@@ -254,6 +398,84 @@ def populate_timeseries_figure(
     if data.has_dissipation:
         plot_dissipation_panel(
             axes[4],
+            data,
+            time_limits,
+        )
+
+
+
+def populate_dipolarity_figure(
+    axes: Sequence[Axes],
+    data: TimeseriesData,
+    diagnostics: DynamoDiagnostics,
+    time_limits: tuple[float, float],
+    ylim=None,
+) -> None:
+    """Populate the compact magnetic-energy and dipole figure."""
+    if len(axes) != 3:
+        raise ValueError(
+            f"Expected 3 axes, received {len(axes)}"
+        )
+
+    plot_magnetic_energy_panel(
+        axes[0],
+        data,
+        time_limits,
+        ylim=ylim,
+    )
+
+    plot_dipolarity_panel(
+        axes[1],
+        data,
+        time_limits,
+        ylabel=r"$f_{\mathrm{dip}}$",
+    )
+
+    plot_dipole_angle_panel(
+        axes[2],
+        data,
+        diagnostics,
+        time_limits,
+        set_xlabel=True,
+        ylabel=r"$\theta$ (deg)",
+    )
+
+
+def populate_hydro_timeseries_figure(
+    axes: Sequence[Axes],
+    data: HydroTimeseriesData,
+    diagnostics: HydroDiagnostics,
+    time_limits: tuple[float, float],
+    ylim=None,
+) -> None:
+    """Populate the standard hydro time-series figure."""
+    expected_count = 3 if data.has_dissipation else 2
+
+    if len(axes) != expected_count:
+        raise ValueError(
+            f"Expected {expected_count} axes, received {len(axes)}"
+        )
+
+    plot_hydro_kinetic_panel(
+        axes[0],
+        data,
+        diagnostics,
+        time_limits,
+        ylim=ylim,
+    )
+
+    plot_hydro_thermal_panel(
+        axes[1],
+        data,
+        diagnostics,
+        time_limits,
+        ylim=ylim,
+        set_xlabel=not data.has_dissipation,
+    )
+
+    if data.has_dissipation:
+        plot_hydro_dissipation_panel(
+            axes[2],
             data,
             time_limits,
         )
