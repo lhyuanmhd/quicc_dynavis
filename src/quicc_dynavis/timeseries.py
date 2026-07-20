@@ -34,233 +34,70 @@ from .timeseries_diagnostics import (
     print_dynamo_diagnostics,
 )
 
+from .timeseries_plotting import (
+    create_timeseries_figure,
+    populate_timeseries_figure,
+    resolve_time_limits,
+)
+
+
 
 # keep updating according to the need
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     """
-    Plot full timeseries of kinetic/magnetic energy, dipolarity, dipole angle, and dissipations.
+    Plot dynamo time-series diagnostics for one simulation case.
 
-    Args:
-        folderFile: path containing run folders (run0, run1, ...)
-        show: whether to display the figure immediately
-        xlim
-        ylim 
+    Parameters
+    ----------
+    folderFile
+        Directory containing numbered run folders such as run0 and run1.
+    save_dir
+        Directory in which the figure is saved.
+    show
+        Display the figure interactively when True.
+    xlim
+        Optional time-axis limits ``(xmin, xmax)``.
+    ylim
+        Optional energy-axis limits applied to the energy panels.
 
-    Returns:
-        fig, axes
+    Returns
+    -------
+    fig
+        Matplotlib figure.
+    axes
+        Tuple of Matplotlib axes.
     """
-    # Get all run folders
-    RunFolders = _discover_run_folders(folderFile)
-
-
-    # # Read timeseries
-    # tkin, kinEtot, kinEtor, kinEpol    = F_conc_timeseries(RunFolders, 'kinE')
-    # tmag, magEtot, magEtor, magEpol    = F_conc_timeseries(RunFolders, 'magE')
-    # ttem, temEtot                      = F_conc_timeseries(RunFolders, 'temE')
-    # tnus, nusselt                      = F_conc_timeseries(RunFolders, 'Nusselt')     
-    # tdip, fdip, g10, g11, h11          = F_conc_timeseries(RunFolders, 'Dip')
-
-    # # Read dissipation 
-    # tkinDis, kinDtot, kinDtor, kinDpol = safe_conc_timeseries(RunFolders, 'kinDis')
-    # tmagDis, magDtot, magDtor, magDpol = safe_conc_timeseries(RunFolders, 'magDis')
-   
-
-    # # Read simulation parameters
-    # Ek, Pm, Pr, q, Ra, Ro   = get_parameters(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
-    # Nres, Mres, Lres        = get_resolution(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
-    # bc_mag, bc_temp, bc_vel = get_boundary_conditions(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
-    
-
 
     # read data
     data = load_timeseries_data(folderFile)
 
-    RunFolders = data.run_folders
-
-    tkin = data.tkin
-    kinEtot = data.kin_total
-    kinEtor = data.kin_tor
-    kinEpol = data.kin_pol
-
-    tmag = data.tmag
-    magEtot = data.mag_total
-    magEtor = data.mag_tor
-    magEpol = data.mag_pol
-
-    ttem = data.ttem
-    temEtot = data.tem_total
-
-    tnus = data.tnusselt
-    nusselt = data.nusselt
-
-    tdip = data.tdip
-    fdip = data.fdip
-    g10 = data.g10
-    g11 = data.g11
-    h11 = data.h11
-
-    tkinDis = data.tkin_dis
-    kinDtot = data.kin_dis_total
-    kinDtor = data.kin_dis_tor
-    kinDpol = data.kin_dis_pol
-
-    tmagDis = data.tmag_dis
-    magDtot = data.mag_dis_total
-    magDtor = data.mag_dis_tor
-    magDpol = data.mag_dis_pol
-
-    Ek = data.Ek
-    Pm = data.Pm
-    Pr = data.Pr
-    q = data.q
-    Ra = data.Ra
-    Ro = data.Ro_input
-
-    Nres = data.N
-    Mres = data.M
-    Lres = data.L
-
-    bc_mag = data.bc_mag
-    bc_temp = data.bc_temp
-    bc_vel = data.bc_vel
-    
-
+    # diagnostic 
     diagnostics = compute_dynamo_diagnostics(data)
     print_dynamo_diagnostics(data, diagnostics)
     
-    kinEtot = diagnostics.physical_kinetic_energy
-    T_perb = diagnostics.thermal_perturbation
-    dipangle = diagnostics.dipole_angle
+    # make plots
+    time_limits = resolve_time_limits(data.tkin, xlim=xlim)
 
-    startindex = diagnostics.averaging_start_index
-
-    magEtoti = diagnostics.initial_magnetic_energy
-    timeavg_kinEtot = diagnostics.mean_kinetic_energy
-    timeavg_magEtot = diagnostics.mean_magnetic_energy
-    timeavg_T_perb = diagnostics.mean_thermal_perturbation
-    timeavg_nusselt = diagnostics.mean_nusselt
-
-    Rm = diagnostics.magnetic_reynolds_number
-    Lambda = diagnostics.elsasser_number
-
-    timeavg_fdip = diagnostics.mean_dipolarity
-    relative_std_fdip = diagnostics.relative_std_dipolarity
-
-    dynamo = int(diagnostics.dynamo_active)
-    excursion = int(diagnostics.excursion)
-    reversal = int(diagnostics.reversal)
-
-    kinDtot_avg = diagnostics.mean_viscous_dissipation
-    magDtot_avg = diagnostics.mean_ohmic_dissipation
-    fohm = diagnostics.ohmic_fraction
-
-    L_u = diagnostics.velocity_length_scale
-    L_b = diagnostics.magnetic_length_scale
-       
-    # ------ Create figure------#
-    has_dis = data.has_dissipation
-    plt.close('all')
-    if has_dis:
-        fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(8, 12), sharex=True, dpi=180)
-    else:
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi=180)
-        ax5 = None
-    
-    #physcial kientic energy
-    if  Pm !=0 and Pr !=0: 
-        kinEtot = Ek/Pm * kinEtot 
-        
-    ax1.set_title(f'$E: {Ek:.1e}, Ra: {Ra:.2e}, q: {q:.2f}, (N,L,M): ({Nres:.0f},{Mres:.0f},{Lres:.0f})$')
-    #print('Reynolds number', '%.2E' %(Rm/Pm))
-    #print('Rossby number', '%.2E' %((2*Rm*Ek)/Pm))
-
-    # kinetic Energy plot
-    ax1.plot(tkin, kinEtot, label=r'$\mathcal{E}_{kin}$')
-    #ax1.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
-
-    ax1.set_yscale('log')
-    ax1.set_ylabel('Energy density')
-    if xlim is None:
-       xlim = (np.max(t) - np.min(t)) * 0.05
-       ax1.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    else:
-       ax1.set_xlim(xlim)        
-
-    if ylim is not None:
-       ax1.set_ylim(ylim)    
-    ax1.legend()
-
-   
-    # magnetic Energy plot
-    #ax2.plot(ttem, Ek*T_perb, label=r'$E \mathcal{E}_{t}$')
-    #ax2.set_ylabel('Thermal perturbation')
-    ax2.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
-    ax2.set_ylabel('Energy density')
-    ax2.set_yscale('log')
-    if xlim is None:
-        xlim = (np.max(t) - np.min(t)) * 0.05
-        ax2.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    else:
-        ax2.set_xlim(xlim)        
-
-    if ylim is not None:
-        ax2.set_ylim(ylim)    
-    ax2.legend()
-
-
-    # Dipolarity
-    if len(tdip) > 0:
-        ax3.plot(tdip, fdip, color='red', label='g10', alpha=0.6)
-    ax3.set_ylabel('Dipolarity')
-    if xlim is None:
-       xlim = (np.max(t) - np.min(t)) * 0.05
-       ax3.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    else:
-       ax3.set_xlim(xlim)  
-    ax3.set_ylim(0, 1)
-
-
-    # Dipole latitude
-    if len(g10) > 0:
-        ax4.plot(tdip, dipangle, 'k', alpha=0.7)
-    ax4.set_ylabel('Dipole angle (deg)')
-    ax4.set_ylim(-5, 185)
-    ax4.axhline(90, color='gray', linestyle='--', alpha=0.4, label=r'$90^{\circ}$')
-    #ax3.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    if xlim is None:
-       xlim = (np.max(t) - np.min(t)) * 0.05
-       ax4.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    else:
-       ax4.set_xlim(xlim)  
-    ax4.legend()
-
-    # dissipation plot  
-    if has_dis and ax5 is not None:
-        if len(tkinDis) > 0:
-            ax5.plot(tkinDis, Ek * kinDtot, alpha=0.7, label='viscous dissipation')
-        if len(tmagDis) > 0:
-            ax5.plot(tmagDis, magDtot, alpha=0.7, label='ohmic dissipation')
-
-        ax5.set_ylabel('Dissipation')
-        ax5.set_xlabel('Time')
-        ax5.set_yscale('log')
-
-        if xlim is None:
-            xlim5 = (np.max(t) - np.min(t)) * 0.05
-            ax5.set_xlim(np.min(t) - xlim5, np.max(t) + xlim5)
-        else:
-            ax5.set_xlim(xlim)
-
-        ax5.legend()
+    fig, axes = create_timeseries_figure(
+        has_dissipation=data.has_dissipation,
+    )
+    populate_timeseries_figure(
+        axes=axes,
+        data=data,
+        diagnostics=diagnostics,
+        time_limits=time_limits,
+        ylim=ylim,
+    )
 
     # ---------- Write summary CSV ---------- #
-    # --- determine Ek root automatically ---
     Ek_root = extract_Ek_root(folderFile)
-    os.makedirs(Ek_root, exist_ok=True)
+    csv_path = os.path.join(
+        Ek_root,
+        "diagnostics",
+        f"data_E_{data.Ek:.1e}.csv",
+    )
 
-    csv_name = "diagnostics/"+f"data_E_{Ek:.1e}_E0mag_Dis_L_T_perb_Nu_Bc_stdfdip.csv"
-    csv_path = os.path.join(Ek_root, csv_name)
-    
+
     write_dynamo_summary_csv(
         csv_path=csv_path,
         q=data.q,
@@ -289,17 +126,24 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     )
 
     #save figure
-    Ek,q,Ra = input_params_from_path(folderFile)
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
-    plt.savefig(save_path, dpi=270)
+    save_dir = os.fspath(save_dir)
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(
+        save_dir,
+        f"Ek_{data.Ek}_q{data.q}_Ra{data.Ra}_timeseries.png",
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=270,
+        bbox_inches="tight",
+    )
 
     if show:
         plt.show()
-    
-    if has_dis:
-        return fig, (ax1, ax2, ax3, ax4, ax5)
-    else:
-        return fig, (ax1, ax2, ax3, ax4)
+
+    return fig, axes
 #-----------------------------------------
 
 def plot_timeseries_dipolarity(folderFile, save_dir, show=True, xlim=None, ylim=None):
