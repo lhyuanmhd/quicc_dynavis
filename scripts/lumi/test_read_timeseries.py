@@ -2,7 +2,6 @@
 import os
 import glob
 import sys
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 
 # ---- user input ----
 CASE_DIR = "/scratch/project_465001528/lhyuan/IlessDyn/CattaneoHuges/E1e-5/q_1/Ra1e3/stfromE1e-4Ra1e3q5/N81L161"

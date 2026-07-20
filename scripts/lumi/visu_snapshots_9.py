@@ -23,7 +23,6 @@ import numpy as np
 
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
 
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 from quicc_dynavis import fields_snapshot
 
 

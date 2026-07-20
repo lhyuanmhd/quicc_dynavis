@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 import sys
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 from quicc_dynavis import io, spectra, timeseries, fields_snapshot 
 
 def main():

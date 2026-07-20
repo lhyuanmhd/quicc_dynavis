@@ -10,7 +10,6 @@ import re
 import matplotlib
 matplotlib.use("Agg")
 
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 
 from quicc_dynavis.timeseries import plot_timeseries, plot_timeseries_dipolarity
 from quicc_dynavis import io   # 假定 print_simulation_summary 在这里

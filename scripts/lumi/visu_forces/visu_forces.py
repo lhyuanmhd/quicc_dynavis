@@ -24,7 +24,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 from quicc_dynavis import fields_snapshot
 
 # -----------------------------

@@ -8,7 +8,6 @@ import io as pyio
 import matplotlib
 matplotlib.use("Agg")
 
-sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 
 from quicc_dynavis.timeseries import  plot_timeseries_hydro
 from quicc_dynavis import io   
