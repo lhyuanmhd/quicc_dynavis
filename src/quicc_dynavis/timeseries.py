@@ -10,9 +10,6 @@ from matplotlib.ticker import FuncFormatter, LogFormatterMathtext, LogLocator
 
 from .io import (
     F_conc_timeseries,
-    #F_read_Nusselt,
-    #F_read_dipolarity,
-    #F_read_energyQCC,
     get_boundary_conditions,
     get_parameters,
     get_resolution,
@@ -31,6 +28,7 @@ _discover_run_folders = discover_run_folders
 extract_Ek_root = extract_ek_root
 
 from .summary import write_dynamo_summary_csv
+from .timeseries_data import load_timeseries_data
 
 # keep updating according to the need
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
@@ -47,32 +45,80 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         fig, axes
     """
     # Get all run folders
-    #RunFolders = sorted(glob.iglob(os.path.join(folderFile, 'run*')))
-    
     RunFolders = _discover_run_folders(folderFile)
 
 
-    # Read timeseries
-    tkin, kinEtot, kinEtor, kinEpol    = F_conc_timeseries(RunFolders, 'kinE')
-    tmag, magEtot, magEtor, magEpol    = F_conc_timeseries(RunFolders, 'magE')
-    ttem, temEtot                      = F_conc_timeseries(RunFolders, 'temE')
-    tnus, nusselt                      = F_conc_timeseries(RunFolders, 'Nusselt')     
-    tdip, fdip, g10, g11, h11          = F_conc_timeseries(RunFolders, 'Dip')
+    # # Read timeseries
+    # tkin, kinEtot, kinEtor, kinEpol    = F_conc_timeseries(RunFolders, 'kinE')
+    # tmag, magEtot, magEtor, magEpol    = F_conc_timeseries(RunFolders, 'magE')
+    # ttem, temEtot                      = F_conc_timeseries(RunFolders, 'temE')
+    # tnus, nusselt                      = F_conc_timeseries(RunFolders, 'Nusselt')     
+    # tdip, fdip, g10, g11, h11          = F_conc_timeseries(RunFolders, 'Dip')
 
-    # Read dissipation 
-    tkinDis, kinDtot, kinDtor, kinDpol = safe_conc_timeseries(RunFolders, 'kinDis')
-    tmagDis, magDtot, magDtor, magDpol = safe_conc_timeseries(RunFolders, 'magDis')
-
-    #tkinDis, kinDtot, kinDtor, kinDpol = F_conc_timeseries(RunFolders, 'kinDis')
-    #tmagDis, magDtot, magDtor, magDpol = F_conc_timeseries(RunFolders, 'magDis')
+    # # Read dissipation 
+    # tkinDis, kinDtot, kinDtor, kinDpol = safe_conc_timeseries(RunFolders, 'kinDis')
+    # tmagDis, magDtot, magDtor, magDpol = safe_conc_timeseries(RunFolders, 'magDis')
    
+
+    # # Read simulation parameters
+    # Ek, Pm, Pr, q, Ra, Ro   = get_parameters(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
+    # Nres, Mres, Lres        = get_resolution(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
+    # bc_mag, bc_temp, bc_vel = get_boundary_conditions(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
+    
+
+    data = load_timeseries_data(folderFile)
+
+    RunFolders = data.run_folders
+
+    tkin = data.tkin
+    kinEtot = data.kin_total
+    kinEtor = data.kin_tor
+    kinEpol = data.kin_pol
+
+    tmag = data.tmag
+    magEtot = data.mag_total
+    magEtor = data.mag_tor
+    magEpol = data.mag_pol
+
+    ttem = data.ttem
+    temEtot = data.tem_total
+
+    tnus = data.tnusselt
+    nusselt = data.nusselt
+
+    tdip = data.tdip
+    fdip = data.fdip
+    g10 = data.g10
+    g11 = data.g11
+    h11 = data.h11
+
+    tkinDis = data.tkin_dis
+    kinDtot = data.kin_dis_total
+    kinDtor = data.kin_dis_tor
+    kinDpol = data.kin_dis_pol
+
+    tmagDis = data.tmag_dis
+    magDtot = data.mag_dis_total
+    magDtor = data.mag_dis_tor
+    magDpol = data.mag_dis_pol
+
+    Ek = data.Ek
+    Pm = data.Pm
+    Pr = data.Pr
+    q = data.q
+    Ra = data.Ra
+    Ro = data.Ro_input
+
+    Nres = data.N
+    Mres = data.M
+    Lres = data.L
+
+    bc_mag = data.bc_mag
+    bc_temp = data.bc_temp
+    bc_vel = data.bc_vel
+
     # Calculate dipole angle
     dipangle = np.arccos(g10 / np.sqrt(g10**2 + g11**2 + h11**2)) * 180 / np.pi
-
-    # Read simulation parameters
-    Ek, Pm, Pr, q, Ra, Ro   = get_parameters(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
-    Nres, Mres, Lres        = get_resolution(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
-    bc_mag, bc_temp, bc_vel = get_boundary_conditions(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
   
     # Compute time-averaged Rossby number
     t = tkin
@@ -87,7 +133,7 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         kinEtot = Ek/Pm * kinEtot 
        
     # ------ Create figure------#
-    has_dis = (len(tkinDis) > 0) or (len(tmagDis) > 0)
+    has_dis = data.has_dissipation
 
     plt.close('all')
     if has_dis:
@@ -136,20 +182,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
    
     # # magnetic Energy plot
-    # ax2.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
-    # ax2.set_yscale('log')
-    # ax2.set_ylabel('Energy density')
-    # if xlim is None:
-    #    xlim = (np.max(t) - np.min(t)) * 0.05
-    #    ax2.set_xlim(np.min(t)-xlim, np.max(t)+xlim)
-    # else:
-    #    ax2.set_xlim(xlim)        
-
-    # if ylim is not None:
-    #    ax2.set_ylim(ylim)    
-    # ax2.legend()
-
-
     # thermal perturbation 
     T_perb = 3/5* (q*Ra)**2 * temEtot  #Et
 
