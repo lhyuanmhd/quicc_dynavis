@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from scipy.interpolate import RegularGridInterpolator
 from .timeseries import input_params_from_path
+from matplotlib.ticker import ScalarFormatter
 
 # field_latex = {
 #     "u_r": r"u_r",
@@ -19,6 +20,7 @@ field_latex = {
     "u_r": r"u_r",
     "u_theta": r"u_\theta",
     "u_phi": r"u_\phi",
+    "u_phi_zonal_3d": r"\langle u_\phi \rangle_\phi",
 
     # magnetic field
     "B_r": r"B_r",
@@ -38,7 +40,14 @@ field_latex = {
     "curlB_r": r"(\nabla\times\mathbf{B})_r",
     "curlB_theta": r"(\nabla\times\mathbf{B})_\theta",
     "curlB_phi": r"(\nabla\times\mathbf{B})_\phi",
-}
+    
+    # nonlinear advection
+    #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
+    
+    #coriolis
+    #"coriolis_magnitude": r"\left|\hat{z} \times \mathbf{u}\right|", 
+
+    }
 
 
 def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
@@ -50,7 +59,7 @@ def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
 
 # set colomap for each field
 def cmap_for_field(field_name):
-    if field_name in ["u_r", "u_theta", "u_phi"]:
+    if field_name in ["u_r", "u_theta", "u_phi", "u_phi_zonal_3d"]:
         return "RdBu_r"
     elif field_name in ["B_r", "B_theta", "B_phi"]:
         return "PuOr"
@@ -58,6 +67,15 @@ def cmap_for_field(field_name):
         return "gist_heat"
     elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial"]:
         return "PRGn"
+    elif field_name in ["inertia_magnitude", 
+                        "coriolis_magnitude", 
+                        "lorentz_magnitude", 
+                        "buoyancy_magnitude",
+                        "viscous_magnitude"]:
+        return "cividis" 
+
+    #elif field_name == "coriolis_magnitude":
+    #    return "magma"    
 
 
 #def _get_color_limits(field, sym_cbar):
@@ -116,7 +134,7 @@ def _add_dashed_circles(ax):
         ax.add_artist(circle)
 
 
-def plot_equatorial(folderFile, data, field_name, title="Equatorial slice", cmap="RdBu_r",
+def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
                     ax=None, savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
@@ -139,7 +157,10 @@ def plot_equatorial(folderFile, data, field_name, title="Equatorial slice", cmap
     eq_idx = np.argmin(np.abs(theta - np.pi/2))
     field = data[field_name][:, eq_idx, :]
     field = apply_temperature_background(field_name, field, r, include_background)
-   
+    
+    if field_name ==  "inertia_magnitude":
+        field  = 1e-9 * field
+
     if len(r) < 110:
         # Make phi periodic
         phi_periodic = np.hstack([phi, 2*np.pi])
@@ -160,19 +181,64 @@ def plot_equatorial(folderFile, data, field_name, title="Equatorial slice", cmap
         r, phi, field = r_new, phi_new, field_new
 
 
-   
-    if vmin is None and vmax is None: 
-        if field_name == "T":
-            cmap="gist_heat"
-            sym_cbar = False  # temperature is positive definite
-        vmin, vmax = _get_color_limits(field, sym_cbar)
+    # if vmin is None and vmax is None: 
+    #     q = 0.98
+    #     if field_name == "T":
+    #         cmap="gist_heat"
+    #         sym_cbar = False  # temperature is positive definite
+    #     elif field_name == "inertia_magnitude" or 'coriolis_magnitude' or 'viscous_magnitude',or 'lorentz_magnitude' or 'buoyancy_magnitude'
+    #         q = 0.95
+    #         sym_cbar = False
+    #     vmin, vmax = _get_color_limits(field, sym_cbar, q)
 
+    # Define field categories for better organization
+    POSITIVE_DEFINITE_FIELDS = {"T"}
+    MAGNITUDE_FIELDS = {
+        "inertia_magnitude", "coriolis_magnitude", 
+        "lorentz_magnitude", "buoyancy_magnitude"
+    }
+    BOUNDARY_FIELDS= {"viscous_magnitude"}
+
+    if vmin is None and vmax is None:
+        if field_name in BOUNDARY_FIELDS:
+            max_val = np.max(field)
+            vmax_10percent = 0.5 * max_val 
+            print(f"\n{field_name} 统计:")
+            print(f"  max = {max_val:.6e}")
+            print(f"  10% of max = {vmax_10percent:.6e}")
+            print(f"  99th percentile = {np.percentile(field, 99):.6e}")
+            print(f"  95th percentile = {np.percentile(field, 95):.6e}")
+            print(f"  90th percentile = {np.percentile(field, 90):.6e}")
+            print(f"  50th percentile (median) = {np.percentile(field, 50):.6e}")
+            print(f"  10th percentile = {np.percentile(field, 10):.6e}")
+            print(f"  1st percentile = {np.percentile(field, 1):.6e}")
+            #90th percentile for viscous magnitud
+            #vmax = np.percentile(field, 95)
+            
+            q = 0.95
+            sym_cbar = False
+            vmin, vmax = _get_color_limits(field, sym_cbar, q)
+        elif field_name in POSITIVE_DEFINITE_FIELDS:
+            q = 0.98
+            cmap = "gist_heat"
+            sym_cbar = False  
+            vmin, vmax = _get_color_limits(field, sym_cbar, q)
+        elif field_name in MAGNITUDE_FIELDS:
+            q = 0.95
+            sym_cbar = False
+            vmin, vmax = _get_color_limits(field, sym_cbar, q)
+        else:
+            q = 0.95  
+            sym_cbar = True
+            vmin, vmax = _get_color_limits(field, sym_cbar, q)    
+    
     R, Phi = np.meshgrid(r, phi, indexing="ij")
     X, Y = R * np.cos(Phi), R * np.sin(Phi)
      
     # Mask values outside outer boundary (r > 1)
     mask = R > 1.0
     field = np.ma.masked_where(mask, field)   
+   
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6,6))
@@ -181,11 +247,21 @@ def plot_equatorial(folderFile, data, field_name, title="Equatorial slice", cmap
     ax.axis("off")
 
     _add_dashed_circles(ax)
-
-    label_str = field_latex.get(field_name, field_name)
-    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
     
+    label_str = field_latex.get(field_name, field_name)
+    #plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    # Force scientific notation (x10^n)
+    fmt = ScalarFormatter(useMathText=True)
+    fmt.set_powerlimits((0, 0))  # always use scientific notation
+    cbar.formatter = fmt
+    cbar.update_ticks()
+    
+    ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
+
+    if title is not None:
+        ax.set_title(rf"${title}$", pad=10, fontsize=16)
 
     # Save file
     if savefig is not None:
@@ -219,9 +295,16 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     r, theta, phi = data["r"], data["theta"], data["phi"]
     atphi = atphi * np.pi
     mid_phi = np.argmin(np.abs(phi - atphi)) # meridional slice at phi = 90 degrees
-    field = data[field_name][:, :, mid_phi]
-    field = apply_temperature_background(field_name, field, r, include_background)
+
+    if field_name == "u_phi_zonal_3d":
+        field = data[field_name][:, :, 0]
+    else:
+        field = data[field_name][:, :, mid_phi]
+        field = apply_temperature_background(field_name, field, r, include_background)
     
+    if field_name ==  "inertia_magnitude":
+        field  = 1e-9 * field
+
     if len(r) < 120:
         # Make phi periodic
         #phi_periodic = np.hstack([phi, 2*np.pi])
@@ -241,14 +324,31 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
         field_new = interp_func(points_new).reshape(R_new.shape)
         r, theta, field = r_new, theta_new, field_new
 
-    #if vmin is None and vmax is None:
-    #    vmin, vmax = _get_color_limits(field, sym_cbar)
+ 
+    # Define field categories for better organization
+    POSITIVE_DEFINITE_FIELDS = {"T"}
+    MAGNITUDE_FIELDS = {
+        "inertia_magnitude", "coriolis_magnitude", 
+        "lorentz_magnitude", "buoyancy_magnitude"
+    }
+    BOUNDARY_FIELDS= {"viscous_magnitude"}
 
-    if vmin is None and vmax is None: 
-        if field_name == "T" and cmap=="RdBu_r":
-            cmap="gist_heat"
+    if vmin is None and vmax is None:
+        if field_name in POSITIVE_DEFINITE_FIELDS:
+            q = 0.98
+            cmap = "gist_heat"
             sym_cbar = False  # temperature is positive definite
-        vmin, vmax = _get_color_limits(field, sym_cbar)    
+        elif field_name in MAGNITUDE_FIELDS:
+            q = 0.95
+            sym_cbar = False
+        elif field_name in  BOUNDARY_FIELDS:
+            q = 0.90
+            sym_cbar = False
+           # vmax = 0.01*np.max(field) 
+        else:
+            q = 0.95  # default quantile
+            sym_cbar = True
+
 
     R, Theta = np.meshgrid(r, theta, indexing="ij")
     X, Z = R * np.sin(Theta), R * np.cos(Theta)
@@ -256,6 +356,8 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     # Mask values outside outer boundary (r > 1)
     mask = R > 1.0
     field = np.ma.masked_where(mask, field)   
+
+
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6,6))
@@ -267,7 +369,15 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     _add_dashed_circles(ax)
 
     label_str = field_latex.get(field_name, field_name)
-    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    #plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    # Force scientific notation (x 10^n)
+    fmt = ScalarFormatter(useMathText=True)
+    fmt.set_powerlimits((0, 0))  # always use scientific notation
+    cbar.formatter = fmt
+    cbar.update_ticks()
+    
     ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
     if savefig is not None:
@@ -396,7 +506,7 @@ def plot_cmb(
         )
 
     else:
-        # continuous colorbar (your original behavior)
+        # continuous colorbar 
         im = ax.pcolormesh(
             Lon, Lat, field.T,
             shading="auto",
@@ -440,3 +550,14 @@ def plot_cmb(
         savefig_field_snapshot(folderFile, field_name, savefig, type="cmb")
     
     return ax
+
+
+
+
+
+
+
+
+
+
+

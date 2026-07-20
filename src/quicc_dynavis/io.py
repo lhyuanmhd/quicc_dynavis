@@ -5,6 +5,7 @@ import fnmatch
 import numpy as np
 import pandas as pd
 import fnmatch
+import re
 
 #--------------Parameters and Resolutions -----------#
 def get_parameters(filepath,output):
@@ -29,9 +30,9 @@ def get_parameters(filepath,output):
     Ek = 0;Pm=0;Ra=0;Pr=0;q=0;Ro=0
     for line in f:
         if '<ekman>' in line:
-            ss = line.find('>')
-            ll = line.rfind('<')
-            Ek = float(line[ss+1:ll])
+            ss = line.find('<ekman>') + len('<ekman>')
+            ll = line.find('</ekman>')
+            Ek = float(line[ss:ll].strip())
         if '<magnetic_prandtl>' in line:
             ss = line.find('>')
             ll = line.rfind('<')
@@ -112,42 +113,83 @@ def get_resolution(filepath,output):
     return(n,l,m)
 
 
+# def get_boundary_conditions(filepath, output='none'):
+#     """
+#     Extract boundary condition settings from parameter file.
+
+#     Args:
+#     ---------
+#     filepath: Path to the parameter file.
+#     output: 'print' to display the results.
+
+#     Returns:
+#     ---------
+#     bc_magnetic   : Magnetic boundary condition (e.g., insulating or conducting)
+#     bc_temperature: Temperature boundary condition (e.g., fixed_flux or fixed_temperature)
+#     bc_velocity   : Velocity boundary condition (e.g., no_slip or stress_free)
+#     """
+#     bc_magnetic = bc_temperature = bc_velocity = "undefined"
+    
+#     with open(filepath, 'r') as f:
+#         for line in f:
+#             if '<magnetic>' in line:
+#                 ss, ll = line.find('>'), line.rfind('<')
+#                 bc_magnetic = line[ss+1:ll].strip()
+#             elif '<temperature>' in line:
+#                 ss, ll = line.find('>'), line.rfind('<')
+#                 bc_temperature = line[ss+1:ll].strip()
+#             elif '<velocity>' in line:
+#                 ss, ll = line.find('>'), line.rfind('<')
+#                 bc_velocity = line[ss+1:ll].strip()
+
+#     if output == 'print':
+#         #print('#################################')
+#         print('## Boundary Conditions ##')
+#         print('Magnetic    BC:', bc_magnetic)
+#         print('Temperature BC:', bc_temperature)
+#         print('Velocity    BC:', bc_velocity)
+    
+#     return bc_magnetic, bc_temperature, bc_velocity
+
+
+
 def get_boundary_conditions(filepath, output='none'):
     """
     Extract boundary condition settings from parameter file.
 
-    Args:
-    ---------
-    filepath: Path to the parameter file.
-    output: 'print' to display the results.
-
-    Returns:
-    ---------
-    bc_magnetic   : Magnetic boundary condition (e.g., insulating or conducting)
-    bc_temperature: Temperature boundary condition (e.g., fixed_flux or fixed_temperature)
-    bc_velocity   : Velocity boundary condition (e.g., no_slip or stress_free)
+    Returns only the inner text, e.g.
+        insulating
+        fixed_flux
+        no_slip
     """
-    bc_magnetic = bc_temperature = bc_velocity = "undefined"
-    
+
+    bc_magnetic = "undefined"
+    bc_temperature = "undefined"
+    bc_velocity = "undefined"
+
+    # Regular expression pattern for <tag>value</tag>
+    pattern = re.compile(r'<(\w+)>\s*([^<]+?)\s*</\1>')
+
     with open(filepath, 'r') as f:
         for line in f:
-            if '<magnetic>' in line:
-                ss, ll = line.find('>'), line.rfind('<')
-                bc_magnetic = line[ss+1:ll].strip()
-            elif '<temperature>' in line:
-                ss, ll = line.find('>'), line.rfind('<')
-                bc_temperature = line[ss+1:ll].strip()
-            elif '<velocity>' in line:
-                ss, ll = line.find('>'), line.rfind('<')
-                bc_velocity = line[ss+1:ll].strip()
+            match = pattern.search(line)
+            if match:
+                tag, value = match.groups()
+                value = value.strip()
+
+                if tag == "magnetic":
+                    bc_magnetic = value
+                elif tag == "temperature":
+                    bc_temperature = value
+                elif tag == "velocity":
+                    bc_velocity = value
 
     if output == 'print':
-        #print('#################################')
         print('## Boundary Conditions ##')
         print('Magnetic    BC:', bc_magnetic)
         print('Temperature BC:', bc_temperature)
         print('Velocity    BC:', bc_velocity)
-    
+
     return bc_magnetic, bc_temperature, bc_velocity
 
 
@@ -412,58 +454,160 @@ def F_read_Nusselt(filepath):
     time = np.asarray(time)
     return(time,Nu)
 
-def F_conc_timeseries(RunFolders,filetype):
+# def F_conc_timeseries(RunFolders,filetype):
+#     """
+#     Function to conncatenate the time series of different runs (e.g after restart))
+   
+#     Note: For a smooth use the folders should be structured as I do it!!!
+    
+    
+#     Args:
+#     ---------
+#     RunFolders: Python list with all folders that should be condiered:
+#                 for exampele with my folder organisation one can get this through: 
+#                     RunFolders =  sorted(glob.iglob(StartFolder+'/run*'))
+#     filetype: string-flag that encodes the time series that should be concatenated;
+#                 - Energy timeseries: 'kinE' or 'magE' 
+#                 - Dipolarity: 'Dip'
+#                 - Enstrophy (Dissipation): 'kinDis' or 'magDis'
+#                 - Nusselt number: Nusselt
+#         Depending on the Filetype-flag different routines are called.
+
+#     Returns:
+#     ---------
+#     time: array with time
+    
+#     Rest depends on the filetype:
+#     -'kinE' or 'magE': 
+#         Etot:  total  energy (mag or kin)
+#         Etor:  toroidal energy (mag or kin)
+#         Epol:  poloidal  energy (mag or kin)
+#     -'Dip': 
+#         fdip: array CMB dipolarity 
+#         g10: array with Gauss coefficients: coefficient g10 
+#         g11: array with Gauss coefficients: real part of the g11
+#         h11: array with Gauss coefficients: imaginary part of the g11
+#     -'Nusselt':
+#         Nu: nusselt number
+#     -'kinDis' or 'magDis': 
+#         Dtot:  total Enstophy (mag or kin) 
+#         Dtor:  toroidal Enstophy (mag or kin)
+#         Dpol:  poloidal Enstophy (mag or kin)
+    
+#     """
+
+#     if filetype == 'kinE':
+#         filename = '/kinetic_energy.dat'
+#     elif filetype == 'magE':
+#         filename = '/magnetic_energy.dat'
+#     elif filetype == 'Nusselt':
+#         filename = '/nusselt.dat'
+#     elif filetype == 'Dip':
+#         filename = '/magnetic_dipolarity.dat'
+#     elif filetype == 'kinDis':
+#         filename = '/kinetic_enstrophy.dat'    
+#     elif filetype == 'magDis':
+#         filename = '/magnetic_enstrophy.dat'
+
+#     num_runs = len(RunFolders)
+#     time = np.array([])
+
+#     if (filetype == 'kinE') or (filetype == 'magE'):
+#         Etot = np.array([])
+#         Etor = np.array([])
+#         Epol = np.array([])
+#     elif filetype == 'Nusselt':
+#         Nu = np.array([])
+#     elif filetype =='Dip':
+#         fdip = np.array([])
+#         g10 = np.array([])
+#         g11 = np.array([])
+#         h11 = np.array([])
+#     elif (filetype == 'kinDis') or (filetype == 'magDis'):
+#         Dtot = np.array([])
+#         Dtor = np.array([])
+#         Dpol = np.array([])
+
+#     for i in range(0,num_runs):
+#         if i == 0:
+#             lastval = 0
+#         else:
+#             if  np.shape(time)[0]==0:
+#                 lastval=0
+#             else:
+#                 lastval = time[-1]
+
+#         #print(filepath+runs[i]+filetype)i
+#         if (filetype == 'kinE') or (filetype == 'magE'):
+#             if os.path.exists(RunFolders[i]+'/kinetic_energy.dat') == True:
+#                 dum,tt,eEtot,eEtor,eEpol = F_read_energyQCC(RunFolders[i]+'/'+filename)
+#                 #start_index= np.argmax(tt>lastval)
+#                 mask = tt > lastval
+#                 if np.any(mask):
+#                     start_index = np.argmax(mask)
+#                 else:
+#                     # No new time values; skip this file safely
+#                     continue
+#                 time = np.concatenate((time,tt[start_index:]))
+#                 Etot = np.concatenate((Etot,eEtot[start_index:]))
+#                 Etor = np.concatenate((Etor,eEtor[start_index:]))
+#                 Epol = np.concatenate((Epol,eEpol[start_index:]))
+#         elif filetype == 'Nusselt':
+#             if os.path.exists(RunFolders[i]+'/nusselt.dat') == True:
+#                 tt,nNu = F_read_Nusselt(RunFolders[i]+'/'+filename)
+#                 start_index= np.argmax(tt>lastval)
+#                 time = np.concatenate((time,tt[start_index:]))
+#                 Nu = np.concatenate((Nu,nNu[start_index:]))
+#         elif filetype == 'Dip':
+#             if os.path.exists(RunFolders[i]+'/magnetic_dipolarity.dat') == True:
+#                 tt,ffdip,gg10,gg11,hh11 = F_read_dipolarity(RunFolders[i]+'/'+filename)
+#                 start_index= np.argmax(tt>lastval)
+#                 time = np.concatenate((time,tt[start_index:]))
+#                 fdip = np.concatenate((fdip,ffdip[start_index:]))
+#                 g10 = np.concatenate((g10,gg10[start_index:]))
+#                 g11 = np.concatenate((g11,gg11[start_index:]))
+#                 h11 = np.concatenate((h11,hh11[start_index:]))
+#         elif (filetype == 'kinDis') or (filetype == 'magDis'):
+#             if os.path.exists(RunFolders[i]+'/magnetic_enstrophy.dat') == True:
+#                 dum2,tt,dDtot,dDtor,dDpol = F_read_energyQCC(RunFolders[i]+'/'+filename)
+#                 start_index= np.argmax(tt>lastval)
+#                 time = np.concatenate((time,tt[start_index:]))
+#                 Dtot = np.concatenate((Dtot,dDtot[start_index:]))
+#                 Dtor = np.concatenate((Dtor,dDtor[start_index:]))
+#                 Dpol = np.concatenate((Dpol,dDpol[start_index:]))
+
+#     if (filetype == 'kinE') or (filetype == 'magE'):
+#         return(time,Etot,Etor,Epol)
+#     elif filetype == 'Nusselt':
+#         return(time,Nu)
+#     elif filetype == 'Dip':
+#         return(time,fdip,g10,g11,h11)
+#     elif (filetype == 'kinDis') or (filetype == 'magDis'):
+#         return(time,Dtot,Dtor,Dpol)
+    
+#update  F_conc_timeseries to inculde temE
+def F_conc_timeseries(RunFolders, filetype):
     """
     Function to conncatenate the time series of different runs (e.g after restart))
-   
-    Note: For a smooth use the folders should be structured as I do it!!!
-    
-    
-    Args:
-    ---------
-    RunFolders: Python list with all folders that should be condiered:
-                for exampele with my folder organisation one can get this through: 
-                    RunFolders =  sorted(glob.iglob(StartFolder+'/run*'))
-    filetype: string-flag that encodes the time series that should be concatenated;
-                - Energy timeseries: 'kinE' or 'magE' 
-                - Dipolarity: 'Dip'
-                - Enstrophy (Dissipation): 'kinDis' or 'magDis'
-                - Nusselt number: Nusselt
-        Depending on the Filetype-flag different routines are called.
+    (Original docstring unchanged; add temE support)
 
-    Returns:
-    ---------
-    time: array with time
-    
-    Rest depends on the filetype:
-    -'kinE' or 'magE': 
-        Etot:  total  energy (mag or kin)
-        Etor:  toroidal energy (mag or kin)
-        Epol:  poloidal  energy (mag or kin)
-    -'Dip': 
-        fdip: array CMB dipolarity 
-        g10: array with Gauss coefficients: coefficient g10 
-        g11: array with Gauss coefficients: real part of the g11
-        h11: array with Gauss coefficients: imaginary part of the g11
-    -'Nusselt':
-        Nu: nusselt number
-    -'kinDis' or 'magDis': 
-        Dtot:  total Enstophy (mag or kin) 
-        Dtor:  toroidal Enstophy (mag or kin)
-        Dpol:  poloidal Enstophy (mag or kin)
-    
+    New:
+    - filetype == 'temE' reads temperature_energy.dat and returns (time, Etot)
+      because it has no toroidal/poloidal components.
     """
 
     if filetype == 'kinE':
         filename = '/kinetic_energy.dat'
     elif filetype == 'magE':
         filename = '/magnetic_energy.dat'
+    elif filetype == 'temE':
+        filename = '/temperature_energy.dat'
     elif filetype == 'Nusselt':
         filename = '/nusselt.dat'
     elif filetype == 'Dip':
         filename = '/magnetic_dipolarity.dat'
     elif filetype == 'kinDis':
-        filename = '/kinetic_enstrophy.dat'    
+        filename = '/kinetic_enstrophy.dat'
     elif filetype == 'magDis':
         filename = '/magnetic_enstrophy.dat'
 
@@ -474,9 +618,11 @@ def F_conc_timeseries(RunFolders,filetype):
         Etot = np.array([])
         Etor = np.array([])
         Epol = np.array([])
+    elif filetype == 'temE':
+        Etot = np.array([])
     elif filetype == 'Nusselt':
         Nu = np.array([])
-    elif filetype =='Dip':
+    elif filetype == 'Dip':
         fdip = np.array([])
         g10 = np.array([])
         g11 = np.array([])
@@ -486,63 +632,87 @@ def F_conc_timeseries(RunFolders,filetype):
         Dtor = np.array([])
         Dpol = np.array([])
 
-    for i in range(0,num_runs):
+    for i in range(0, num_runs):
         if i == 0:
             lastval = 0
         else:
-            if  np.shape(time)[0]==0:
-                lastval=0
+            if np.shape(time)[0] == 0:
+                lastval = 0
             else:
                 lastval = time[-1]
 
-        #print(filepath+runs[i]+filetype)i
+        # --- kinetic / magnetic energy (original) ---
         if (filetype == 'kinE') or (filetype == 'magE'):
-            if os.path.exists(RunFolders[i]+'/kinetic_energy.dat') == True:
-                dum,tt,eEtot,eEtor,eEpol = F_read_energyQCC(RunFolders[i]+'/'+filename)
-                #start_index= np.argmax(tt>lastval)
+            if os.path.exists(RunFolders[i] + '/kinetic_energy.dat') == True:
+                dum, tt, eEtot, eEtor, eEpol = F_read_energyQCC(RunFolders[i] + '/' + filename)
+
                 mask = tt > lastval
                 if np.any(mask):
                     start_index = np.argmax(mask)
                 else:
-                    # No new time values; skip this file safely
                     continue
-                time = np.concatenate((time,tt[start_index:]))
-                Etot = np.concatenate((Etot,eEtot[start_index:]))
-                Etor = np.concatenate((Etor,eEtor[start_index:]))
-                Epol = np.concatenate((Epol,eEpol[start_index:]))
+
+                time = np.concatenate((time, tt[start_index:]))
+                Etot = np.concatenate((Etot, eEtot[start_index:]))
+                Etor = np.concatenate((Etor, eEtor[start_index:]))
+                Epol = np.concatenate((Epol, eEpol[start_index:]))
+
+        # --- NEW: temperature energy ---
+        elif filetype == 'temE':
+            if os.path.exists(RunFolders[i] + '/temperature_energy.dat') == True:
+                # Expect a reader that returns (tt, Etot) OR similar.
+                # If you already have a different reader name, replace the call below.
+                tt, eEtot =F_read_Nusselt(RunFolders[i] + '/' + filename)
+
+                mask = tt > lastval
+                if np.any(mask):
+                    start_index = np.argmax(mask)
+                else:
+                    continue
+
+                time = np.concatenate((time, tt[start_index:]))
+                Etot = np.concatenate((Etot, eEtot[start_index:]))
+
+        # --- Nusselt (original) ---
         elif filetype == 'Nusselt':
-            if os.path.exists(RunFolders[i]+'/nusselt.dat') == True:
-                tt,nNu = F_read_Nusselt(RunFolders[i]+'/'+filename)
-                start_index= np.argmax(tt>lastval)
-                time = np.concatenate((time,tt[start_index:]))
-                Nu = np.concatenate((Nu,nNu[start_index:]))
+            if os.path.exists(RunFolders[i] + '/nusselt.dat') == True:
+                tt, nNu = F_read_Nusselt(RunFolders[i] + '/' + filename)
+                start_index = np.argmax(tt > lastval)
+                time = np.concatenate((time, tt[start_index:]))
+                Nu = np.concatenate((Nu, nNu[start_index:]))
+
+        # --- Dipolarity (original) ---
         elif filetype == 'Dip':
-            if os.path.exists(RunFolders[i]+'/magnetic_dipolarity.dat') == True:
-                tt,ffdip,gg10,gg11,hh11 = F_read_dipolarity(RunFolders[i]+'/'+filename)
-                start_index= np.argmax(tt>lastval)
-                time = np.concatenate((time,tt[start_index:]))
-                fdip = np.concatenate((fdip,ffdip[start_index:]))
-                g10 = np.concatenate((g10,gg10[start_index:]))
-                g11 = np.concatenate((g11,gg11[start_index:]))
-                h11 = np.concatenate((h11,hh11[start_index:]))
+            if os.path.exists(RunFolders[i] + '/magnetic_dipolarity.dat') == True:
+                tt, ffdip, gg10, gg11, hh11 = F_read_dipolarity(RunFolders[i] + '/' + filename)
+                start_index = np.argmax(tt > lastval)
+                time = np.concatenate((time, tt[start_index:]))
+                fdip = np.concatenate((fdip, ffdip[start_index:]))
+                g10 = np.concatenate((g10, gg10[start_index:]))
+                g11 = np.concatenate((g11, gg11[start_index:]))
+                h11 = np.concatenate((h11, hh11[start_index:]))
+
+        # --- Enstrophy (original) ---
         elif (filetype == 'kinDis') or (filetype == 'magDis'):
-            if os.path.exists(RunFolders[i]+'/magnetic_enstrophy.dat') == True:
-                dum2,tt,dDtot,dDtor,dDpol = F_read_energyQCC(RunFolders[i]+'/'+filename)
-                start_index= np.argmax(tt>lastval)
-                time = np.concatenate((time,tt[start_index:]))
-                Dtot = np.concatenate((Dtot,dDtot[start_index:]))
-                Dtor = np.concatenate((Dtor,dDtor[start_index:]))
-                Dpol = np.concatenate((Dpol,dDpol[start_index:]))
+            if os.path.exists(RunFolders[i] + '/magnetic_enstrophy.dat') == True:
+                dum2, tt, dDtot, dDtor, dDpol = F_read_energyQCC(RunFolders[i] + '/' + filename)
+                start_index = np.argmax(tt > lastval)
+                time = np.concatenate((time, tt[start_index:]))
+                Dtot = np.concatenate((Dtot, dDtot[start_index:]))
+                Dtor = np.concatenate((Dtor, dDtor[start_index:]))
+                Dpol = np.concatenate((Dpol, dDpol[start_index:]))
 
     if (filetype == 'kinE') or (filetype == 'magE'):
-        return(time,Etot,Etor,Epol)
+        return (time, Etot, Etor, Epol)
+    elif filetype == 'temE':
+        return (time, Etot)
     elif filetype == 'Nusselt':
-        return(time,Nu)
+        return (time, Nu)
     elif filetype == 'Dip':
-        return(time,fdip,g10,g11,h11)
+        return (time, fdip, g10, g11, h11)
     elif (filetype == 'kinDis') or (filetype == 'magDis'):
-        return(time,Dtot,Dtor,Dpol)
-    
+        return (time, Dtot, Dtor, Dpol)
+
 
 #-------------- Spectra -----------#
 import os
@@ -628,46 +798,102 @@ def read_spectra(filepath):
 
     return lm, lmtot, lmtor, lmpol, time
 
+import os, re, glob
+from pathlib import Path
 
-def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
+def _extract_int(pattern: str, s: str, default=-1) -> int:
     """
-    Return the last/first/selected single spectrum from folder.
+    Extract first integer using regex pattern with one capturing group.
+    """
+    m = re.search(pattern, s)
+    return int(m.group(1)) if m else default
 
-    spec_type: 'kinetic', 'magnetic', or 'temperature'
+#def _pick_run_dir(folderpath: str | Path, which: str = "last") -> Path:
+from typing import Union
+
+def _pick_run_dir(folderpath: Union[str, Path], which: str = "last") -> Path:
+    """
+    Pick a run directory under folderpath. Uses run number if present (run3, run12, ...).
+    Fallback: modification time.
+    """
+    folderpath = Path(folderpath)
+    run_dirs = [p for p in folderpath.rglob("*") if p.is_dir() and re.search(r"run\d+", p.name)]
+    if not run_dirs:
+        raise FileNotFoundError(f"No run* directories found under {folderpath}")
+
+    # sort by run number (preferred), fallback to mtime
+    def run_key(p: Path):
+        rn = _extract_int(r"run(\d+)", p.name, default=-1)
+        if rn >= 0:
+            return (0, rn)   # (has_run_number, run_number)
+        return (1, p.stat().st_mtime)
+
+    run_dirs = sorted(run_dirs, key=run_key)
+
+    if which == "last":
+        return run_dirs[-1]
+    elif which == "first":
+        return run_dirs[0]
+    elif isinstance(which, int):
+        return run_dirs[which]
+    else:
+        raise ValueError("`which` must be 'last', 'first', or an integer index")
+
+def _pick_spectrum_file(run_dir: Path, spec_type: str, index_tag: str, which: str = "last") -> Path:
+    """
+    Pick spectrum file inside one run directory.
+    Example filename you mentioned: magnetic_n_spectrum8000.dat
+    We sort by the integer after 'spectrum'.
+    """
+    # old logic: pattern = spec_type + '_m*' or spec_type + '_l*'
+    # actual filenames: magnetic_l_spectrum8000.dat
+    # keep it flexible: accept spec_type + index_tag and then anything, but require 'spectrum<number>'.
+    pattern = str(run_dir / f"{spec_type}{index_tag}*spectrum*.dat")
+    files = [Path(p) for p in glob.glob(pattern)]
+    if not files:
+        raise FileNotFoundError(f"No spectrum files matching {pattern}")
+
+    def spec_key(p: Path):
+        # Sort by spectrum index number; fallback to mtime if not found
+        sn = _extract_int(r"spectrum(\d+)", p.name, default=-1)
+        if sn >= 0:
+            return (0, sn)
+        return (1, p.stat().st_mtime)
+
+    files = sorted(files, key=spec_key)
+
+    if which == "last":
+        return files[-1]
+    elif which == "first":
+        return files[0]
+    elif isinstance(which, int):
+        return files[which]
+    else:
+        raise ValueError("`which` must be 'last', 'first', or an integer index")
+
+def read_single_spectrum(folderpath, spec_type="kinetic", which="last"):
+    """
+    Read a single spectrum from the *selected run* (last/first/index),
+    and within that run read the last/first/index spectrum file.
 
     Returns:
         l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
-        (Note: for temperature spectra, ltor/lpol/mtor/mpol = None)
     """
-    indexList = ['_m*', '_l*']
+    # Old code assumed two files: spec_type + '_m*' and spec_type + '_l*'
+    indexList = ["_m", "_l"]  # we'll add wildcard in picker
+
     l = m = None
     ltot = ltor = lpol = None
     mtot = mtor = mpol = None
     time = None
 
-    for h in range(2):
-        pattern = spec_type + indexList[h]
-        FileList = []
-        for path, subdirs, files in sorted(os.walk(folderpath)):
-            if fnmatch.fnmatch(path, '*run*'):
-                for name in files:
-                    if fnmatch.fnmatch(name, pattern):
-                        FileList.append(os.path.join(path, name))
+    run_dir = _pick_run_dir(folderpath, which=which)
 
-        FileList = sorted(FileList)
-        if not FileList:
-            raise FileNotFoundError(f'No files matching {pattern} in {folderpath}')
+    for h, tag in enumerate(indexList):
+        # tag like "_m" -> pass as "_m" and picker uses f"{spec_type}{tag}*spectrum*.dat"
+        chosen_file = _pick_spectrum_file(run_dir, spec_type, tag, which="last" if which in ("last","first") else which)
 
-        if which == 'last':
-            chosen_file = FileList[-1]
-        elif which == 'first':
-            chosen_file = FileList[0]
-        elif isinstance(which, int):
-            chosen_file = FileList[which]
-        else:
-            raise ValueError("`which` must be 'last', 'first', or an integer index")
-
-        lm_vals, ltot_vals, ltor_vals, lpol_vals, time = read_spectra(chosen_file)
+        lm_vals, ltot_vals, ltor_vals, lpol_vals, time = read_spectra(str(chosen_file))
 
         if h == 0:
             m = lm_vals
@@ -681,6 +907,59 @@ def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
             lpol = lpol_vals
 
     return l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
+
+# def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
+#     """
+#     Return the last/first/selected single spectrum from folder.
+# 
+#     spec_type: 'kinetic', 'magnetic', or 'temperature'
+# 
+#     Returns:
+#         l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
+#         (Note: for temperature spectra, ltor/lpol/mtor/mpol = None)
+#     """
+#     indexList = ['_m*', '_l*']
+#     l = m = None
+#     ltot = ltor = lpol = None
+#     mtot = mtor = mpol = None
+#     time = None
+# 
+#     for h in range(2):
+#         pattern = spec_type + indexList[h]
+#         FileList = []
+#         for path, subdirs, files in sorted(os.walk(folderpath)):
+#             if fnmatch.fnmatch(path, '*run*'):
+#                 for name in files:
+#                     if fnmatch.fnmatch(name, pattern):
+#                         FileList.append(os.path.join(path, name))
+# 
+#         FileList = sorted(FileList)
+#         if not FileList:
+#             raise FileNotFoundError(f'No files matching {pattern} in {folderpath}')
+# 
+#         if which == 'last':
+#             chosen_file = FileList[-1]
+#         elif which == 'first':
+#             chosen_file = FileList[0]
+#         elif isinstance(which, int):
+#             chosen_file = FileList[which]
+#         else:
+#             raise ValueError("`which` must be 'last', 'first', or an integer index")
+# 
+#         lm_vals, ltot_vals, ltor_vals, lpol_vals, time = read_spectra(chosen_file)
+# 
+#         if h == 0:
+#             m = lm_vals
+#             mtot = ltot_vals
+#             mtor = ltor_vals
+#             mpol = lpol_vals
+#         else:
+#             l = lm_vals
+#             ltot = ltot_vals
+#             ltor = ltor_vals
+#             lpol = lpol_vals
+# 
+#     return l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
 
 
 def avgSpectra_new(folderpath,spec_type,start_time,stop_time):

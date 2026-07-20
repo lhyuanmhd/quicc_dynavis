@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-visu_snapshots.py (updated)
+visu_snapshots.py (Python 3.8/3.9 compatible)
 
 Key improvements:
 - Adds --force to overwrite existing figures (default: skip if figure exists).
 - Adds --visu-dir to target a specific directory runX/visu_#### directly.
-  This avoids any ambiguity about "latest" and supports external batch drivers.
 - Adds --out to explicitly set the output PNG path (optional).
-- Keeps all existing CLI behavior intact (run discovery, tag selection, safe-latest).
+- Keeps existing CLI behavior intact (run discovery, tag selection, safe-latest).
 """
 
 import argparse
 from pathlib import Path
 import re
 import sys
+from typing import Optional, List
 
 # Headless for LUMI
 import matplotlib
@@ -44,10 +44,11 @@ def _discover_runs(case_dir: Path):
     runs = []
     for root in _discover_run_roots(case_dir):
         runs += [p for p in root.glob("run*") if p.is_dir() and _RUN_RE.match(p.name)]
-    # unique + sort by run index
+
     def rkey(p: Path):
         m = _RUN_RE.match(p.name)
         return int(m.group(1)) if m else -1
+
     runs = sorted(set(runs), key=rkey)
     return runs
 
@@ -64,11 +65,11 @@ def _pick_run(case_dir: Path, run: str):
         cand = case_dir / run
         if cand.is_dir():
             return cand
-        raise FileNotFoundError(f"Run directory not found: {run} under {case_dir}")
+        raise FileNotFoundError("Run directory not found: {} under {}".format(run, case_dir))
 
     runs = _discover_runs(case_dir)
     if not runs:
-        raise FileNotFoundError(f"No run* directories found under {case_dir}")
+        raise FileNotFoundError("No run* directories found under {}".format(case_dir))
 
     def rkey(p: Path):
         m = _RUN_RE.match(p.name)
@@ -80,7 +81,7 @@ def _pick_run(case_dir: Path, run: str):
 # -----------------------------
 # Utilities: snapshot tags
 # -----------------------------
-def _list_available_visu_tags(run_dir: Path):
+def _list_available_visu_tags(run_dir: Path) -> List[str]:
     """
     Available tags from directories like visu_0040.
     Returns list of normalized tags ["0000","0011",...], sorted increasing.
@@ -91,29 +92,33 @@ def _list_available_visu_tags(run_dir: Path):
             continue
         m = _VISU_RE.match(p.name)
         if m:
-            tags.append(f"{int(m.group(1)):04d}")
+            tags.append("{:04d}".format(int(m.group(1))))
     tags = sorted(set(tags), key=lambda s: int(s))
     return tags
 
-def _parse_tags_csv(s: str):
+def _parse_tags_csv(s: str) -> List[str]:
     items = [x.strip() for x in s.split(",") if x.strip()]
-    return [f"{int(x):04d}" for x in items]
+    return ["{:04d}".format(int(x)) for x in items]
 
-def _choose_tags(run_dir: Path, tag: str | None, tags: str | None,
-                 latest: bool, safe_latest: bool, nlatest: int):
+def _choose_tags(run_dir: Path,
+                 tag: Optional[str],
+                 tags: Optional[str],
+                 latest: bool,
+                 safe_latest: bool,
+                 nlatest: int) -> List[str]:
     avail = _list_available_visu_tags(run_dir)
     if not avail:
-        raise FileNotFoundError(f"No visu_#### directories found in {run_dir}")
+        raise FileNotFoundError("No visu_#### directories found in {}".format(run_dir))
 
     if tag is not None:
-        chosen = [f"{int(tag):04d}"]
+        chosen = ["{:04d}".format(int(tag))]
     elif tags is not None:
         chosen = _parse_tags_csv(tags)
     elif nlatest and nlatest > 0:
         if latest:
             chosen = avail[-nlatest:]
         else:
-            # "Safe" selection: drop the very last tag if possible
+            # Safe selection: drop the very last tag if possible
             if len(avail) >= 2:
                 chosen = avail[:-1][-nlatest:]
             else:
@@ -122,7 +127,6 @@ def _choose_tags(run_dir: Path, tag: str | None, tags: str | None,
         if latest:
             chosen = [avail[-1]]
         else:
-            # safe-latest default
             if len(avail) >= 2:
                 chosen = [avail[-2]]
             else:
@@ -132,8 +136,9 @@ def _choose_tags(run_dir: Path, tag: str | None, tags: str | None,
     missing = [t for t in chosen if t not in aset]
     if missing:
         raise FileNotFoundError(
-            f"Requested tags not found in {run_dir}: {missing}\n"
-            f"Available (head/tail): {avail[:5]} ... {avail[-5:]}"
+            "Requested tags not found in {}: {}\nAvailable (head/tail): {} ... {}".format(
+                run_dir, missing, avail[:5], avail[-5:]
+            )
         )
     return chosen
 
@@ -141,7 +146,7 @@ def _choose_tags(run_dir: Path, tag: str | None, tags: str | None,
 # -----------------------------
 # Find vis_fields NPZ for a tag
 # -----------------------------
-def _find_vis_fields_npz(run_dir: Path, tag: str):
+def _find_vis_fields_npz(run_dir: Path, tag: str) -> Path:
     """
     Find vis_fields NPZ under:
       run_dir/visu_TAG/vis_fields_0000.npz
@@ -149,13 +154,13 @@ def _find_vis_fields_npz(run_dir: Path, tag: str):
       run_dir/visu_TAG/vis_fields.npz
       run_dir/visu_TAG/vis_fields*.npz
     """
-    visu = run_dir / f"visu_{tag}"
+    visu = run_dir / "visu_{}".format(tag)
     if not visu.is_dir():
-        raise FileNotFoundError(f"visu directory not found: {visu}")
+        raise FileNotFoundError("visu directory not found: {}".format(visu))
 
     preferred = [
         visu / "vis_fields_0000.npz",
-        visu / f"vis_fields{tag}.npz",
+        visu / "vis_fields{}.npz".format(tag),
         visu / "vis_fields.npz",
     ]
     for fp in preferred:
@@ -166,7 +171,7 @@ def _find_vis_fields_npz(run_dir: Path, tag: str):
     if cands:
         return cands[-1]
 
-    raise FileNotFoundError(f"No vis_fields*.npz found in {visu}")
+    raise FileNotFoundError("No vis_fields*.npz found in {}".format(visu))
 
 
 # -----------------------------
@@ -176,7 +181,7 @@ def _input_params_from_path(case_dir: Path):
     s = str(case_dir)
 
     def find_after(prefix):
-        m = re.search(rf"{prefix}([^/]+)", s)
+        m = re.search(r"{}([^/]+)".format(prefix), s)
         return m.group(1) if m else None
 
     Ek = find_after("E")
@@ -188,8 +193,8 @@ def _input_params_from_path(case_dir: Path):
 # -----------------------------
 # Plot panel
 # -----------------------------
-def plot_snapshot_panel(case_dir: Path, data: np.lib.npyio.NpzFile, save_path: Path,
-                        atphi=2/3, show_grid=True):
+def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
+                        atphi=2/3, show_grid=False):
     """
     2x3 panel layout:
       (u_r eq, u_phi mer, curl_u eq) / (T eq, B_r mer, B_r CMB)
@@ -220,55 +225,105 @@ def plot_snapshot_panel(case_dir: Path, data: np.lib.npyio.NpzFile, save_path: P
 
     fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax10, include_background=True)
     fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax11)
-    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax12, show_grid=show_grid)
+    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax12, show_grid=False)
 
     time = data["time"]
-    fig.suptitle(f"Ek={Ek}, q={q}, Ra={Ra}, time={time:.2e}", y=0.98, fontsize=16)
+    fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
+                 y=0.98, fontsize=16)
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
-    print(f"[OK] Saved figure: {save_path}")
+    print("[OK] Saved figure: {}".format(save_path))
+
+
+def plot_udotgradu_panel(case_dir: Path, data, save_path: Path,
+                         atphi=2/3, show_grid=False):
+    """
+    1x2 panel layout:
+      (|u dot grad u| equatorial, |u dot grad u| meridional at phi=atphi*pi)
+    Requires: data["u_dot_grad_u_mag"] in the NPZ.
+    """
+    try:
+        from quicc_dynavis import timeseries as ts
+        Ek, q, Ra = ts.input_params_from_path(str(case_dir))
+    except Exception:
+        Ek, q, Ra = _input_params_from_path(case_dir)
+
+    if "u_dot_grad_u_mag" not in data:
+        raise KeyError(
+            "NPZ is missing key 'u_dot_grad_u_mag'. "
+            "Re-run extract_fields_curl.py with include_udotgradu_mag=True."
+        )
+
+    fig = plt.figure(figsize=(14, 6))
+    gs = fig.add_gridspec(1, 2, width_ratios=[1, 1], wspace=0.15)
+
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax1 = fig.add_subplot(gs[0, 1])
+
+    # Equatorial |u dot grad u|
+    fields_snapshot.plot_equatorial(str(case_dir), data, "u_dot_grad_u_magnitude", ax=ax0)
+
+    # Meridional |u dot grad u| at phi = atphi*pi
+    fields_snapshot.plot_meridional(str(case_dir), data, "u_dot_grad_u_magnitude", atphi=atphi, ax=ax1)
+
+    time = data["time"]
+    fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}  |u dot grad u|".format(Ek, q, Ra, float(time)),
+                 y=0.98, fontsize=14)
+
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+    print("[OK] Saved figure: {}".format(save_path))
 
 
 # -----------------------------
-# New: explicit visu-dir mode
+# Explicit visu-dir mode
 # -----------------------------
 def _infer_case_dir_from_visu_dir(visu_dir: Path) -> Path:
     """
-    Try to infer the case directory from a path like:
+    Infer case directory from:
       .../<case>/runs/run3/visu_0020
     or
       .../<case>/run3/visu_0020
-
-    We return <case> as the base directory used for parameter parsing and figures output.
     """
     run_dir = visu_dir.parent
     if not _RUN_RE.match(run_dir.name):
-        raise ValueError(f"--visu-dir must be inside run*/visu_####. Got: {visu_dir}")
+        raise ValueError("--visu-dir must be inside run*/visu_####. Got: {}".format(visu_dir))
 
     parent = run_dir.parent
     if parent.name == "runs":
         return parent.parent
     return parent
 
+#def _plot_one_visu_dir(visu_dir: Path,
+#                       out: Optional[Path],
+#                       force: bool,
+#                       atphi: float,
+#                       show_grid: bool,
+#                       dry_run: bool):
 
-def _plot_one_visu_dir(visu_dir: Path, out: Path | None, force: bool,
-                       atphi: float, show_grid: bool, dry_run: bool):
+def _plot_one_visu_dir(visu_dir: Path,
+                       out: Optional[Path],
+                       force: bool,
+                       atphi: float,
+                       show_grid: bool,
+                       dry_run: bool,
+                       udotgradu: bool):
+
     visu_dir = visu_dir.resolve()
     run_dir = visu_dir.parent
     m_run = _RUN_RE.match(run_dir.name)
     m_visu = _VISU_RE.match(visu_dir.name)
     if not m_run or not m_visu:
-        raise ValueError(f"--visu-dir must match run*/visu_####. Got: {visu_dir}")
+        raise ValueError("--visu-dir must match run*/visu_####. Got: {}".format(visu_dir))
 
-    tag = f"{int(m_visu.group(1)):04d}"
+    tag = "{:04d}".format(int(m_visu.group(1)))
     case_dir = _infer_case_dir_from_visu_dir(visu_dir).resolve()
 
-    # Determine NPZ (reuse existing logic by pointing to run_dir and tag)
     npz_path = _find_vis_fields_npz(run_dir, tag)
 
-    # Default output path if not provided: same canonical naming under case_dir/figures
     if out is None:
         fig_dir = case_dir / "figures"
         try:
@@ -276,35 +331,58 @@ def _plot_one_visu_dir(visu_dir: Path, out: Path | None, force: bool,
             Ek, q, Ra = ts.input_params_from_path(str(case_dir))
         except Exception:
             Ek, q, Ra = _input_params_from_path(case_dir)
-        out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_snapshots.png"
+        #out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.png".format(Ek, q, Ra, run_dir.name, tag)
+        if udotgradu:
+            out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_udotgradu.png".format(Ek, q, Ra, run_dir.name, tag)
+        else:
+            out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.png".format(Ek, q, Ra, run_dir.name, tag)
     else:
         out = out.resolve()
 
     print("========================================")
-    print(f"[INFO] case_dir : {case_dir}")
-    print(f"[INFO] run_dir  : {run_dir}")
-    print(f"[INFO] visu_dir : {visu_dir}")
-    print(f"[INFO] tag      : {tag}")
-    print(f"[INFO] npz      : {npz_path}")
-    print(f"[INFO] out      : {out}")
-    print(f"[INFO] grid     : {show_grid}")
+    print("[INFO] case_dir : {}".format(case_dir))
+    print("[INFO] run_dir  : {}".format(run_dir))
+    print("[INFO] visu_dir : {}".format(visu_dir))
+    print("[INFO] tag      : {}".format(tag))
+    print("[INFO] npz      : {}".format(npz_path))
+    print("[INFO] out      : {}".format(out))
+    print("[INFO] grid     : {}".format(show_grid))
     print("========================================")
 
     if out.exists() and not force:
-        print(f"[SKIP] Output exists (use --force to overwrite): {out}")
+        print("[SKIP] Output exists (use --force to overwrite): {}".format(out))
         return
 
     if dry_run:
         return
 
+    #data = np.load(npz_path)
+    #plot_snapshot_panel(
+    #    case_dir=case_dir,
+    #    data=data,
+    #    save_path=out,
+    #    atphi=atphi,
+    #    show_grid=show_grid,
+    #)
+
     data = np.load(npz_path)
-    plot_snapshot_panel(
-        case_dir=case_dir,
-        data=data,
-        save_path=out,
-        atphi=atphi,
-        show_grid=show_grid,
-    )
+
+    if udotgradu:
+        plot_udotgradu_panel(
+            case_dir=case_dir,
+            data=data,
+            save_path=out,
+            atphi=atphi,
+            show_grid=show_grid,
+        )
+    else:
+        plot_snapshot_panel(
+            case_dir=case_dir,
+            data=data,
+            save_path=out,
+            atphi=atphi,
+            show_grid=show_grid,
+        )
 
 
 # -----------------------------
@@ -313,37 +391,45 @@ def _plot_one_visu_dir(visu_dir: Path, out: Path | None, force: bool,
 def main():
     p = argparse.ArgumentParser(description="LUMI snapshots: 2x3 panel (equatorial/meridional/CMB).")
 
-    # Legacy/standard mode: case_dir + run selection + tag selection
-    p.add_argument("case_dir", nargs="?", default=".", help="Case directory (default: current directory).")
+    p.add_argument("case_dir", nargs="?", default=".",
+                   help="Case directory (default: current directory).")
 
-    # New explicit mode: point directly to runX/visu_#### folder
     p.add_argument("--visu-dir", default=None,
                    help="Direct path to run*/visu_####. If provided, run/tag selection is ignored.")
     p.add_argument("--out", default=None, help="Explicit output PNG path (optional).")
     p.add_argument("--force", action="store_true", help="Overwrite existing output figure.")
 
-    # run selection (legacy/standard mode)
     p.add_argument("--run", default="auto", help="Run folder name (run3) or 'auto' (default).")
 
-    # tag selection
     p.add_argument("--tag", default=None, help="Single snapshot tag like 0040 (legacy).")
     p.add_argument("--tags", default=None, help="Comma-separated tags like 0040,0027,0011.")
     p.add_argument("--latest", action="store_true", help="Use latest available tag (may be writing).")
     p.add_argument("--safe-latest", action="store_true",
-                   help="Use safe latest tag (default): usually the second-latest to avoid partial writes.")
+                   help="Use safe latest tag (default): usually second-latest to avoid partial writes.")
     p.add_argument("--nlatest", type=int, default=0, help="Plot latest N tags (default safe behavior).")
 
-    # plot options
-    p.add_argument("--atphi", type=float, default=2/3, help="Meridional cut position in units of pi (0..2).")
+    p.add_argument("--atphi", type=float, default=2/3,
+                   help="Meridional cut position in units of pi (0..2).")
     p.add_argument("--no-grid", action="store_true", help="Disable lon/lat grid on CMB plot.")
-    p.add_argument("--dry-run", action="store_true", help="Only print what would be plotted, then exit.")
+    p.add_argument("--dry-run", action="store_true",
+                   help="Only print what would be plotted, then exit.")
+    p.add_argument("--udotgradu", action="store_true",
+                   help="Plot |u dot grad u| in equatorial + meridional planes (separate figure).")
 
     args = p.parse_args()
 
-    # If --visu-dir is provided, use the explicit mode and ignore legacy selection.
     if args.visu_dir is not None:
         visu_dir = Path(args.visu_dir)
         out = Path(args.out) if args.out is not None else None
+        #_plot_one_visu_dir(
+        #    visu_dir=visu_dir,
+        #    out=out,
+        #    force=bool(args.force),
+        #    atphi=float(args.atphi),
+        #    show_grid=(not args.no_grid),
+        #    dry_run=bool(args.dry_run),
+        #)
+        
         _plot_one_visu_dir(
             visu_dir=visu_dir,
             out=out,
@@ -351,10 +437,11 @@ def main():
             atphi=float(args.atphi),
             show_grid=(not args.no_grid),
             dry_run=bool(args.dry_run),
+            udotgradu=bool(args.udotgradu),
         )
+
         return
 
-    # Legacy/standard mode
     case_dir = Path(args.case_dir).resolve()
     fig_dir = case_dir / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
@@ -363,7 +450,7 @@ def main():
 
     latest = bool(args.latest)
     safe_latest = bool(args.safe_latest) or (
-        not latest and args.tag is None and args.tags is None and args.nlatest == 0
+        (not latest) and args.tag is None and args.tags is None and args.nlatest == 0
     )
     if latest:
         safe_latest = False
@@ -384,10 +471,10 @@ def main():
         Ek, q, Ra = _input_params_from_path(case_dir)
 
     print("========================================")
-    print(f"[INFO] case_dir : {case_dir}")
-    print(f"[INFO] run_dir  : {run_dir}")
-    print(f"[INFO] tags     : {chosen_tags}")
-    print(f"[INFO] grid     : {not args.no_grid}")
+    print("[INFO] case_dir : {}".format(case_dir))
+    print("[INFO] run_dir  : {}".format(run_dir))
+    print("[INFO] tags     : {}".format(chosen_tags))
+    print("[INFO] grid     : {}".format(not args.no_grid))
     print("========================================")
 
     if args.dry_run:
@@ -395,20 +482,42 @@ def main():
 
     for t in chosen_tags:
         npz_path = _find_vis_fields_npz(run_dir, t)
-        out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_snapshots.png"
-
+        #out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.png".format(Ek, q, Ra, run_dir.name, t)
+        if args.udotgradu:
+            out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_udotgradu.png".format(Ek, q, Ra, run_dir.name, t)
+        else:
+            out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.png".format(Ek, q, Ra, run_dir.name, t)
+ 
         if out.exists() and not args.force:
-            print(f"[SKIP] Output exists (use --force to overwrite): {out}")
+            print("[SKIP] Output exists (use --force to overwrite): {}".format(out))
             continue
 
+       # data = np.load(npz_path)
+       # plot_snapshot_panel(
+       #     case_dir=case_dir,
+       #     data=data,
+       #     save_path=out,
+       #     atphi=args.atphi,
+       #     show_grid=(not args.no_grid),
+       # )
         data = np.load(npz_path)
-        plot_snapshot_panel(
-            case_dir=case_dir,
-            data=data,
-            save_path=out,
-            atphi=args.atphi,
-            show_grid=(not args.no_grid),
-        )
+        if getattr(sys.modules[__name__], "_PLOT_UDOTGRADU", False):
+           plot_udotgradu_panel(
+              case_dir=case_dir,
+              data=data,
+              save_path=out,
+              atphi=args.atphi,
+              show_grid= (not args.no_grid),
+            )
+        else:
+           plot_snapshot_panel(
+              case_dir=case_dir,
+              data=data,
+              save_path=out,
+              atphi=args.atphi,
+              show_grid= (not args.no_grid),
+            )
+
 
 
 if __name__ == "__main__":

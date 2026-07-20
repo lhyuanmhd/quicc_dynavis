@@ -243,9 +243,7 @@ def _input_params_from_path(case_dir: Path):
 def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
                         atphi=2/3, show_grid=False):
     """
-    2x4 panel layout:
-    Row 1: u_r (eq), u_phi (eq), curl_u_axial (eq), zonal_flow (meridional)
-    Row 2: T (eq), B_r (mer), B_r (CMB), [reserved for additional field]
+    1x4 panel layout:
     """
     try:
         from quicc_dynavis import timeseries as ts
@@ -254,76 +252,48 @@ def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
         Ek, q, Ra = _input_params_from_path(case_dir)
 
     # Create 2x4 grid with custom width ratios
-    fig = plt.figure(figsize=(24, 10))
-    gs = fig.add_gridspec(2, 4, 
+    fig = plt.figure(figsize=(26, 5))
+    gs = fig.add_gridspec(1, 4, 
                           width_ratios=[1, 1, 1, 1.45], 
                           wspace=0.15, 
-                          hspace=0.25)
+                          hspace=0.15)
 
-    # Row 1 (equatorial plane views)
-    ax00 = fig.add_subplot(gs[0, 0])  # u_r equatorial
+
+
+
+    ax00 = fig.add_subplot(gs[0, 0])  # T equatorial
     ax01 = fig.add_subplot(gs[0, 1])  # u_phi equatorial  
-    ax02 = fig.add_subplot(gs[0, 2])  # curl_u_axial equatorial
-    ax03 = fig.add_subplot(gs[0, 3])  # zonal flow meridional
+    ax02 = fig.add_subplot(gs[0, 2]) 
+    ax03 = fig.add_subplot(gs[0, 3],  projection="mollweide")  # B_r CMB
+    
+    
+    fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax00, include_background=True)
+    ax00.set_title(r'$T_0 + T$', pad=10, fontsize=16)
+    
+    # Plot zonal flow (u_phi zonal average) in meridional plane
+    fields_snapshot.plot_meridional(str(case_dir), data, "u_phi_zonal_3d", ax=ax01, cmap='RdBu_r')
+    fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax02)
+    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax03, show_grid=False)
+    
+    # Force all subplot boxes to have the same height
+    fig.canvas.draw()
 
-    # Row 2
-    ax10 = fig.add_subplot(gs[1, 0])  # T equatorial
-    ax11 = fig.add_subplot(gs[1, 1])
-    ax12 = fig.add_subplot(gs[1, 2])  
-    ax13 = fig.add_subplot(gs[1, 3],  projection="mollweide")  # B_r CMB
+    axes = [ax00, ax01, ax02, ax03]
 
-    # Adjust aspect ratios
-    for ax in (ax03, ax13,  #ax03, #ax13
+    for ax in (ax03, #ax13,  #ax03, #ax13
                ):
         ax.set_aspect("auto")
-
-    # Row 1 plots
-    fields_snapshot.plot_equatorial(str(case_dir), data, "u_r", ax=ax00)
-    #fields_snapshot.plot_equatorial(str(case_dir), data, "u_phi", ax=ax01)
-
-    fields_snapshot.plot_equatorial(str(case_dir), data, "u_phi", ax=ax01)
-     
-    # Plot zonal flow (u_phi zonal average) in meridional plane
-    fields_snapshot.plot_meridional(str(case_dir), data, "u_phi_zonal_3d",
-                                    ax=ax02, cmap='RdBu_r')
-    ax02.set_title(r'$\langle u_\phi \rangle_\phi$', fontsize=12)
-     
-    fields_snapshot.plot_equatorial(str(case_dir), data, "curl_u_axial", ax=ax03)
-    
   
-    # Row 2 plots
-    fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax10, include_background=True)
-    ax10.set_title(r'$T_0 + T$', pad=10, fontsize=16)
-    fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax11, include_background=False)
-    fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax12)
-    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax13, show_grid=False)
-    
-
     # Add panel labels
     panel_labels = ['(a)', '(b)', '(c)', '(d)', 
-                    '(e)', '(f)', #'(g)',
-                    #'(h)'
                     ]
     axes = [ax00, ax01, ax02, 
-            ax03, 
-            ax10, ax11, ax12, 
-            #ax13
+            ax03
             ]
-    #for ax, label in zip(axes, panel_labels):
-    #    ax.text(0.02, 0.98, label, transform=ax.transAxes,
-    #            fontsize=12, fontweight='bold',
-    #            verticalalignment='top',
-    #            bbox=dict(boxstyle="round, pad=0.3", facecolor='white', alpha=0.8)
-    #            )
-
-    # Title
-    #time = data["time"]
-    #fig.suptitle(f"Ek={Ek:.2e}, q={q:.2e}, Ra={Ra:.2e}, time={float(time):.2e}",
-    #             y=0.98, fontsize=14)
-    
+        
     time = data["time"]
-    fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
-                  y=0.98, fontsize=16)
+    #fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
+    #              y=0.98, fontsize=16)
  
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
@@ -511,7 +481,7 @@ def main():
 
     for t in chosen_tags:
         npz_path = _find_vis_fields_npz(run_dir, t)
-        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.png".format(Ek, q, Ra, run_dir.name, t)
+        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots_1_row.png".format(Ek, q, Ra, run_dir.name, t)
         
         if out.exists() and not args.force:
             print("[SKIP] Output exists (use --force to overwrite): {}".format(out))

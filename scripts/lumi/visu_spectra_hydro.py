@@ -19,7 +19,7 @@ def main():
     fig_dir.mkdir(parents=True, exist_ok=True)
 
     #single spectra  at last timestep
-    spectra.plot_spectra_km(folderFile=str(case_dir), save_dir = str(fig_dir),
+    spectra.plot_spectra_kt(folderFile=str(case_dir), save_dir = str(fig_dir),
         mode="single",   # "single" or "average": #mode = 'average', start_time=0, stop_time=1,
         #mode = "average",
         which="last",    # if single: "first", "last", or index (e.g. 10  
@@ -28,7 +28,7 @@ def main():
     )
 
     #Average spectra
-    spectra.plot_spectra_km(folderFile=str(case_dir), save_dir = str(fig_dir),
+    spectra.plot_spectra_kt(folderFile=str(case_dir), save_dir = str(fig_dir),
         #mode="single",   # "single" or "average": #mode = 'average', start_time=0, stop_time=1,
         mode = "average",
         which="last",    # if single: "first", "last", or index (e.g. 10  

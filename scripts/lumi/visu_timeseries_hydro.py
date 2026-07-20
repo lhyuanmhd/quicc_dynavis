@@ -3,17 +3,15 @@ import argparse
 from pathlib import Path
 import sys
 import contextlib
-import io as pyio  
-import re
-
+import io as pyio   
 
 import matplotlib
 matplotlib.use("Agg")
 
 sys.path.append('/scratch/project_465001528/lhyuan/codes/quicc_dynavis/src')
 
-from quicc_dynavis.timeseries import plot_timeseries, plot_timeseries_dipolarity
-from quicc_dynavis import io   # 假定 print_simulation_summary 在这里
+from quicc_dynavis.timeseries import  plot_timeseries_hydro
+from quicc_dynavis import io   
 
 
 def main():
@@ -32,38 +30,18 @@ def main():
     fig_dir = case_dir / "figures"
     fig_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_timeseries(
+    plot_timeseries_hydro(
         folderFile=str(case_dir),
         save_dir=str(fig_dir),
         show=False,
     )
-
-    plot_timeseries_dipolarity(
-        folderFile=str(case_dir),
-        save_dir=str(fig_dir),
-        show=False,
-    ) 
-    
     print(f"[OK] timeseries saved under {fig_dir}")
 
     # ---- diagnostics / run_summary ----
     diag_dir = case_dir / "diagnostics"
     diag_dir.mkdir(parents=True, exist_ok=True)
-    
-   
-    runs_dir = case_dir / "runs"
 
-    candidates = sorted([
-        d for d in runs_dir.iterdir()
-        if d.is_dir() and re.fullmatch(r'run0+', d.name)
-    ])
-
-    if not candidates:
-        raise FileNotFoundError("No run0-style directory found")
-
-    run0_dir = candidates[0]
-
-    param_file = run0_dir / "parameters.cfg"
+    param_file = case_dir / "runs/run0" / "parameters.cfg"
     summary_file = diag_dir / "run_summary.txt"
 
     buf = pyio.StringIO()
