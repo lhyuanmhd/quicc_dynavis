@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DYNAVIS="$(cd -- "$SCRIPT_DIR/../../.." && pwd)"
+
 #remove unnecessary files
 #rm run.log
 #rm slurm*
@@ -39,7 +42,7 @@ PY
 
 
 # extract fields we are intertested
-python /scratch/project_465001528/lhyuan/codes/quicc_dynavis/scripts/lumi/extract_fields_curl.py
+python "$DYNAVIS/scripts/lumi/extract_fields_curl.py"
 
 #remove 
 #rm visState0000.hdf5

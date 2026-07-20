@@ -16,8 +16,9 @@ set -euo pipefail
 LOG="viz.log"
 exec > >(tee -a "$LOG") 2>&1
 
-# Path to your quicc_dynavis repo
-DYNAVIS="/scratch/project_465001528/lhyuan/codes/quicc_dynavis"
+# Resolve the repository root from this script's location
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DYNAVIS="$(cd -- "$SCRIPT_DIR/../../.." && pwd)"
 
 # Flags
 DO_TIMESERIES=0
@@ -287,4 +288,4 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
   done
 done
 
-echo "[DONE]
+echo "[DONE]"

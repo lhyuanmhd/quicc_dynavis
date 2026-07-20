@@ -14,8 +14,6 @@ from pathlib import Path
 import re
 import sys
 from typing import Optional, List
-
-# Headless for LUMI
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -387,7 +385,7 @@ def _plot_one_visu_dir(visu_dir: Path,
 # Main
 # -----------------------------
 def main():
-    p = argparse.ArgumentParser(description="LUMI snapshots: 3x3 panel (equatorial/meridional/CMB).")
+    p = argparse.ArgumentParser(description="snapshots: 3x3 panel (equatorial/meridional/CMB).")
 
     p.add_argument("case_dir", nargs="?", default=".",
                    help="Case directory (default: current directory).")

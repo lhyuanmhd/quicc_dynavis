@@ -12,8 +12,7 @@ matplotlib.use("Agg")
 
 
 from quicc_dynavis.timeseries import plot_timeseries, plot_timeseries_dipolarity
-from quicc_dynavis import io   # 假定 print_simulation_summary 在这里
-
+from quicc_dynavis import io 
 
 def main():
     p = argparse.ArgumentParser()
