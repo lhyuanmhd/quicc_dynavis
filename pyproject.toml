@@ -7,6 +7,14 @@ name = "quicc-dynavis"
 version = "0.1.0"
 description = "Post-processing and visualization tools for QuICC dynamo simulations"
 requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "h5py",
+    "pandas",
+    "Pillow",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
