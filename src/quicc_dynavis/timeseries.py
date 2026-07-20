@@ -15,6 +15,7 @@ matplotlib.rcParams['mathtext.rm'] = 'Times New Roman'
 matplotlib.rcParams['mathtext.it'] = 'Times New Roman:italic'
 matplotlib.rcParams['mathtext.bf'] = 'Times New Roman:bold'
 
+
 def input_params_from_path(folderFile):
     Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
     #Ek in format 1e-4
@@ -285,16 +286,26 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
        ax4.set_xlim(xlim)  
     ax4.legend()
 
-    # Determine if reversal occurs by looking dipole angle crossing 90 degrees
-    # from < 90 to >90 or vice versa 
-    # only use data from startindex to the end
+
     reversal = 0    
+    excursion = 0
+
+    # only use data from startindex to the end
     dipangle_subset = dipangle[startindex:]
+    
+    # check for excursion
     for i in range(1, len(dipangle_subset)):
         if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
            (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
-            reversal = 1
+            excursion = 1
             break
+    
+    # check for reversal 
+    # criteria: dipole angle goes beyond 150 deg and below 30 deg, and dipolarity >0.35 (empirical)    
+    if excursion == 1:
+        if np.max(dipangle_subset) > 150 and np.min(dipangle_subset) < 30:
+            if  timeavg_fdip > 0.35:
+                reversal = 1
 
     # ---------- Write summary CSV ---------- #
     # --- determine Ek root automatically ---
