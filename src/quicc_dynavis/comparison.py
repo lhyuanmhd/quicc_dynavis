@@ -235,3 +235,5 @@ def compare_energy_multi(
         plt.show()
 
     return fig, axes
+
+

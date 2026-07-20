@@ -1,19 +1,14 @@
-import csv
-import glob
 import os
-import re
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.ticker import FuncFormatter, LogFormatterMathtext, LogLocator
-
 matplotlib.rcParams["mathtext.fontset"] = "cm"
 from .timeseries_utils import (
     extract_ek_root,
 )
-
 from .summary import write_dynamo_summary_csv
+
 from .timeseries_data import load_timeseries_data, load_hydro_timeseries_data
+
 from .timeseries_diagnostics import (
     compute_dynamo_diagnostics,
     print_dynamo_diagnostics,
