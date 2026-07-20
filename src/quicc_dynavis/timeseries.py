@@ -29,6 +29,11 @@ extract_Ek_root = extract_ek_root
 
 from .summary import write_dynamo_summary_csv
 from .timeseries_data import load_timeseries_data
+from .timeseries_diagnostics import (
+    compute_dynamo_diagnostics,
+    print_dynamo_diagnostics,
+)
+
 
 # keep updating according to the need
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
@@ -66,6 +71,8 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     # bc_mag, bc_temp, bc_vel = get_boundary_conditions(os.path.join(RunFolders[0], 'parameters.cfg'), 'no')
     
 
+
+    # read data
     data = load_timeseries_data(folderFile)
 
     RunFolders = data.run_folders
@@ -116,52 +123,56 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     bc_mag = data.bc_mag
     bc_temp = data.bc_temp
     bc_vel = data.bc_vel
+    
 
-    # Calculate dipole angle
-    dipangle = np.arccos(g10 / np.sqrt(g10**2 + g11**2 + h11**2)) * 180 / np.pi
-  
-    # Compute time-averaged Rossby number
-    t = tkin
-    Ro = Ek * np.sqrt(2 * kinEtot)
-    #startindex = int(0.3 * len(Ro))
-    startindex = np.where(t >= t[0] + 0.3 * (t[-1] - t[0]))[0][0]
-    timeavg_Ro = np.round(np.mean(Ro[startindex:]), 2)
- 
+    diagnostics = compute_dynamo_diagnostics(data)
+    print_dynamo_diagnostics(data, diagnostics)
+    
+    kinEtot = diagnostics.physical_kinetic_energy
+    T_perb = diagnostics.thermal_perturbation
+    dipangle = diagnostics.dipole_angle
 
-    #physcial kientic energy
-    if  Pm !=0 and Pr !=0: 
-        kinEtot = Ek/Pm * kinEtot 
+    startindex = diagnostics.averaging_start_index
+
+    magEtoti = diagnostics.initial_magnetic_energy
+    timeavg_kinEtot = diagnostics.mean_kinetic_energy
+    timeavg_magEtot = diagnostics.mean_magnetic_energy
+    timeavg_T_perb = diagnostics.mean_thermal_perturbation
+    timeavg_nusselt = diagnostics.mean_nusselt
+
+    Rm = diagnostics.magnetic_reynolds_number
+    Lambda = diagnostics.elsasser_number
+
+    timeavg_fdip = diagnostics.mean_dipolarity
+    relative_std_fdip = diagnostics.relative_std_dipolarity
+
+    dynamo = int(diagnostics.dynamo_active)
+    excursion = int(diagnostics.excursion)
+    reversal = int(diagnostics.reversal)
+
+    kinDtot_avg = diagnostics.mean_viscous_dissipation
+    magDtot_avg = diagnostics.mean_ohmic_dissipation
+    fohm = diagnostics.ohmic_fraction
+
+    L_u = diagnostics.velocity_length_scale
+    L_b = diagnostics.magnetic_length_scale
        
     # ------ Create figure------#
     has_dis = data.has_dissipation
-
     plt.close('all')
     if has_dis:
         fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(8, 12), sharex=True, dpi=180)
     else:
         fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi=180)
         ax5 = None
-
-    #plt.close('all')
-    #fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 10), sharex=True, dpi =180)
     
-    
+    #physcial kientic energy
+    if  Pm !=0 and Pr !=0: 
+        kinEtot = Ek/Pm * kinEtot 
+        
     ax1.set_title(f'$E: {Ek:.1e}, Ra: {Ra:.2e}, q: {q:.2f}, (N,L,M): ({Nres:.0f},{Mres:.0f},{Lres:.0f})$')
-    
-    # compute magnetic Reynolds number
-    Rm = np.sqrt(np.mean(kinEtot))
-
-    print('Input parameters:')
-    print('Ek:', Ek)
-    print('Ra:', Ra)
-    print('q:', q)
-    print('-------------------------------')
-    print('output diagnostics:')
-    print('magnetic Reynolds number Rm=', int(Rm))
-
     #print('Reynolds number', '%.2E' %(Rm/Pm))
     #print('Rossby number', '%.2E' %((2*Rm*Ek)/Pm))
-   
 
     # kinetic Energy plot
     ax1.plot(tkin, kinEtot, label=r'$\mathcal{E}_{kin}$')
@@ -179,17 +190,10 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
        ax1.set_ylim(ylim)    
     ax1.legend()
 
-
    
-    # # magnetic Energy plot
-    # thermal perturbation 
-    T_perb = 3/5* (q*Ra)**2 * temEtot  #Et
-
-    timeavg_T_perb = np.mean(T_perb[startindex:])
-    print(f"time-averaged  T_perb = {timeavg_T_perb:.2e}")
-    ax2.plot(ttem, Ek*T_perb, label=r'$E \mathcal{E}_{t}$')
+    # magnetic Energy plot
+    #ax2.plot(ttem, Ek*T_perb, label=r'$E \mathcal{E}_{t}$')
     #ax2.set_ylabel('Thermal perturbation')
-    
     ax2.plot(tmag, magEtot, label=r'$\mathcal{E}_{mag}$')
     ax2.set_ylabel('Energy density')
     ax2.set_yscale('log')
@@ -204,42 +208,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     ax2.legend()
 
 
-
-    #intial magnetic energy
-    magEtoti = magEtot[0]
-
-    #compute time-averaged Energy kinEtot
-    #startindex = int(0.3 * len(kinEtot))
-    startindex = np.where(t >= t[0] + 0.3 * (t[-1] - t[0]))[0][0]
-    timeavg_kinEtot = np.mean(kinEtot[startindex:])
-    print(f"time-averaged kinetic energy  = {timeavg_kinEtot:.2e}")
-
-    #compute time-averaged Energy magEtot
-    timeavg_magEtot = np.mean(magEtot[startindex:])
-    print(f"time-averaged magnetic energy = {timeavg_magEtot:.2e}")
-
-    #Time averaged Elssaser number
-    Lambda = 2*timeavg_magEtot
-    print(f"Elsasser number Lambda= {Lambda:.2e}")
-
-    #compute time-averaged Nusselt
-    timeavg_nusselt = np.mean(nusselt[startindex:])
-    print(f"time-averaged nusselt = {timeavg_nusselt:.2e}")
-
- 
-    #Determine if dynamo is active
-    dynamo_threshold = 1e-4
-    if magEtot[-1] < dynamo_threshold or Rm < 30:
-        dynamo =  0
-        print(f"Dynamo is dead : {dynamo}")
-        if Rm < 50:
-            print(f"Rm is too small: {Rm}")
-        else:
-            print(f"Em is too small: {magEtot[-1]}")   
-    else:
-        dynamo =  1
-        print(f"Dynamo is active ✅ : {dynamo} ")
-
     # Dipolarity
     if len(tdip) > 0:
         ax3.plot(tdip, fdip, color='red', label='g10', alpha=0.6)
@@ -251,14 +219,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
        ax3.set_xlim(xlim)  
     ax3.set_ylim(0, 1)
 
-    # compute time-averaged Dipolarity
-    timeavg_fdip = np.mean(fdip[startindex:])  
-
-    # compute relative fluctuation: std(fdip) / mean(fdip)
-    relative_std_fdip = np.std(fdip[startindex:]) / timeavg_fdip
-
-    print(f"Time-averaged dipolarity: {timeavg_fdip:.2e}")
-    print(f"std(dipolarity)/mean(dipolarity): {relative_std_fdip:.2e}")
 
     # Dipole latitude
     if len(g10) > 0:
@@ -274,42 +234,7 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
        ax4.set_xlim(xlim)  
     ax4.legend()
 
-    # Determine if reversal occurs by looking dipole angle crossing 90 degrees
-    # from < 90 to >90 or vice versa 
-    # only use data from startindex to the end
-    #reversal = 0    
-    #dipangle_subset = dipangle[startindex:]
-    #for i in range(1, len(dipangle_subset)):
-    #    if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
-    #       (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
-    #        reversal = 1
-    #        break
-    
-    reversal = 0
-    excursion = 0
-
-    # only use data from startindex to the end
-    dipangle_subset = dipangle[startindex:]
-
-    # check for excursion
-    for i in range(1, len(dipangle_subset)):
-        if (dipangle_subset[i-1] < 90 and dipangle_subset[i] >= 90) or \
-           (dipangle_subset[i-1] > 90 and dipangle_subset[i] <= 90):
-            excursion = 1
-            break
-
-    print('Excursion:', excursion) 
-    
-    # check for reversal (need updating)
-    # Earth-like criteria: dipole angle goes beyond 150 deg and below 30 deg, and dipolarity >0.35 (empirical)
-    if excursion == 1:
-        if np.max(dipangle_subset) > 150 and np.min(dipangle_subset) < 30:
-            if  timeavg_fdip > 0.30:
-                reversal = 1
-
-    print('Reversal (timeavg_fdip > 0.30):', reversal)
-
-  
+    # dissipation plot  
     if has_dis and ax5 is not None:
         if len(tkinDis) > 0:
             ax5.plot(tkinDis, Ek * kinDtot, alpha=0.7, label='viscous dissipation')
@@ -328,22 +253,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
         ax5.legend()
 
-    
-    # averaged viscous dissipation and ohmic dissipation
-    kinDtot_avg  =  Ek*np.mean(kinDtot[:])
-    magDtot_avg  =     np.mean(magDtot[:])
-    fohm =  magDtot_avg/( magDtot_avg+kinDtot_avg) 
-
-    # compute typical lemgth scale:
-    L_u = np.sqrt(timeavg_kinEtot*Ek/kinDtot_avg)
-    L_b = np.sqrt(timeavg_magEtot/magDtot_avg)
-
-    print(f"viscous dissipation: {kinDtot_avg:.2e}" )
-    print(f"ohmic   dissipation: {magDtot_avg :.2e}" )
-    print(f"fraction of ohmic Dis: {fohm :.2e}" )
-    print(f" typical length scale of u: {L_u :.2e}" )
-    print(f" typical length scale of B: {L_b :.2e}" )
-
     # ---------- Write summary CSV ---------- #
     # --- determine Ek root automatically ---
     Ek_root = extract_Ek_root(folderFile)
@@ -351,37 +260,36 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
     csv_name = "diagnostics/"+f"data_E_{Ek:.1e}_E0mag_Dis_L_T_perb_Nu_Bc_stdfdip.csv"
     csv_path = os.path.join(Ek_root, csv_name)
-
+    
     write_dynamo_summary_csv(
         csv_path=csv_path,
-        q=q,
-        Ra=Ra,
-        Ek=Ek,
-        E0mag = magEtoti,
-        dynamo=dynamo,
-        dipolarity=timeavg_fdip,
-        Elsasser=Lambda,
-        visDis = kinDtot_avg,
-        ohmDis = magDtot_avg,
-        fohm = fohm,
-        L_u = L_u,          #lengthscale for u
-        L_b = L_b,          #lengthscale for b
-        T_perb= timeavg_T_perb,     #new added thermal perturbation
-        nusselt= timeavg_nusselt,
-        reversal=reversal,
-        Rm=Rm,
-        relative_std_fdip = relative_std_fdip,    # std of dipolarity / average dipolarity
-        bc_mag = bc_mag,  # boundary condition
-        bc_temp= bc_temp, 
-        bc_vel = bc_vel,
-        N = Nres,
-        M = Mres,
-        L = Lres
+        q=data.q,
+        Ra=data.Ra,
+        Ek=data.Ek,
+        E0mag=diagnostics.initial_magnetic_energy,
+        dynamo=int(diagnostics.dynamo_active),
+        dipolarity=diagnostics.mean_dipolarity,
+        Elsasser=diagnostics.elsasser_number,
+        visDis=diagnostics.mean_viscous_dissipation,
+        ohmDis=diagnostics.mean_ohmic_dissipation,
+        fohm=diagnostics.ohmic_fraction,
+        L_u=diagnostics.velocity_length_scale,
+        L_b=diagnostics.magnetic_length_scale,
+        T_perb=diagnostics.mean_thermal_perturbation,
+        nusselt=diagnostics.mean_nusselt,
+        reversal=int(diagnostics.reversal),
+        Rm=diagnostics.magnetic_reynolds_number,
+        relative_std_fdip=diagnostics.relative_std_dipolarity,
+        bc_mag=data.bc_mag,
+        bc_temp=data.bc_temp,
+        bc_vel=data.bc_vel,
+        N=data.N,
+        M=data.M,
+        L=data.L,
     )
 
     #save figure
     Ek,q,Ra = input_params_from_path(folderFile)
-    
     save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_timeseries.png')
     plt.savefig(save_path, dpi=270)
 
@@ -393,8 +301,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
     else:
         return fig, (ax1, ax2, ax3, ax4)
 #-----------------------------------------
-
-
 
 def plot_timeseries_dipolarity(folderFile, save_dir, show=True, xlim=None, ylim=None):
     """
