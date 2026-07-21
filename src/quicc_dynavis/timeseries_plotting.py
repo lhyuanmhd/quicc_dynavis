@@ -11,6 +11,18 @@ from .timeseries_data import TimeseriesData, HydroTimeseriesData
 from .timeseries_diagnostics import DynamoDiagnostics, HydroDiagnostics
 
 
+DEFAULT_COLORS = {
+    "kinetic": "tab:blue",
+    "magnetic": "tab:red",
+    "dipolarity": "tab:orange",
+    "dipole_angle": "tab:gray",
+    "nusselt": "tab:purple",
+    "temperature": "tab:brown",
+    "viscous": "tab:cyan",
+    "ohmic": "tab:pink",
+    "fohm": "tab:gray",
+}
+
 def resolve_time_limits(
     time: np.ndarray,
     xlim=None,
@@ -114,6 +126,7 @@ def plot_kinetic_energy_panel(
     ax.plot(
         data.tkin,
         diagnostics.physical_kinetic_energy,
+        color=DEFAULT_COLORS["kinetic"],
         label=r"$\mathcal{E}_{kin}$",
     )
 
@@ -142,6 +155,7 @@ def plot_magnetic_energy_panel(
     ax.plot(
         data.tmag,
         data.mag_total,
+        color=DEFAULT_COLORS["magnetic"],
         label=r"$\mathcal{E}_{mag}$",
     )
 
@@ -167,15 +181,17 @@ def plot_magnetic_thermal_panel(
     ylim=None,
 ) -> None:
     """Plot magnetic energy and scaled thermal perturbation energy."""
-    # ax.plot(
-    #     data.ttem,
-    #     data.Ek * diagnostics.thermal_perturbation,
-    #     label=r"$E \mathcal{E}_{t}$",
-    # )
+    ax.plot(
+        data.ttem,
+        data.Ek * diagnostics.thermal_perturbation,
+        color=DEFAULT_COLORS["temperature"],
+        label=r"$E \mathcal{E}_{t}$",
+    )
 
     ax.plot(
         data.tmag,
         data.mag_total,
+        color=DEFAULT_COLORS["magnetic"],
         label=r"$\mathcal{E}_{mag}$",
     )
 
@@ -200,6 +216,7 @@ def plot_dipolarity_panel(
         ax.plot(
             data.tdip,
             data.fdip,
+            color=DEFAULT_COLORS["dipolarity"],
             label=r"$f_{\mathrm{dip}}$",
             alpha=0.6,
         )
@@ -223,7 +240,7 @@ def plot_dipole_angle_panel(
         ax.plot(
             data.tdip,
             diagnostics.dipole_angle,
-            "k",
+            color=DEFAULT_COLORS["dipole_angle"],
             alpha=0.7,
         )
 
@@ -254,6 +271,7 @@ def plot_dissipation_panel(
             data.tkin_dis,
             data.Ek * data.kin_dis_total,
             alpha=0.7,
+            color=DEFAULT_COLORS["viscous"],
             label="Viscous dissipation",
         )
 
@@ -262,6 +280,7 @@ def plot_dissipation_panel(
             data.tmag_dis,
             data.mag_dis_total,
             alpha=0.7,
+            color=DEFAULT_COLORS["ohmic"],
             label="Ohmic dissipation",
         )
 
@@ -284,6 +303,7 @@ def plot_hydro_kinetic_panel(
     ax.plot(
         data.tkin,
         diagnostics.physical_kinetic_energy,
+        color=DEFAULT_COLORS["kinetic"],
         label=r"$\mathcal{E}_{kin}$",
     )
 
@@ -313,6 +333,7 @@ def plot_hydro_thermal_panel(
     ax.plot(
         data.ttem,
         data.Ek * diagnostics.thermal_perturbation,
+        color=DEFAULT_COLORS["temperature"],
         label=r"$E\mathcal{E}_{t}$",
     )
 
@@ -339,6 +360,7 @@ def plot_hydro_dissipation_panel(
             data.tkin_dis,
             data.Ek * data.kin_dis_total,
             alpha=0.7,
+            color=DEFAULT_COLORS["viscous"],
             label="Viscous dissipation",
         )
 

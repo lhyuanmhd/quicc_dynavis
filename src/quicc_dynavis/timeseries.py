@@ -125,9 +125,9 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{data.Ek}_q{data.q}_Ra{data.Ra}_timeseries.png",
+        f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}_timeseries.png",
     )
-
+    
     fig.savefig(
         save_path,
         dpi=270,
@@ -175,7 +175,8 @@ def plot_timeseries_dipolarity(
     save_path = os.path.join(
         save_dir,
         (
-            f"Ek_{data.Ek}_q{data.q}_Ra{data.Ra}"
+            #f"Ek_{data.Ek}_q{data.q}_Ra{data.Ra}"
+            f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}"
             "_timeseries_Emag_fdip_tiltAngle.png"
         ),
     )
@@ -227,7 +228,8 @@ def plot_timeseries_hydro(
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{data.Ek}_Ra{data.Ra}_timeseries.png",
+        #f"Ek_{data.Ek}_Ra{data.Ra}_timeseries.png",
+        f"Ek_{data.Ek:.1e}_Ra_{data.Ra:.2e}_timeseries.png",
     )
 
     fig.savefig(
