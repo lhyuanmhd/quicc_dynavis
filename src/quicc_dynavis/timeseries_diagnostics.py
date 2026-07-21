@@ -193,10 +193,13 @@ def compute_dynamo_diagnostics(
         )
     else:
         relative_std_dipolarity = float("nan")
+    
 
+    # Rm is sqrt of Ekin independent of Ek and Pm, so we can use the raw kinetic energy time series
     magnetic_reynolds_number = float(
-        np.sqrt(np.mean(physical_kinetic_energy))
+        np.sqrt(np.mean(data.kin_total[start_index:]))
     )
+
     elsasser_number = 2.0 * mean_magnetic_energy
 
     final_magnetic_energy = (
