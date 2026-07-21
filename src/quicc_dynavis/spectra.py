@@ -2,126 +2,105 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from .io import get_parameters, read_spectra
-from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new  # assuming you have it in io or move it here
-from .timeseries import input_params_from_path
+from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new 
+from .timeseries_utils import input_params_from_path
 import re
 
+def _load_km_spectra(
+    folder_file,
+    mode="single",
+    start_time=None,
+    stop_time=None,
+    which="last",
+):
+    if mode == "single":
+        kinetic = read_single_spectrum(
+            folder_file,
+            "kinetic",
+            which=which,
+        )
+        magnetic = read_single_spectrum(
+            folder_file,
+            "magnetic",
+            which=which,
+        )
+
+        time_k = kinetic[-1]
+        time_m = magnetic[-1]
+
+        label_k = f"Single t={time_k:.3E}"
+        label_m = f"Single t={time_m:.3E}"
+
+        return kinetic[:-1], magnetic[:-1], label_k, label_m
+
+    if mode == "average":
+        if start_time is None or stop_time is None:
+            start_time = 0
+            stop_time = 1
+
+        kinetic = avgSpectra_new(
+            folder_file,
+            "kinetic",
+            start_time,
+            stop_time,
+        )
+        magnetic = avgSpectra_new(
+            folder_file,
+            "magnetic",
+            start_time,
+            stop_time,
+        )
+
+        return kinetic, magnetic, "average", "average"
+
+    raise ValueError("mode must be 'single' or 'average'")
 
 def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True, ref_scaling=False):
     """
     Plot kinetic and magnetic spectra (single or averaged).
     Top row: kinetic, Bottom row: magnetic.
     """
-    # --- load spectra ---
-    
-    if mode == 'single':
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        #lt, mt, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t, time_t = read_single_spectrum(folderFile, 'temperature', which=which)   
-        
-        # add temperature spectra here if needed
-        label_k = f"Single t={time_k:.3E}"
-        label_m = f"Single t={time_m:.3E}"
-        #label_t = f"Single t={time_m:.3E}"
 
-    elif mode == "average":
-        if start_time == None or stop_time == None:
-            start_time = 0
-            stop_time = 1
-            
-        # --- kinetic ---
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = avgSpectra_new(folderFile, "kinetic", start_time, stop_time)
-        # --- magnetic ---
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m = avgSpectra_new(folderFile, "magnetic", start_time, stop_time)
-        #--- temperature ---
-        #lm, mm, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t = avgSpectra_new(folderFile, "temperature", start_time, stop_time)
-        label_k = f"average"
-        label_m = f"average"
-        label_t = f"average"
+    kinetic, magnetic, label_k, label_m = _load_km_spectra(
+    folderFile,
+    mode=mode,
+    start_time=start_time,
+    stop_time=stop_time,
+    which=which,
+    )
 
+    (
+        lk,
+        mk,
+        ltot_k,
+        ltor_k,
+        lpol_k,
+        mtot_k,
+        mtor_k,
+        mpol_k,
+    ) = kinetic
 
-
-    else:
-        raise ValueError("mode must be 'single' or 'average'")
+    (
+        lm,
+        mm,
+        ltot_m,
+        ltor_m,
+        lpol_m,
+        mtot_m,
+        mtor_m,
+        mpol_m,
+    ) = magnetic
 
     # --- create figure ---
     plt.close('all')
     fig, axes = plt.subplots(2, 2, figsize=(8, 9), dpi=180)
     fig.subplots_adjust(wspace=0.3, hspace=0.35, left=0.12, top=0.92, right=0.97, bottom=0.12)
     
-    #mk,mm,mt = mk+1, mm+1, mt+1  # shift m for plotting
-    #lk,lm,lt = lk+1, lm+1, lt+1  # shift m for plotting
-
-    # Kinetic (top row)
     # l-spetra
     ax1, ax2 = axes[0]
     ax1.plot(lk[1:], ltot_k[1:], '.-', label='total')
     ax1.plot(lk[1:], ltor_k[1:], '.-', label='toroidal')
     ax1.loglog(lk[1:], lpol_k[1:], '.-', label='poloidal')
-
-#    # --------------------------------------------------
-#     # Reference -5/3 scaling anchored at spectral peak
-#     # --------------------------------------------------
-#     if ref_scaling:
-#         lk = np.asarray(lk)
-#         Ek = np.asarray(ltot_k)
-
-#         # ignore l=0 if present
-#         lk_use = lk[1:]
-#         Ek_use = Ek[1:]
-
-#         # index of spectral peak
-#         ipeak = np.argmax(Ek_use)
-
-#         l_ref = lk_use[ipeak]
-#         E_ref = Ek_use[ipeak]
-
-#         # scaling range (purely for plotting)
-#         n = len(lk_use)
-#         sid = int(0.25 * n)
-#         eid = int(0.8 * n)
-
-#         # -5/3 reference curve
-#         E_kolmo = 3 * E_ref * (lk_use / l_ref)**(-5/3)
-
-#         ax1.plot(
-#             lk_use[sid:eid],
-#             E_kolmo[sid:eid],
-#             'k--',
-#             lw=1.5,
-#             label=r'$l^{-5/3}$'
-#         )
-
-#         # 3/4 reference curve
-#         E_scal = 1.5* E_ref * (lk_use / l_ref)**(4/5) 
-#         sid = int(0.01 * n)
-#         eid = int(0.2 * n)
-
-#         ax1.plot(
-#             lk_use[sid:eid],
-#             E_scal[sid:eid],
-#             '--',
-#             lw=1.5,
-#             label=r'$l^{4/5}$'
-#         )
-
-
-#         # -15/2 reference curve
-#         E_scal = 5e2* E_ref * (lk_use / l_ref)**(-8) 
-#         sid = int(0.6 * n)
-#         eid = int(1 * n)
-
-#         ax1.plot(
-#             lk_use[sid:eid],
-#             E_scal[sid:eid],
-#             '--',
-#             lw=1.5,
-#             label=r'$l^{-8}$'
-#         )
-
-     
-
     ax1.set_xlabel('$l$')
     ax1.set_ylabel('Energy')
     #ax1.set_xscale('log'); 
@@ -142,7 +121,6 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
 
     # Magnetic (bottom row)
     ax3, ax4 = axes[1]
-
     lm = np.asarray(lm)
     Em = np.asarray(ltot_m)
 
@@ -159,18 +137,6 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     n = len(lm_use)
     sid = int(0.4 * n)
     eid = int(1 * n)
-
-    # # reference curve
-    # E_kolmo = 8e4* E_ref * (lm_use / l_ref)**(-4)
-
-    # ax3.plot(
-    #     lm_use[sid:eid],
-    #     E_kolmo[sid:eid],
-    #     'k--',
-    #     lw=1.5,
-    #     label=r'$l^{-4}$'
-    # )
-
 
     ax3.plot(lm[1:], ltot_m[1:], '.-', label='total')
     ax3.plot(lm[1:], ltor_m[1:], '.-', label='toroidal')
@@ -205,139 +171,179 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
 
     return fig, axes, save_path
 
-
-
-def plot_spectra_kt(folderFile, save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True, ref_scaling=False):
+def plot_spectra_kt(
+    folderFile,
+    save_dir,
+    mode="single",
+    start_time=None,
+    stop_time=None,
+    which="last",
+    show=True,
+    ref_scaling=False,
+):
     """
-    Plot kinetic and magnetic spectra (single or averaged).
-    Top row: kinetic, Bottom row: magnetic.
+    Plot kinetic and temperature spectra for purely hydrodynamic cases.
+
+    Top row:
+        Kinetic l- and m-spectra.
+
+    Bottom row:
+        Temperature l- and m-spectra.
     """
-    # --- load spectra ---
-    
-    if mode == 'single':
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
-        #lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        #lt, mt, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t, time_t = read_single_spectrum(folderFile, 'temperature', which=which)   
-        
-        # add temperature spectra here if needed
+    if mode == "single":
+        (
+            lk,
+            mk,
+            ltot_k,
+            ltor_k,
+            lpol_k,
+            mtot_k,
+            mtor_k,
+            mpol_k,
+            time_k,
+        ) = read_single_spectrum(
+            folderFile,
+            "kinetic",
+            which=which,
+        )
+
+        (
+            lt,
+            mt,
+            ltot_t,
+            _,
+            _,
+            mtot_t,
+            _,
+            _,
+            time_t,
+        ) = read_single_spectrum(
+            folderFile,
+            "temperature",
+            which=which,
+        )
+
         label_k = f"Single t={time_k:.3E}"
-        #label_m = f"Single t={time_m:.3E}"
-        #label_t = f"Single t={time_m:.3E}"
+        label_t = f"Single t={time_t:.3E}"
 
     elif mode == "average":
-        if start_time == None or stop_time == None:
+        if start_time is None or stop_time is None:
             start_time = 0
             stop_time = 1
-            
-        # --- kinetic ---
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = avgSpectra_new(folderFile, "kinetic", start_time, stop_time)
-        # --- magnetic ---
-        #lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m = avgSpectra_new(folderFile, "magnetic", start_time, stop_time)
-        #--- temperature ---
-        #lm, mm, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t = avgSpectra_new(folderFile, "temperature", start_time, stop_time)
-        
-        label_k = f"average"
-        label_m = f"average"
-        label_t = f"average"
 
+        (
+            lk,
+            mk,
+            ltot_k,
+            ltor_k,
+            lpol_k,
+            mtot_k,
+            mtor_k,
+            mpol_k,
+        ) = avgSpectra_new(
+            folderFile,
+            "kinetic",
+            start_time,
+            stop_time,
+        )
 
+        (
+            lt,
+            mt,
+            ltot_t,
+            _,
+            _,
+            mtot_t,
+            _,
+            _,
+        ) = avgSpectra_new(
+            folderFile,
+            "temperature",
+            start_time,
+            stop_time,
+        )
+
+        label_k = f"Average t=[{start_time}, {stop_time}]"
+        label_t = f"Average t=[{start_time}, {stop_time}]"
 
     else:
         raise ValueError("mode must be 'single' or 'average'")
 
-    # --- create figure ---
-    plt.close('all')
-    fig, axes = plt.subplots(2, 2, figsize=(8, 9), dpi=180)
-    fig.subplots_adjust(wspace=0.3, hspace=0.35, left=0.12, top=0.92, right=0.97, bottom=0.12)
-    
-    #mk,mm,mt = mk+1, mm+1, mt+1  # shift m for plotting
-    #lk,lm,lt = lk+1, lm+1, lt+1  # shift m for plotting
+    plt.close("all")
 
-    # Kinetic (top row)
-    # l-spetra
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(8, 9),
+        dpi=180,
+    )
+
+    fig.subplots_adjust(
+        wspace=0.3,
+        hspace=0.35,
+        left=0.12,
+        top=0.92,
+        right=0.97,
+        bottom=0.12,
+    )
+
+    # Kinetic l-spectrum
     ax1, ax2 = axes[0]
-    ax1.plot(lk[1:], ltot_k[1:], '.-', label='total')
-    ax1.plot(lk[1:], ltor_k[1:], '.-', label='toroidal')
-    ax1.loglog(lk[1:], lpol_k[1:], '.-', label='poloidal')
 
-     
+    ax1.plot(lk[1:], ltot_k[1:], ".-", label="total")
+    ax1.plot(lk[1:], ltor_k[1:], ".-", label="toroidal")
+    ax1.plot(lk[1:], lpol_k[1:], ".-", label="poloidal")
 
-    ax1.set_xlabel('$l$')
-    ax1.set_ylabel('Energy')
-    #ax1.set_xscale('log'); 
-    ax1.set_yscale('log')
-    ax1.set_title(f'Kinetic $l$-spectrum({label_k})')
+    ax1.set_xlabel(r"$l$")
+    ax1.set_ylabel("Energy")
+    ax1.set_yscale("log")
+    ax1.set_title(f"Kinetic $l$-spectrum ({label_k})")
     ax1.legend()
-    
-    # m-spectra
-    ax2.plot(mk, mtot_k, '.-', label='total')
-    ax2.plot(mk, mtor_k, '.-', label='toroidal')
-    ax2.loglog(mk, mpol_k, '.-', label='poloidal')
-    ax2.set_xlabel('$m$')
-    ax2.set_ylabel('Energy')
-    #ax2.set_xscale('log'); 
-    ax2.set_yscale('log')
-    ax2.set_title(f'Kinetic $m$-spectrum({label_k})')
 
+    # Kinetic m-spectrum
+    ax2.plot(mk, mtot_k, ".-", label="total")
+    ax2.plot(mk, mtor_k, ".-", label="toroidal")
+    ax2.plot(mk, mpol_k, ".-", label="poloidal")
 
-    # # Magnetic (bottom row)
-    # ax3, ax4 = axes[1]
+    ax2.set_xlabel(r"$m$")
+    ax2.set_ylabel("Energy")
+    ax2.set_yscale("log")
+    ax2.set_title(f"Kinetic $m$-spectrum ({label_k})")
+    ax2.legend()
 
-    # lm = np.asarray(lm)
-    # Em = np.asarray(ltot_m)
+    # Temperature spectra
+    ax3, ax4 = axes[1]
 
-    # # ignore l=0 if present
-    # lm_use = lm[1:]
-    # Em_use = Em[1:]
+    ax3.plot(lt[1:], ltot_t[1:], ".-", label="total")
+    ax3.set_xlabel(r"$l$")
+    ax3.set_ylabel("Energy")
+    ax3.set_yscale("log")
+    ax3.set_title(f"Temperature $l$-spectrum ({label_t})")
+    ax3.legend()
 
-    # # index of spectral peak
-    # ipeak = np.argmax(Em_use)
+    ax4.plot(mt, mtot_t, ".-", label="total")
+    ax4.set_xlabel(r"$m$")
+    ax4.set_ylabel("Energy")
+    ax4.set_yscale("log")
+    ax4.set_title(f"Temperature $m$-spectrum ({label_t})")
+    ax4.legend()
 
-    # l_ref = lm_use[ipeak]
-    # E_ref = Em_use[ipeak]
+    tag = "single" if mode == "single" else "average"
 
-    # n = len(lm_use)
-    # sid = int(0.4 * n)
-    # eid = int(1 * n)
+    Ek, q, Ra = input_params_from_path(folderFile)
 
-    # # # reference curve
-    # # E_kolmo = 8e4* E_ref * (lm_use / l_ref)**(-4)
+    os.makedirs(save_dir, exist_ok=True)
 
-    # # ax3.plot(
-    # #     lm_use[sid:eid],
-    # #     E_kolmo[sid:eid],
-    # #     'k--',
-    # #     lw=1.5,
-    # #     label=r'$l^{-4}$'
-    # # )
+    save_path = os.path.join(
+        save_dir,
+        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_kt_{tag}.png",
+    )
 
-
-    # ax3.plot(lm[1:], ltot_m[1:], '.-', label='total')
-    # ax3.plot(lm[1:], ltor_m[1:], '.-', label='toroidal')
-    # ax3.loglog(lm[1:], lpol_m[1:], '.-', label='poloidal')
-    # ax3.set_xlabel('$l$')
-    # ax3.set_ylabel('Energy')
-    # #ax3.set_xscale('log'); 
-    # ax3.set_yscale('log')
-    # ax3.set_title(f'Magnetic $l$-spectrum ({label_m})')
-    # ax3.legend()
-
-    # ax4.plot(mm, mtot_m, '.-', label='total')
-    # ax4.plot(mm, mtor_m, '.-', label='toroidal')
-    # ax4.loglog(mm, mpol_m, '.-', label='poloidal')
-    # ax4.set_xlabel('$m$')
-    # ax4.set_ylabel('Energy')
-    # #ax4.set_xscale('log'); 
-    # ax4.set_yscale('log')
-    # ax4.set_title(f'Magnetic $m$-spectrum({label_m})')
-
-    # Save figure
-    tag = 'single' if mode == 'single' else 'average'
-
-    Ek,q,Ra = input_params_from_path(folderFile)
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_{tag}.png')
-    
-    plt.savefig(save_path, dpi=270)
+    fig.savefig(
+        save_path,
+        dpi=270,
+        bbox_inches="tight",
+    )
 
     if show:
         plt.show()
@@ -346,228 +352,598 @@ def plot_spectra_kt(folderFile, save_dir, mode='single', start_time=None, stop_t
 
     return fig, axes, save_path
 
-
-def plot_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True):
+def plot_spectra(
+    folderFile,
+    save_dir,
+    mode="single",
+    start_time=None,
+    stop_time=None,
+    which="last",
+    show=True,
+):
     """
-    Plot kinetic and magnetic spectra (single or averaged).
-    Top row: kinetic, Bottom row: magnetic.
+    Plot kinetic, magnetic, and temperature spectra.
+
+    Rows:
+        1. Kinetic l- and m-spectra
+        2. Magnetic l- and m-spectra
+        3. Temperature l- and m-spectra
+
+    Parameters
+    ----------
+    folderFile : str or path-like
+        Simulation run directory.
+    save_dir : str or path-like
+        Directory in which the figure is saved.
+    mode : {"single", "average"}
+        Plot one spectrum or a time-averaged spectrum.
+    start_time, stop_time : float, optional
+        Averaging interval when mode="average".
+    which : str
+        Spectrum selection passed to read_single_spectrum.
+    show : bool
+        Whether to display the figure.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+    axes : numpy.ndarray
+    save_path : str
     """
-    # --- load spectra ---
-    if mode == 'single':
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        lt, mt, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t, time_t = read_single_spectrum(folderFile, 'temperature', which=which)   
-        
-        # add temperature spectra here if needed
-        label_k = f"t={time_k:.3E}"
-        label_m = f"t={time_m:.3E}"
-        label_t = f"t={time_m:.3E}"
+    if mode == "single":
+        (
+            lk,
+            mk,
+            ltot_k,
+            ltor_k,
+            lpol_k,
+            mtot_k,
+            mtor_k,
+            mpol_k,
+            time_k,
+        ) = read_single_spectrum(
+            folderFile,
+            "kinetic",
+            which=which,
+        )
 
-    elif mode == "average":
-        # --- kinetic ---
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k = avgSpectra_new(folderFile, "kinetic", start_time, stop_time)
-        # --- magnetic ---
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m = avgSpectra_new(folderFile, "magnetic", start_time, stop_time)
-        #--- temperature ---
-        lm, mm, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t = avgSpectra_new(folderFile, "temperature", start_time, stop_time)
-        
-        #label_k = f"average over t [{start_time}, {stop_time}]"
-        #label_m = f"average over t [{start_time}, {stop_time}]"
-        #label_t = f"average over t [{start_time}, {stop_time}]"
-    else:
-        raise ValueError("mode must be 'single' or 'average'")
+        (
+            lm,
+            mm,
+            ltot_m,
+            ltor_m,
+            lpol_m,
+            mtot_m,
+            mtor_m,
+            mpol_m,
+            time_m,
+        ) = read_single_spectrum(
+            folderFile,
+            "magnetic",
+            which=which,
+        )
 
-    # --- create figure ---
-    plt.close('all')
-    fig, axes = plt.subplots(3, 2, figsize=(8, 9), dpi=180)
-    fig.subplots_adjust(wspace=0.3, hspace=0.35, left=0.12, top=0.92, right=0.97, bottom=0.12)
-    
-    #mk,mm,mt = mk+1, mm+1, mt+1  # shift m for plotting
-    #lk,lm,lt = lk+1, lm+1, lt+1  # shift m for plotting
-
-    # Kinetic (top row)
-    ax1, ax2 = axes[0]
-    ax1.plot(lk[1:], ltot_k[1:], '.-', label='total')
-    ax1.plot(lk[1:], ltor_k[1:], '.-', label='toroidal')
-    ax1.plot(lk[1:], lpol_k[1:], '.-', label='poloidal')
-    ax1.set_xlabel('$l$')
-    ax1.set_ylabel('Energy')
-    #ax1.set_xscale('log'); 
-    ax1.set_yscale('log')
-    ax1.set_title(f'Kinetic ({label_k})')
-    ax1.legend()
-
-    ax2.plot(mk, mtot_k, '.-', label='total')
-    ax2.plot(mk, mtor_k, '.-', label='toroidal')
-    ax2.plot(mk, mpol_k, '.-', label='poloidal')
-    ax2.set_xlabel('$m$')
-    ax2.set_ylabel('Energy')
-    #ax2.set_xscale('log'); 
-    ax2.set_yscale('log')
-    ax2.set_title(f'Kinetic ({label_k})')
-
-    # Magnetic (bottom row)
-    ax3, ax4 = axes[1]
-    ax3.plot(lm[1:], ltot_m[1:], '.-', label='total')
-    ax3.plot(lm[1:], ltor_m[1:], '.-', label='toroidal')
-    ax3.plot(lm[1:], lpol_m[1:], '.-', label='poloidal')
-    ax3.set_xlabel('$l$')
-    ax3.set_ylabel('Energy')
-    #ax3.set_xscale('log'); 
-    ax3.set_yscale('log')
-    ax3.set_title(f'Magnetic ({label_m})')
-    ax3.legend()
-
-    ax4.plot(mm, mtot_m, '.-', label='total')
-    ax4.plot(mm, mtor_m, '.-', label='toroidal')
-    ax4.plot(mm, mpol_m, '.-', label='poloidal')
-    ax4.set_xlabel('$m$')
-    ax4.set_ylabel('Energy')
-    #ax4.set_xscale('log'); 
-    ax4.set_yscale('log')
-    ax4.set_title(f'Magnetic ({label_m})')
-
-    #tempeature spectra (added third row)
-    ax5, ax6 = axes[2]
-    ax5.plot(lt, ltot_t, '.-', label='total')
-    ax5.set_xlabel('$l$')
-    ax5.set_ylabel('Energy')
-    #ax5.set_xscale('log'); 
-    ax5.set_yscale('log')
-    ax5.set_title(f'Temperature $l$-spectrum ({label_t})')
-    ax5.legend()
-
-    ax6.plot(mt, mtot_t, '.-', label='total')
-    ax6.set_xlabel('$m$')
-    ax6.set_ylabel('Energy')
-    #ax6.set_xscale('log'); 
-    ax6.set_yscale('log')
-    ax6.set_title(f'Temperature $m$-spectrum({label_t})')
-
-
-    # Save figure
-    tag = 'single' if mode == 'single' else 'average'
-
-    # Ek,Pm,Pr,q,Ra,Ro=get_parameters(folderFile+'/run0/parameters.cfg','no')
-    # Ek = f"{Ek:.1e}"
-
-    Ek,q,Ra = input_params_from_path(folderFile)
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_Ra{Ra}_q{q}_spectra.png')
-    plt.savefig(save_path, dpi=270)
-
-    if show:
-        plt.show()
-
-    return fig, axes, save_path
-
-def plot_lmn_spectra(folderFile, save_dir, mode='single', start_time=None, stop_time=None, which='last', show=True):
-    """
-    Plot kinetic, magnetic, and temperature spectra (l-, m-spectra),
-    including 2D (n, l) energy maps.
-    """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import os
-    from matplotlib.colors import LogNorm
-
-    # --- Load spectra ---
-    if mode == 'single':
-        # l and m spectra
-        lk, mk, ltot_k, ltor_k, lpol_k, mtot_k, mtor_k, mpol_k, time_k = read_single_spectrum(folderFile, 'kinetic', which=which)
-        lm, mm, ltot_m, ltor_m, lpol_m, mtot_m, mtor_m, mpol_m, time_m = read_single_spectrum(folderFile, 'magnetic', which=which)
-        lt, mt, ltot_t, ltor_t, lpol_t, mtot_t, mtor_t, mpol_t, time_t = read_single_spectrum(folderFile, 'temperature', which=which)
-
-        # n spectra (now full 2D data)
-        nk, lk2, e_tot_k, e_tor_k, e_pol_k, time_nk = read_single_n_spectrum(folderFile, 'kinetic', which=which)
-        nm, lm2, e_tot_m, e_tor_m, e_pol_m, time_nm = read_single_n_spectrum(folderFile, 'magnetic', which=which)
-        nt, lt2, e_tot_t,       _,       _, time_nt = read_single_n_spectrum(folderFile, 'temperature', which=which)
+        (
+            lt,
+            mt,
+            ltot_t,
+            _,
+            _,
+            mtot_t,
+            _,
+            _,
+            time_t,
+        ) = read_single_spectrum(
+            folderFile,
+            "temperature",
+            which=which,
+        )
 
         label_k = f"t={time_k:.3E}"
         label_m = f"t={time_m:.3E}"
         label_t = f"t={time_t:.3E}"
 
+    elif mode == "average":
+        if start_time is None or stop_time is None:
+            start_time = 0
+            stop_time = 1
+
+        (
+            lk,
+            mk,
+            ltot_k,
+            ltor_k,
+            lpol_k,
+            mtot_k,
+            mtor_k,
+            mpol_k,
+        ) = avgSpectra_new(
+            folderFile,
+            "kinetic",
+            start_time,
+            stop_time,
+        )
+
+        (
+            lm,
+            mm,
+            ltot_m,
+            ltor_m,
+            lpol_m,
+            mtot_m,
+            mtor_m,
+            mpol_m,
+        ) = avgSpectra_new(
+            folderFile,
+            "magnetic",
+            start_time,
+            stop_time,
+        )
+
+        (
+            lt,
+            mt,
+            ltot_t,
+            _,
+            _,
+            mtot_t,
+            _,
+            _,
+        ) = avgSpectra_new(
+            folderFile,
+            "temperature",
+            start_time,
+            stop_time,
+        )
+
+        label_k = f"average t=[{start_time}, {stop_time}]"
+        label_m = f"average t=[{start_time}, {stop_time}]"
+        label_t = f"average t=[{start_time}, {stop_time}]"
+
     else:
-        raise NotImplementedError("Averaging mode for n-spectra not yet implemented.")
+        raise ValueError("mode must be 'single' or 'average'")
 
-    # --- Create figure ---
-    plt.close('all')
-    fig, axes = plt.subplots(3, 3, figsize=(13, 9), dpi=180)
-    fig.subplots_adjust(wspace=0.35, hspace=0.35, left=0.08, right=0.98, top=0.93, bottom=0.10)
+    plt.close("all")
 
-    mk, mm, mt = mk + 1, mm + 1, mt + 1
-    nkp1, nmp1, ntp1 = nk, nm, nt  # shifted n for labeling
+    fig, axes = plt.subplots(
+        3,
+        2,
+        figsize=(8, 9),
+        dpi=180,
+    )
 
-    # === Kinetic spectra ===
-    axes[0, 0].plot(lk[1:], ltot_k[1:], '.-', label='total')
-    axes[0, 0].plot(lk[1:], ltor_k[1:], '.-', label='toroidal')
-    axes[0, 0].plot(lk[1:], lpol_k[1:], '.-', label='poloidal')
-    axes[0, 0].set(xlabel='$l$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Kinetic $l$-spectrum ({label_k})')
-    axes[0, 0].legend()
+    fig.subplots_adjust(
+        wspace=0.3,
+        hspace=0.35,
+        left=0.12,
+        top=0.92,
+        right=0.97,
+        bottom=0.12,
+    )
 
-    axes[0, 1].plot(mk, mtot_k, '.-', label='total')
-    axes[0, 1].plot(mk, mtor_k, '.-', label='toroidal')
-    axes[0, 1].plot(mk, mpol_k, '.-', label='poloidal')
-    axes[0, 1].set(xlabel='$m+1$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Kinetic $m$-spectrum ({label_k})')
+    # Kinetic spectra
+    ax1, ax2 = axes[0]
 
-    # === Kinetic n-l map ===
-    if e_tot_k is not None:
-        im = axes[0, 2].pcolormesh(lk2, nkp1, e_tot_k, norm=LogNorm(),cmap='magma')#cmap='hot')# cmap='viridis')
-        axes[0, 2].set(xlabel='$l$', ylabel='$n$', title='Kinetic $E(n,l)$')
-        fig.colorbar(im, ax=axes[0, 2], label='Energy')
+    ax1.plot(lk[1:], ltot_k[1:], ".-", label="total")
+    ax1.plot(lk[1:], ltor_k[1:], ".-", label="toroidal")
+    ax1.plot(lk[1:], lpol_k[1:], ".-", label="poloidal")
+    ax1.set_xlabel(r"$l$")
+    ax1.set_ylabel("Energy")
+    ax1.set_yscale("log")
+    ax1.set_title(f"Kinetic $l$-spectrum ({label_k})")
+    ax1.legend()
 
-    # === Magnetic spectra ===
-    axes[1, 0].plot(lm[1:], ltot_m[1:], '.-', label='total')
-    axes[1, 0].plot(lm[1:], ltor_m[1:], '.-', label='toroidal')
-    axes[1, 0].plot(lm[1:], lpol_m[1:], '.-', label='poloidal')
-    axes[1, 0].set(xlabel='$l$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Magnetic $l$-spectrum ({label_m})')
-    axes[1, 0].legend()
+    ax2.plot(mk, mtot_k, ".-", label="total")
+    ax2.plot(mk, mtor_k, ".-", label="toroidal")
+    ax2.plot(mk, mpol_k, ".-", label="poloidal")
+    ax2.set_xlabel(r"$m$")
+    ax2.set_ylabel("Energy")
+    ax2.set_yscale("log")
+    ax2.set_title(f"Kinetic $m$-spectrum ({label_k})")
+    ax2.legend()
 
-    axes[1, 1].plot(mm, mtot_m, '.-', label='total')
-    axes[1, 1].plot(mm, mtor_m, '.-', label='toroidal')
-    axes[1, 1].plot(mm, mpol_m, '.-', label='poloidal')
-    axes[1, 1].set(xlabel='$m+1$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Magnetic $m$-spectrum ({label_m})')
+    # Magnetic spectra
+    ax3, ax4 = axes[1]
 
-    # === Magnetic n-l map ===
-    if e_tot_m is not None:
-        im = axes[1, 2].pcolormesh(lm2, nmp1, e_tot_m, norm=LogNorm(), cmap='magma')#cmap='hot')#cmap='plasma')
-        axes[1, 2].set(xlabel='$l$', ylabel='$n$', title='Magnetic $E(n,l)$')
-        fig.colorbar(im, ax=axes[1, 2], label='Energy')
+    ax3.plot(lm[1:], ltot_m[1:], ".-", label="total")
+    ax3.plot(lm[1:], ltor_m[1:], ".-", label="toroidal")
+    ax3.plot(lm[1:], lpol_m[1:], ".-", label="poloidal")
+    ax3.set_xlabel(r"$l$")
+    ax3.set_ylabel("Energy")
+    ax3.set_yscale("log")
+    ax3.set_title(f"Magnetic $l$-spectrum ({label_m})")
+    ax3.legend()
 
-    # === Temperature spectra ===
-    axes[2, 0].plot(lt[1:], ltot_t[1:], '.-', label='total')
-    axes[2, 0].set(xlabel='$l$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Temperature $l$-spectrum ({label_t})')
+    ax4.plot(mm, mtot_m, ".-", label="total")
+    ax4.plot(mm, mtor_m, ".-", label="toroidal")
+    ax4.plot(mm, mpol_m, ".-", label="poloidal")
+    ax4.set_xlabel(r"$m$")
+    ax4.set_ylabel("Energy")
+    ax4.set_yscale("log")
+    ax4.set_title(f"Magnetic $m$-spectrum ({label_m})")
+    ax4.legend()
 
-    axes[2, 1].plot(mt, mtot_t, '.-', label='total')
-    axes[2, 1].set(xlabel='$m+1$', ylabel='Energy', xscale='log', yscale='log',
-                   title=f'Temperature $m$-spectrum ({label_t})')
+    # Temperature spectra
+    ax5, ax6 = axes[2]
 
-    # === Temperature n-l map ===
-    if e_tot_t is not None:
-        im = axes[2, 2].pcolormesh(lt2, ntp1, e_tot_t, norm=LogNorm(),cmap='magma')#cmap= 'hot')#cmap='inferno')
-        axes[2, 2].set(xlabel='$l$', ylabel='$n$', title='Temperature $E(n,l)$')
-        fig.colorbar(im, ax=axes[2, 2], label='Energy')
+    ax5.plot(lt[1:], ltot_t[1:], ".-", label="total")
+    ax5.set_xlabel(r"$l$")
+    ax5.set_ylabel("Energy")
+    ax5.set_yscale("log")
+    ax5.set_title(f"Temperature $l$-spectrum ({label_t})")
+    ax5.legend()
 
-    # === Save ===
-    # Ek, Pm, Pr, q, Ra, Ro = get_parameters(os.path.join(folderFile, 'run0/parameters.cfg'), 'no')
-    # Ek = f"{Ek:.1e}"
-    # Ra = f'{Ra:.1e}'
-    # q = f'{q:.1e}'
-    
-    Ek,q,Ra = input_params_from_path(folderFile)
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_with_nlmap.png')
-    plt.savefig(save_path, dpi=270)
+    ax6.plot(mt, mtot_t, ".-", label="total")
+    ax6.set_xlabel(r"$m$")
+    ax6.set_ylabel("Energy")
+    ax6.set_yscale("log")
+    ax6.set_title(f"Temperature $m$-spectrum ({label_t})")
+    ax6.legend()
+
+    tag = "single" if mode == "single" else "average"
+
+    Ek, q, Ra = input_params_from_path(folderFile)
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(
+        save_dir,
+        f"Ek_{Ek}_Ra{Ra}_q{q}_spectra_{tag}.png",
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=270,
+        bbox_inches="tight",
+    )
 
     if show:
         plt.show()
+    else:
+        plt.close(fig)
 
     return fig, axes, save_path
 
+def plot_lmn_spectra(
+    folderFile,
+    save_dir,
+    mode="single",
+    start_time=None,
+    stop_time=None,
+    which="last",
+    show=True,
+):
+    """
+    Plot kinetic, magnetic, and temperature spectra together with
+    two-dimensional radial-degree energy maps E(n, l).
 
+    Columns:
+        1. l-spectrum
+        2. m-spectrum
+        3. E(n, l) map
+
+    Rows:
+        1. Kinetic
+        2. Magnetic
+        3. Temperature
+
+    Notes
+    -----
+    Averaging of the E(n, l) spectra is not currently implemented.
+    """
+    from matplotlib.colors import LogNorm
+
+    if mode != "single":
+        raise NotImplementedError(
+            "Averaging mode for n-spectra is not yet implemented."
+        )
+
+    # Kinetic l- and m-spectra
+    (
+        lk,
+        mk,
+        ltot_k,
+        ltor_k,
+        lpol_k,
+        mtot_k,
+        mtor_k,
+        mpol_k,
+        time_k,
+    ) = read_single_spectrum(
+        folderFile,
+        "kinetic",
+        which=which,
+    )
+
+    # Magnetic l- and m-spectra
+    (
+        lm,
+        mm,
+        ltot_m,
+        ltor_m,
+        lpol_m,
+        mtot_m,
+        mtor_m,
+        mpol_m,
+        time_m,
+    ) = read_single_spectrum(
+        folderFile,
+        "magnetic",
+        which=which,
+    )
+
+    # Temperature l- and m-spectra
+    (
+        lt,
+        mt,
+        ltot_t,
+        _,
+        _,
+        mtot_t,
+        _,
+        _,
+        time_t,
+    ) = read_single_spectrum(
+        folderFile,
+        "temperature",
+        which=which,
+    )
+
+    # Two-dimensional E(n, l) spectra
+    (
+        nk,
+        lk_n,
+        e_tot_k,
+        _,
+        _,
+        time_nk,
+    ) = read_single_n_spectrum(
+        folderFile,
+        "kinetic",
+        which=which,
+    )
+
+    (
+        nm,
+        lm_n,
+        e_tot_m,
+        _,
+        _,
+        time_nm,
+    ) = read_single_n_spectrum(
+        folderFile,
+        "magnetic",
+        which=which,
+    )
+
+    (
+        nt,
+        lt_n,
+        e_tot_t,
+        _,
+        _,
+        time_nt,
+    ) = read_single_n_spectrum(
+        folderFile,
+        "temperature",
+        which=which,
+    )
+
+    label_k = f"t={time_k:.3E}"
+    label_m = f"t={time_m:.3E}"
+    label_t = f"t={time_t:.3E}"
+
+    plt.close("all")
+
+    fig, axes = plt.subplots(
+        3,
+        3,
+        figsize=(13, 9),
+        dpi=180,
+    )
+
+    fig.subplots_adjust(
+        wspace=0.35,
+        hspace=0.35,
+        left=0.08,
+        right=0.98,
+        top=0.93,
+        bottom=0.10,
+    )
+
+    # Shift m by one so m=0 can be shown on a logarithmic axis.
+    mk_plot = np.asarray(mk) + 1
+    mm_plot = np.asarray(mm) + 1
+    mt_plot = np.asarray(mt) + 1
+
+    # ------------------------------------------------------------------
+    # Kinetic spectra
+    # ------------------------------------------------------------------
+    ax_lk, ax_mk, ax_nk = axes[0]
+
+    ax_lk.plot(lk[1:], ltot_k[1:], ".-", label="total")
+    ax_lk.plot(lk[1:], ltor_k[1:], ".-", label="toroidal")
+    ax_lk.plot(lk[1:], lpol_k[1:], ".-", label="poloidal")
+    ax_lk.set(
+        xlabel=r"$l$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Kinetic $l$-spectrum ({label_k})",
+    )
+    ax_lk.legend()
+
+    ax_mk.plot(mk_plot, mtot_k, ".-", label="total")
+    ax_mk.plot(mk_plot, mtor_k, ".-", label="toroidal")
+    ax_mk.plot(mk_plot, mpol_k, ".-", label="poloidal")
+    ax_mk.set(
+        xlabel=r"$m+1$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Kinetic $m$-spectrum ({label_k})",
+    )
+    ax_mk.legend()
+
+    if e_tot_k is not None:
+        e_tot_k = np.asarray(e_tot_k)
+
+        positive_k = e_tot_k[e_tot_k > 0]
+        if positive_k.size > 0:
+            image_k = ax_nk.pcolormesh(
+                lk_n,
+                nk,
+                e_tot_k,
+                norm=LogNorm(
+                    vmin=positive_k.min(),
+                    vmax=positive_k.max(),
+                ),
+                cmap="magma",
+                shading="auto",
+            )
+            fig.colorbar(
+                image_k,
+                ax=ax_nk,
+                label="Energy",
+            )
+
+    ax_nk.set(
+        xlabel=r"$l$",
+        ylabel=r"$n$",
+        title=rf"Kinetic $E(n,l)$ ($t={time_nk:.3E}$)",
+    )
+
+    # ------------------------------------------------------------------
+    # Magnetic spectra
+    # ------------------------------------------------------------------
+    ax_lm, ax_mm, ax_nm = axes[1]
+
+    ax_lm.plot(lm[1:], ltot_m[1:], ".-", label="total")
+    ax_lm.plot(lm[1:], ltor_m[1:], ".-", label="toroidal")
+    ax_lm.plot(lm[1:], lpol_m[1:], ".-", label="poloidal")
+    ax_lm.set(
+        xlabel=r"$l$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Magnetic $l$-spectrum ({label_m})",
+    )
+    ax_lm.legend()
+
+    ax_mm.plot(mm_plot, mtot_m, ".-", label="total")
+    ax_mm.plot(mm_plot, mtor_m, ".-", label="toroidal")
+    ax_mm.plot(mm_plot, mpol_m, ".-", label="poloidal")
+    ax_mm.set(
+        xlabel=r"$m+1$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Magnetic $m$-spectrum ({label_m})",
+    )
+    ax_mm.legend()
+
+    if e_tot_m is not None:
+        e_tot_m = np.asarray(e_tot_m)
+
+        positive_m = e_tot_m[e_tot_m > 0]
+        if positive_m.size > 0:
+            image_m = ax_nm.pcolormesh(
+                lm_n,
+                nm,
+                e_tot_m,
+                norm=LogNorm(
+                    vmin=positive_m.min(),
+                    vmax=positive_m.max(),
+                ),
+                cmap="magma",
+                shading="auto",
+            )
+            fig.colorbar(
+                image_m,
+                ax=ax_nm,
+                label="Energy",
+            )
+
+    ax_nm.set(
+        xlabel=r"$l$",
+        ylabel=r"$n$",
+        title=rf"Magnetic $E(n,l)$ ($t={time_nm:.3E}$)",
+    )
+
+    # ------------------------------------------------------------------
+    # Temperature spectra
+    # ------------------------------------------------------------------
+    ax_lt, ax_mt, ax_nt = axes[2]
+
+    ax_lt.plot(lt[1:], ltot_t[1:], ".-", label="total")
+    ax_lt.set(
+        xlabel=r"$l$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Temperature $l$-spectrum ({label_t})",
+    )
+    ax_lt.legend()
+
+    ax_mt.plot(mt_plot, mtot_t, ".-", label="total")
+    ax_mt.set(
+        xlabel=r"$m+1$",
+        ylabel="Energy",
+        xscale="log",
+        yscale="log",
+        title=f"Temperature $m$-spectrum ({label_t})",
+    )
+    ax_mt.legend()
+
+    if e_tot_t is not None:
+        e_tot_t = np.asarray(e_tot_t)
+
+        positive_t = e_tot_t[e_tot_t > 0]
+        if positive_t.size > 0:
+            image_t = ax_nt.pcolormesh(
+                lt_n,
+                nt,
+                e_tot_t,
+                norm=LogNorm(
+                    vmin=positive_t.min(),
+                    vmax=positive_t.max(),
+                ),
+                cmap="magma",
+                shading="auto",
+            )
+            fig.colorbar(
+                image_t,
+                ax=ax_nt,
+                label="Energy",
+            )
+
+    ax_nt.set(
+        xlabel=r"$l$",
+        ylabel=r"$n$",
+        title=rf"Temperature $E(n,l)$ ($t={time_nt:.3E}$)",
+    )
+
+    Ek, q, Ra = input_params_from_path(folderFile)
+
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(
+        save_dir,
+        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_with_nlmap.png",
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=270,
+        bbox_inches="tight",
+    )
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return fig, axes, save_path
 
 def plot_single_n_spectrum(filename, show=True, l_indices=None):
     """
@@ -649,8 +1025,6 @@ def plot_single_n_spectrum(filename, show=True, l_indices=None):
         plt.show()
 
     return n, E, np.array(l_values)
-
-
 
 def plot_normalized_spectra_single_run(run_path, save_dir=None, which='last', show=True):
     """

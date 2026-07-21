@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from scipy.interpolate import RegularGridInterpolator
-from .timeseries import input_params_from_path
+from .timeseries_utils import input_params_from_path
 from matplotlib.ticker import ScalarFormatter
 
 # field_latex = {

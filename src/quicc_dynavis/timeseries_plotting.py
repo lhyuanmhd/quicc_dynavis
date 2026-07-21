@@ -134,6 +134,7 @@ def plot_kinetic_energy_panel(
 def plot_magnetic_energy_panel(
     ax: Axes,
     data: TimeseriesData,
+    diagnostics: DynamoDiagnostics,
     time_limits: tuple[float, float],
     ylim=None,
 ) -> None:
@@ -420,6 +421,7 @@ def populate_dipolarity_figure(
     plot_magnetic_energy_panel(
         axes[0],
         data,
+        diagnostics,
         time_limits,
         ylim=ylim,
     )
