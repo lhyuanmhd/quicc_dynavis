@@ -5,7 +5,7 @@ matplotlib.rcParams["mathtext.fontset"] = "cm"
 from .timeseries_utils import (
     extract_ek_root,
 )
-from .summary import write_dynamo_summary_csv
+from .summary_old import write_dynamo_summary_csv
 
 from .timeseries_data import load_timeseries_data, load_hydro_timeseries_data
 
@@ -97,6 +97,8 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         q=data.q,
         Ra=data.Ra,
         Ek=data.Ek,
+        Pm=data.Pm,
+        Pr=data.Pr,
         E0mag=diagnostics.initial_magnetic_energy,
         dynamo=int(diagnostics.dynamo_active),
         dipolarity=diagnostics.mean_dipolarity,
