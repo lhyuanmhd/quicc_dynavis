@@ -12,8 +12,7 @@ class DynamoDiagnostics:
     """Time-averaged diagnostics derived from one simulation case."""
 
     averaging_start_index: int
-
-    rossby_series: np.ndarray
+    
     mean_rossby: float
 
     physical_kinetic_energy: np.ndarray
@@ -137,9 +136,6 @@ def compute_dynamo_diagnostics(
         fraction=averaging_fraction,
     )
 
-    rossby_series = data.Ek * np.sqrt(2.0 * data.kin_total)
-    mean_rossby = _mean_after_start(rossby_series, start_index)
-
     physical_kinetic_energy = np.asarray(
         data.kin_total,
         dtype=float,
@@ -199,6 +195,9 @@ def compute_dynamo_diagnostics(
     magnetic_reynolds_number = float(
         np.sqrt(np.mean(data.kin_total[start_index:]))
     )
+     
+    # compue Rossby number based on mean Rm
+    mean_rossby = 2*magnetic_reynolds_number * data.Ek / data.Pm
 
     elsasser_number = 2.0 * mean_magnetic_energy
 
@@ -275,7 +274,6 @@ def compute_dynamo_diagnostics(
 
     return DynamoDiagnostics(
         averaging_start_index=start_index,
-        rossby_series=rossby_series,
         mean_rossby=mean_rossby,
         physical_kinetic_energy=physical_kinetic_energy,
         thermal_perturbation=thermal_perturbation,
@@ -363,11 +361,11 @@ def print_dynamo_diagnostics(
         f"{diagnostics.ohmic_fraction:.2e}"
     )
     print(
-        "Typical velocity length scale = "
+        "Typical velocity dissipation length scale = "
         f"{diagnostics.vel_dis_length_scale:.2e}"
     )
     print(
-        "Typical magnetic length scale = "
+        "Typical magnetic disspation length scale = "
         f"{diagnostics.mag_dis_length_scale:.2e}"
     )
 
