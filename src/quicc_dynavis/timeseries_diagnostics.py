@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .timeseries_data import TimeseriesData
+from .timeseries_data import TimeseriesData, HydroTimeseriesData
 
 
 @dataclass
