@@ -40,8 +40,8 @@ class DynamoDiagnostics:
     mean_ohmic_dissipation: float
     ohmic_fraction: float
 
-    velocity_length_scale: float
-    magnetic_length_scale: float
+    vel_dis_length_scale: float
+    mag_dis_length_scale: float
 
 
 def _averaging_start_index(time: np.ndarray, fraction: float = 0.3) -> int:
@@ -230,7 +230,7 @@ def compute_dynamo_diagnostics(
 
     if len(data.mag_dis_total) > 0:
         mean_ohmic_dissipation = float(
-            np.mean(data.mag_dis_total)
+            2 *4/3 * np.pi * np.mean(data.mag_dis_total)
         )
     else:
         mean_ohmic_dissipation = float("nan")
@@ -250,29 +250,28 @@ def compute_dynamo_diagnostics(
         and mean_viscous_dissipation > 0
         and np.isfinite(mean_kinetic_energy)
     ):
-        velocity_length_scale = float(
+        vel_dis_length_scale = float(
             np.sqrt(
-                mean_kinetic_energy
-                * data.Ek
+                  mean_kinetic_energy
                 / mean_viscous_dissipation
             )
         )
     else:
-        velocity_length_scale = float("nan")
+        vel_dis_length_scale = float("nan")
 
     if (
         np.isfinite(mean_ohmic_dissipation)
         and mean_ohmic_dissipation > 0
         and np.isfinite(mean_magnetic_energy)
     ):
-        magnetic_length_scale = float(
+        mag_dis_length_scale = float(
             np.sqrt(
                 mean_magnetic_energy
                 / mean_ohmic_dissipation
             )
         )
     else:
-        magnetic_length_scale = float("nan")
+        mag_dis_length_scale = float("nan")
 
     return DynamoDiagnostics(
         averaging_start_index=start_index,
@@ -296,8 +295,8 @@ def compute_dynamo_diagnostics(
         mean_viscous_dissipation=mean_viscous_dissipation,
         mean_ohmic_dissipation=mean_ohmic_dissipation,
         ohmic_fraction=ohmic_fraction,
-        velocity_length_scale=velocity_length_scale,
-        magnetic_length_scale=magnetic_length_scale,
+        vel_dis_length_scale=vel_dis_length_scale,
+        mag_dis_length_scale=mag_dis_length_scale,
     )
 
 
@@ -365,11 +364,11 @@ def print_dynamo_diagnostics(
     )
     print(
         "Typical velocity length scale = "
-        f"{diagnostics.velocity_length_scale:.2e}"
+        f"{diagnostics.vel_dis_length_scale:.2e}"
     )
     print(
         "Typical magnetic length scale = "
-        f"{diagnostics.magnetic_length_scale:.2e}"
+        f"{diagnostics.mag_dis_length_scale:.2e}"
     )
 
 
@@ -432,7 +431,7 @@ def compute_hydro_diagnostics(
 
     if len(data.kin_dis_total) > 0:
         mean_viscous_dissipation = float(
-            data.Ek * np.mean(data.kin_dis_total)
+            2 * 4/3*np.pi * data.Ek * np.mean(data.kin_dis_total)
         )
     else:
         mean_viscous_dissipation = float("nan")

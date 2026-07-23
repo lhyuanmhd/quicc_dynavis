@@ -17,8 +17,8 @@ DYNAMO_SUMMARY_HEADER = [
     "visDis",
     "ohmDis",
     "fohm",
-    "L_u",
-    "L_b",
+    "L_u",  # velocity dissipation length scale
+    "L_b",  # magnetic dissipation length scale
     "T_perb",
     "Nu",
     "rev",
