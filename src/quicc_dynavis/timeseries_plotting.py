@@ -12,7 +12,7 @@ from .timeseries_diagnostics import DynamoDiagnostics, HydroDiagnostics
 
 
 DEFAULT_COLORS = {
-    "kinetic": "tab:royalblue",
+    "kinetic": "royalblue",
     "magnetic": "tab:orange",
     "dipolarity": "tab:coral",
     "dipole_angle": "tab:gray",
