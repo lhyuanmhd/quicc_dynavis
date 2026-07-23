@@ -10,8 +10,6 @@ DYNAMO_SUMMARY_HEADER = [
     "q",
     "Ra",
     "Ek",
-    "Pm",
-    "Pr",
     "E0mag",
     "dyn",
     "fdip",
@@ -33,14 +31,6 @@ DYNAMO_SUMMARY_HEADER = [
     "M",
     "L",
 ]
-
-
-def _format_control_parameter(value):
-    """Format a finite control parameter or infinity for CSV output."""
-    if value is None or np.isinf(value):
-        return "inf"
-
-    return f"{value:.2e}"
 
 
 def _format_summary_row(
@@ -67,17 +57,12 @@ def _format_summary_row(
     N,
     M,
     L,
-    *,
-    Pm=np.inf,
-    Pr=np.inf,
 ):
     """Format one dynamo diagnostic row for CSV output."""
     return [
-        f"{q:.6g}",
+        f"{q:.2f}",
         f"{Ra:.2e}",
         f"{Ek:.2e}",
-        _format_control_parameter(Pm),
-        _format_control_parameter(Pr),
         f"{E0mag:.2e}",
         int(dynamo),
         f"{dipolarity:.2f}",
@@ -101,67 +86,39 @@ def _format_summary_row(
     ]
 
 
-def _numeric_values_match(old_value, new_value):
-    """Compare finite or infinite numeric values."""
+def _row_matches_case(row, q, Ra, Ek):
+    """Return whether an existing CSV row corresponds to the same case."""
+    if len(row) < 3:
+        return False
+
+    expected = (
+        f"{q:.2f}",
+        f"{Ra:.2e}",
+        f"{Ek:.2e}",
+    )
+
+    if tuple(row[:3]) == expected:
+        return True
+
     try:
-        old_value = float(old_value)
-        new_value = float(new_value)
+        q_old, ra_old, ek_old = map(float, row[:3])
     except (TypeError, ValueError):
         return False
 
-    if np.isinf(old_value) or np.isinf(new_value):
-        return old_value == new_value
-
-    return np.isclose(
-        old_value,
-        new_value,
-        rtol=1e-6,
-        atol=1e-12,
-    )
-
-
-def _row_matches_case(
-    row,
-    q,
-    Ra,
-    Ek,
-    *,
-    Pm=np.inf,
-    Pr=np.inf,
-):
-    """Return whether an existing CSV row corresponds to the same case."""
-    if len(row) < 5:
-        return False
-
     return (
-        _numeric_values_match(row[0], q)
-        and _numeric_values_match(row[1], Ra)
-        and _numeric_values_match(row[2], Ek)
-        and _numeric_values_match(row[3], Pm)
-        and _numeric_values_match(row[4], Pr)
+        np.isclose(q_old, q, rtol=1e-6, atol=1e-12)
+        and np.isclose(ra_old, Ra, rtol=1e-6, atol=1e-12)
+        and np.isclose(ek_old, Ek, rtol=1e-6, atol=1e-12)
     )
+
 
 
 def _summary_sort_key(row):
     """Return a numeric sorting key, placing invalid rows last."""
     try:
-        return (
-            0,
-            float(row[0]),  # q
-            float(row[1]),  # Ra
-            float(row[2]),  # Ek
-            float(row[3]),  # Pm
-            float(row[4]),  # Pr
-        )
+        return 0, float(row[0]), float(row[1]), float(row[2])
     except (IndexError, TypeError, ValueError):
-        return (
-            1,
-            float("inf"),
-            float("inf"),
-            float("inf"),
-            float("inf"),
-            float("inf"),
-        )
+        return 1, float("inf"), float("inf"), float("inf")
 
 
 def write_dynamo_summary_csv(
@@ -189,9 +146,6 @@ def write_dynamo_summary_csv(
     N,
     M,
     L,
-    *,
-    Pm=np.inf,
-    Pr=np.inf,
 ):
     """Add or update one simulation entry in a dynamo summary CSV file."""
     csv_path = Path(csv_path)
@@ -220,8 +174,6 @@ def write_dynamo_summary_csv(
         N=N,
         M=M,
         L=L,
-        Pm=Pm,
-        Pr=Pr,
     )
 
     data_rows = []
@@ -232,43 +184,15 @@ def write_dynamo_summary_csv(
 
         if rows:
             first_row = rows[0]
-
             if first_row == DYNAMO_SUMMARY_HEADER:
                 data_rows = rows[1:]
-
-            elif first_row[:3] == ["q", "Ra", "Ek"]:
-                # Convert rows from the old CSV format:
-                #
-                # q, Ra, Ek, E0mag, ...
-                #
-                # to the new format:
-                #
-                # q, Ra, Ek, Pm, Pr, E0mag, ...
-                old_data_rows = rows[1:]
-
-                data_rows = [
-                    row[:3] + ["inf", "inf"] + row[3:]
-                    for row in old_data_rows
-                    if row
-                ]
-
             else:
-                raise ValueError(
-                    f"Unrecognized CSV header in {csv_path}: "
-                    f"{first_row}"
-                )
+                data_rows = rows
 
     updated = False
 
     for index, row in enumerate(data_rows):
-        if _row_matches_case(
-            row,
-            q=q,
-            Ra=Ra,
-            Ek=Ek,
-            Pm=Pm,
-            Pr=Pr,
-        ):
+        if _row_matches_case(row, q=q, Ra=Ra, Ek=Ek):
             data_rows[index] = new_row
             updated = True
             break
@@ -286,14 +210,8 @@ def write_dynamo_summary_csv(
         writer.writerows(data_rows)
 
     action = "Updated" if updated else "Added"
-
     print(
-        f"[OK] {action}: "
-        f"q={q:.6g}, "
-        f"Ra={Ra:.2e}, "
-        f"Ek={Ek:.2e}, "
-        f"Pm={_format_control_parameter(Pm)}, "
-        f"Pr={_format_control_parameter(Pr)}"
+        f"[OK] {action}: q={q:.2f}, Ra={Ra:.2e}, Ek={Ek:.2e}"
     )
     print(
         f"[OK] CSV written to {csv_path} "
