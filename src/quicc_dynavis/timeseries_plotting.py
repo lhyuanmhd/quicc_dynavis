@@ -13,14 +13,14 @@ from .timeseries_diagnostics import DynamoDiagnostics, HydroDiagnostics
 
 DEFAULT_COLORS = {
     "kinetic": "royalblue",
-    "magnetic": "tab:orange",
-    "dipolarity": "tab:coral",
-    "dipole_angle": "tab:gray",
-    "nusselt": "tab:purple",
-    "temperature": "tab:brown",
-    "viscous": "tab:teal",
-    "ohmic": "tab:peru",
-    "fohm": "tab:dimgray",
+    "magnetic": "orange",
+    "dipolarity": "coral",
+    "dipole_angle": "gray",
+    "nusselt": "purple",
+    "temperature": "brown",
+    "viscous": "teal",
+    "ohmic": "peru",
+    "fohm": "dimgray",
 }
 
 def resolve_time_limits(
