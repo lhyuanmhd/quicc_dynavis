@@ -152,7 +152,7 @@ def plot_timeseries_dipolarity(
     data = load_timeseries_data(folderFile)
 
     diagnostics = compute_dynamo_diagnostics(data)
-    print_dynamo_diagnostics(data, diagnostics)
+   #print_dynamo_diagnostics(data, diagnostics)
 
     time_limits = resolve_time_limits(
         data.tkin,

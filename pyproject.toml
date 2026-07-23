@@ -1,20 +1,21 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "quicc-dynavis"
 version = "0.1.0"
-description = "Post-processing and visualization tools for QuICC dynamo simulations"
-requires-python = ">=3.9"
+description = "Visualization and post-processing tools for QuICC dynamo simulations"
+requires-python = ">=3.10"
 dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
-    "h5py",
     "pandas",
-    "Pillow",
+    "h5py",
 ]
+[tool.setuptools]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
