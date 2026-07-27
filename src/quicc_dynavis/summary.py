@@ -24,8 +24,8 @@ DYNAMO_SUMMARY_HEADER = [
     "T_perb",
     "Nu",
     "rev",
+    "Ro",   # new addition
     "Rm",
-    "Ro",
     "relative_std_fdip",
     "bc_mag",
     "bc_temp",
@@ -33,6 +33,7 @@ DYNAMO_SUMMARY_HEADER = [
     "N",
     "M",
     "L",
+
 ]
 
 
@@ -71,7 +72,7 @@ def _format_summary_row(
     *,
     Pm=np.inf,
     Pr=np.inf,
-    Ro
+    Ro=np.nan,
 ):
     """Format one dynamo diagnostic row for CSV output."""
     return [
@@ -92,6 +93,7 @@ def _format_summary_row(
         f"{T_perb:.3e}",
         f"{nusselt:.2f}" if not np.isnan(nusselt) else "nan",
         int(reversal) if not np.isnan(reversal) else "nan",
+        f"{Ro:.3e}" if not np.isnan(Ro) else "nan",
         f"{Rm:.2f}",
         f"{relative_std_fdip:.2f}",
         bc_mag,
@@ -194,7 +196,7 @@ def write_dynamo_summary_csv(
     *,
     Pm=np.inf,
     Pr=np.inf,
-    Ro,
+    Ro=np.nan,
 ):
     """Add or update one simulation entry in a dynamo summary CSV file."""
     csv_path = Path(csv_path)
