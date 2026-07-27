@@ -82,6 +82,7 @@ def main():
 
     #Ek_root = extract_ek_root(case_dir)
     Ek_root = Path(extract_ek_root(case_dir))
+
     csv_path = (
         Ek_root
         / "diagnostics"
@@ -94,6 +95,8 @@ def main():
             q=q,
             Ra=Ra,
             Ek=Ek,
+            Pm=Pm,
+            Pr=Pr,
             flow_degree=spectra_diagnostics.flow_degree,
         )
 
