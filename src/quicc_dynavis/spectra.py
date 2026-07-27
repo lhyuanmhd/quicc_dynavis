@@ -117,14 +117,30 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     #ax1.set_xscale('log'); 
     ax1.set_yscale('log')
     ax1.set_title(f'Kinetic $l$-spectrum({label_k})')
-    ax1.legend()
+    # ax1.legend()
+    # ax1.text(
+    #     0.97,
+    #     0.95,
+    #     rf"$\ell_u={flow_degree:.2f}$",
+    #     transform=ax1.transAxes,
+    #     ha="right",
+    #     va="top",
+    # )
+    ax1.legend(loc="lower left")
     ax1.text(
-        0.97,
+        0.03,
         0.95,
         rf"$\ell_u={flow_degree:.2f}$",
         transform=ax1.transAxes,
-        ha="right",
+        ha="left",
         va="top",
+        fontsize=11,
+        zorder=10,
+        bbox={
+            "facecolor": "white",
+            "alpha": 0.8,
+            "edgecolor": "none",
+        },
     )
     
     # m-spectra
