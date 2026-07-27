@@ -2,40 +2,37 @@
 
 import argparse
 import sys
-import os
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
 
-from quicc_dynavis import (
-    fields_snapshot,
-    io,
-    spectra,
-    timeseries,
-)
+from quicc_dynavis import spectra
 from quicc_dynavis.summary import (
     update_dynamo_summary_spectra,
 )
 from quicc_dynavis.timeseries_utils import (
-    input_params_from_path,
     extract_ek_root,
+    input_params_from_path,
+)
+
+from quicc_dynavis.io import (
+    get_parameters,
 )
 
 
-
 def main():
-    p = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    p.add_argument(
+    parser.add_argument(
         "case_dir",
         nargs="?",
         default=".",
         help="Case dir (default: current directory)",
     )
 
-    args = p.parse_args()
+    args = parser.parse_args()
 
     case_dir = Path(args.case_dir).resolve()
 
@@ -74,16 +71,22 @@ def main():
     # ---------------------------------------------------------
     # Update spectral diagnostics in the existing summary CSV
     # ---------------------------------------------------------
-    Ek, q, Ra = input_params_from_path(str(case_dir))
+    #Ek, q, Ra = input_params_from_path(str(case_dir))
 
-  
-    Ek_root = extract_ek_root(case_dir)
-    csv_path = os.path.join(
-        Ek_root,
-        "diagnostics",
-        f"data_E_{Ek:.1e}.csv",
+
+    parameter_file = case_dir / "parameters.cfg"
+    Ek, Pm, Pr, q, Ra, _ = get_parameters(
+        filepath=str(parameter_file),
+        output=None,
     )
-    
+
+    Ek_root = extract_ek_root(case_dir)
+    csv_path = (
+        Ek_root
+        / "diagnostics"
+        / f"data_E_{Ek:.1e}.csv"
+    )
+
     try:
         update_dynamo_summary_spectra(
             csv_path=csv_path,
