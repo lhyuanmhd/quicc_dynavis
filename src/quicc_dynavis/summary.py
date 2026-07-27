@@ -25,7 +25,7 @@ DYNAMO_SUMMARY_HEADER = [
     "Nu",
     "rev",
     "Rm",
-    "Ro"
+    "Ro",
     "relative_std_fdip",
     "bc_mag",
     "bc_temp",
