@@ -43,6 +43,8 @@ class DynamoDiagnostics:
     mag_dis_length_scale: float
 
 
+
+
 def _averaging_start_index(time: np.ndarray, fraction: float = 0.3) -> int:
     """Return the first index after the initial fraction of a time interval."""
     if len(time) == 0:
@@ -271,6 +273,7 @@ def compute_dynamo_diagnostics(
         )
     else:
         mag_dis_length_scale = float("nan")
+
 
     return DynamoDiagnostics(
         averaging_start_index=start_index,

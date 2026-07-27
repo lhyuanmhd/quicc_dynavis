@@ -6,6 +6,8 @@ from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new
 from .timeseries_utils import input_params_from_path
 import re
 
+from .spectra_utils import calculate_flow_degree
+
 def _load_km_spectra(
     folder_file,
     mode="single",
@@ -80,6 +82,13 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
         mpol_k,
     ) = kinetic
 
+    flow_degree = calculate_flow_degree(
+        lk,
+        ltot_k,
+    )
+
+    #flow_degree_over_pi = flow_degree / np.pi
+
     (
         lm,
         mm,
@@ -96,6 +105,8 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     fig, axes = plt.subplots(2, 2, figsize=(8, 9), dpi=180)
     fig.subplots_adjust(wspace=0.3, hspace=0.35, left=0.12, top=0.92, right=0.97, bottom=0.12)
     
+
+  
     # l-spetra
     ax1, ax2 = axes[0]
     ax1.plot(lk[1:], ltot_k[1:], '.-', label='total')
@@ -107,6 +118,14 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     ax1.set_yscale('log')
     ax1.set_title(f'Kinetic $l$-spectrum({label_k})')
     ax1.legend()
+    ax1.text(
+        0.97,
+        0.95,
+        rf"$\ell_u={flow_degree:.2f}$",
+        transform=ax1.transAxes,
+        ha="right",
+        va="top",
+    )
     
     # m-spectra
     ax2.plot(mk, mtot_k, '.-', label='total')
@@ -163,6 +182,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     Ek,q,Ra = input_params_from_path(folderFile)
     save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_{tag}.png')
     plt.savefig(save_path, dpi=270)
+    
 
     if show:
         plt.show()

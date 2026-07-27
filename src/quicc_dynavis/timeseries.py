@@ -34,7 +34,7 @@ from .timeseries_plotting import (
     resolve_time_limits,
 )
 
-
+from .spectra import calculate_spectral_flow_diagnostics
 
 # keep updating according to the need
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
@@ -90,7 +90,9 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         "diagnostics",
         f"data_E_{data.Ek:.1e}.csv",
     )
+    
 
+    
     write_dynamo_summary_csv(
         csv_path=csv_path,
         q=data.q,
