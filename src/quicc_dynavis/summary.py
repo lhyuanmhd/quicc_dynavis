@@ -76,10 +76,14 @@ def _format_summary_row(
     Pm=np.inf,
     Pr=np.inf,
     Ro=np.nan,
+    flow_degree=np.nan,
+    degree_over_pi=np.nan,
+    local_Ro=np.nan,
 ):
     """Format one dynamo diagnostic row for CSV output."""
+
     return [
-        f"{q:.2f}",
+        f"{q:.6g}",
         f"{Ra:.2e}",
         f"{Ek:.2e}",
         _format_control_parameter(Pm),
@@ -94,11 +98,46 @@ def _format_summary_row(
         f"{Ld_u:.2e}",
         f"{Ld_b:.2e}",
         f"{T_perb:.3e}",
-        f"{nusselt:.2f}" if not np.isnan(nusselt) else "nan",
-        int(reversal) if not np.isnan(reversal) else "nan",
-        f"{Ro:.3e}" if not np.isnan(Ro) else "nan",
-        f"{Rm:.2f}",
-        f"{relative_std_fdip:.2f}",
+        (
+            f"{nusselt:.2f}"
+            if np.isfinite(nusselt)
+            else "nan"
+        ),
+        (
+            int(reversal)
+            if np.isfinite(reversal)
+            else "nan"
+        ),
+        (
+            f"{Ro:.3e}"
+            if np.isfinite(Ro)
+            else "nan"
+        ),
+        (
+            f"{flow_degree:.6g}"
+            if np.isfinite(flow_degree)
+            else "nan"
+        ),
+        (
+            f"{degree_over_pi:.6g}"
+            if np.isfinite(degree_over_pi)
+            else "nan"
+        ),
+        (
+            f"{local_Ro:.6g}"
+            if np.isfinite(local_Ro)
+            else "nan"
+        ),
+        (
+            f"{Rm:.2f}"
+            if np.isfinite(Rm)
+            else "nan"
+        ),
+        (
+            f"{relative_std_fdip:.2f}"
+            if np.isfinite(relative_std_fdip)
+            else "nan"
+        ),
         bc_mag,
         bc_temp,
         bc_vel,
@@ -106,7 +145,6 @@ def _format_summary_row(
         int(M),
         int(L),
     ]
-
 
 def _numeric_values_match(old_value, new_value):
     """Compare finite or infinite numeric values."""
@@ -170,6 +208,41 @@ def _summary_sort_key(row):
             float("inf"),
         )
 
+def _convert_summary_row(
+    old_header,
+    old_row,
+):
+    """Convert an older summary row to the current CSV format."""
+
+    old_values = {
+        column: old_row[index]
+        for index, column in enumerate(old_header)
+        if index < len(old_row)
+    }
+
+    # Handle old dissipation-length column names.
+    if "Ld_u" not in old_values and "L_u" in old_values:
+        old_values["Ld_u"] = old_values["L_u"]
+
+    if "Ld_b" not in old_values and "L_b" in old_values:
+        old_values["Ld_b"] = old_values["L_b"]
+
+    default_values = {
+        "Pm": "inf",
+        "Pr": "inf",
+        "Ro": "nan",
+        "flow_degree": "nan",
+        "degree_over_pi": "nan",
+        "local_Ro": "nan",
+    }
+
+    return [
+        old_values.get(
+            column,
+            default_values.get(column, "nan"),
+        )
+        for column in DYNAMO_SUMMARY_HEADER
+    ]
 
 def write_dynamo_summary_csv(
     csv_path,
@@ -200,6 +273,9 @@ def write_dynamo_summary_csv(
     Pm=np.inf,
     Pr=np.inf,
     Ro=np.nan,
+    flow_degree=np.nan,
+    degree_over_pi=np.nan,
+    local_Ro=np.nan,
 ):
     """Add or update one simulation entry in a dynamo summary CSV file."""
     csv_path = Path(csv_path)
@@ -230,13 +306,54 @@ def write_dynamo_summary_csv(
         L=L,
         Pm=Pm,
         Pr=Pr,
-        Ro=Ro
+        Ro=Ro,
+        flow_degree=flow_degree,
+        degree_over_pi=degree_over_pi,
+        local_Ro=local_Ro,
     )
 
+    # data_rows = []
+
+    # if csv_path.is_file():
+    #     with csv_path.open("r", newline="", encoding="utf-8") as handle:
+    #         rows = list(csv.reader(handle))
+
+    #     if rows:
+    #         first_row = rows[0]
+
+    #         if first_row == DYNAMO_SUMMARY_HEADER:
+    #             data_rows = rows[1:]
+
+    #         elif first_row[:3] == ["q", "Ra", "Ek"]:
+    #             # Convert rows from the old CSV format:
+    #             #
+    #             # q, Ra, Ek, E0mag, ...
+    #             #
+    #             # to the new format:
+    #             #
+    #             # q, Ra, Ek, Pm, Pr, E0mag, ...
+    #             old_data_rows = rows[1:]
+
+    #             data_rows = [
+    #                 row[:3] + ["inf", "inf"] + row[3:]
+    #                 for row in old_data_rows
+    #                 if row
+    #             ]
+
+    #         else:
+    #             raise ValueError(
+    #                 f"Unrecognized CSV header in {csv_path}: "
+    #                 f"{first_row}"
+    #             )
+    
     data_rows = []
 
     if csv_path.is_file():
-        with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        with csv_path.open(
+            "r",
+            newline="",
+            encoding="utf-8",
+        ) as handle:
             rows = list(csv.reader(handle))
 
         if rows:
@@ -246,18 +363,12 @@ def write_dynamo_summary_csv(
                 data_rows = rows[1:]
 
             elif first_row[:3] == ["q", "Ra", "Ek"]:
-                # Convert rows from the old CSV format:
-                #
-                # q, Ra, Ek, E0mag, ...
-                #
-                # to the new format:
-                #
-                # q, Ra, Ek, Pm, Pr, E0mag, ...
-                old_data_rows = rows[1:]
-
                 data_rows = [
-                    row[:3] + ["inf", "inf"] + row[3:]
-                    for row in old_data_rows
+                    _convert_summary_row(
+                        old_header=first_row,
+                        old_row=row,
+                    )
+                    for row in rows[1:]
                     if row
                 ]
 
@@ -266,7 +377,7 @@ def write_dynamo_summary_csv(
                     f"Unrecognized CSV header in {csv_path}: "
                     f"{first_row}"
                 )
-
+            
     updated = False
 
     for index, row in enumerate(data_rows):
@@ -343,6 +454,13 @@ def update_dynamo_summary_spectra(
 
     header = rows[0]
     data_rows = rows[1:]
+
+
+    for row in data_rows:
+        if len(row) < len(header):
+            row.extend(
+                ["nan"] * (len(header) - len(row))
+            )
 
     required_columns = [
         "q",
