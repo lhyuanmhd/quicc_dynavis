@@ -80,7 +80,8 @@ def main():
         output=None,
     )
 
-    Ek_root = extract_ek_root(case_dir)
+    #Ek_root = extract_ek_root(case_dir)
+    Ek_root = Path(extract_ek_root(case_dir))
     csv_path = (
         Ek_root
         / "diagnostics"
