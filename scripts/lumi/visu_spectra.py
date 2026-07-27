@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import os
 from pathlib import Path
 
 import matplotlib
@@ -19,7 +20,9 @@ from quicc_dynavis.summary import (
 )
 from quicc_dynavis.timeseries_utils import (
     input_params_from_path,
+    extract_ek_root,
 )
+
 
 
 def main():
@@ -73,8 +76,14 @@ def main():
     # ---------------------------------------------------------
     Ek, q, Ra = input_params_from_path(str(case_dir))
 
-    csv_path = fig_dir / "dynamo_summary.csv"
-
+  
+    Ek_root = extract_ek_root(case_dir)
+    csv_path = os.path.join(
+        Ek_root,
+        "diagnostics",
+        f"data_E_{Ek:.1e}.csv",
+    )
+    
     try:
         update_dynamo_summary_spectra(
             csv_path=csv_path,
