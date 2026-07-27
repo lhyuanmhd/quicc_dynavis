@@ -91,8 +91,6 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         f"data_E_{data.Ek:.1e}.csv",
     )
     
-
-    
     write_dynamo_summary_csv(
         csv_path=csv_path,
         q=data.q,
@@ -120,8 +118,8 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         L=data.L,
         Pm=data.Pm,
         Pr=data.Pr,
+        Ro=diagnostics.mean_rossby
     )
-
 
     #save figure
     save_dir = os.fspath(save_dir)

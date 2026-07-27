@@ -192,6 +192,7 @@ def write_dynamo_summary_csv(
     *,
     Pm=np.inf,
     Pr=np.inf,
+    Ro=None,
 ):
     """Add or update one simulation entry in a dynamo summary CSV file."""
     csv_path = Path(csv_path)
@@ -222,6 +223,7 @@ def write_dynamo_summary_csv(
         L=L,
         Pm=Pm,
         Pr=Pr,
+        Ro=Ro
     )
 
     data_rows = []
