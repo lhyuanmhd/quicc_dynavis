@@ -74,7 +74,7 @@ def main():
     #Ek, q, Ra = input_params_from_path(str(case_dir))
 
 
-    parameter_file = case_dir / "parameters.cfg"
+    parameter_file = case_dir / "runs/run000/parameters.cfg"
     Ek, Pm, Pr, q, Ra, _ = get_parameters(
         filepath=str(parameter_file),
         output=None,
