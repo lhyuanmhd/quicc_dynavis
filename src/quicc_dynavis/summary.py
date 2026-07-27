@@ -70,6 +70,7 @@ def _format_summary_row(
     *,
     Pm=np.inf,
     Pr=np.inf,
+    Ro
 ):
     """Format one dynamo diagnostic row for CSV output."""
     return [
@@ -192,7 +193,7 @@ def write_dynamo_summary_csv(
     *,
     Pm=np.inf,
     Pr=np.inf,
-    Ro=None,
+    Ro,
 ):
     """Add or update one simulation entry in a dynamo summary CSV file."""
     csv_path = Path(csv_path)
