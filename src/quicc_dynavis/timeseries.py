@@ -34,7 +34,7 @@ from .timeseries_plotting import (
     resolve_time_limits,
 )
 
-from .spectra import calculate_spectral_flow_diagnostics
+#from .spectra_utils import calculate_flow_degree, calculate_local_rossby,calculate_spectral_flow_diagnostics
 
 # keep updating according to the need
 def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
