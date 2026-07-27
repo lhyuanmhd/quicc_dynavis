@@ -19,12 +19,15 @@ DYNAMO_SUMMARY_HEADER = [
     "visDis",
     "ohmDis",
     "fohm",
-    "L_u",  # velocity dissipation length scale
-    "L_b",  # magnetic dissipation length scale
+    "Ld_u",  # velocity dissipation length scale
+    "Ld_b",  # magnetic dissipation length scale
     "T_perb",
     "Nu",
     "rev",
-    "Ro",   # new addition
+    "Ro",              # global Rossby number
+    "flow_degree",     # energy-weighted spherical-harmonic degree
+    "degree_over_pi",  # characteristic length scale for local Rossby number
+    "local_Ro",        # local Rossby number
     "Rm",
     "relative_std_fdip",
     "bc_mag",
@@ -56,8 +59,8 @@ def _format_summary_row(
     visDis,
     ohmDis,
     fohm,
-    L_u,
-    L_b,
+    Ld_u,
+    Ld_b,
     T_perb,
     nusselt,
     reversal,
@@ -76,7 +79,7 @@ def _format_summary_row(
 ):
     """Format one dynamo diagnostic row for CSV output."""
     return [
-        f"{q:.6g}",
+        f"{q:.2f}",
         f"{Ra:.2e}",
         f"{Ek:.2e}",
         _format_control_parameter(Pm),
@@ -88,8 +91,8 @@ def _format_summary_row(
         f"{visDis:.2e}",
         f"{ohmDis:.2e}",
         f"{fohm:.3f}",
-        f"{L_u:.2e}",
-        f"{L_b:.2e}",
+        f"{Ld_u:.2e}",
+        f"{Ld_b:.2e}",
         f"{T_perb:.3e}",
         f"{nusselt:.2f}" if not np.isnan(nusselt) else "nan",
         int(reversal) if not np.isnan(reversal) else "nan",
@@ -180,8 +183,8 @@ def write_dynamo_summary_csv(
     visDis,
     ohmDis,
     fohm,
-    L_u,
-    L_b,
+    Ld_u,
+    Ld_b,
     T_perb,
     nusselt,
     reversal,
@@ -212,8 +215,8 @@ def write_dynamo_summary_csv(
         visDis=visDis,
         ohmDis=ohmDis,
         fohm=fohm,
-        L_u=L_u,
-        L_b=L_b,
+        Ld_u=Ld_u,
+        Ld_b=Ld_b,
         T_perb=T_perb,
         nusselt=nusselt,
         reversal=reversal,
@@ -304,4 +307,134 @@ def write_dynamo_summary_csv(
     print(
         f"[OK] CSV written to {csv_path} "
         f"({len(data_rows)} total entries)"
+    )
+
+
+def update_dynamo_summary_spectra(
+    csv_path,
+    q,
+    Ra,
+    Ek,
+    flow_degree,
+    *,
+    Pm=np.inf,
+    Pr=np.inf,
+):
+    """
+    Update spectral diagnostics for one case in an existing summary CSV.
+
+    The local Rossby number is calculated using the Rossby number already
+    stored in the CSV:
+
+        local_Ro = Ro * flow_degree / pi
+    """
+    csv_path = Path(csv_path)
+
+    if not csv_path.is_file():
+        raise FileNotFoundError(
+            f"Summary CSV does not exist: {csv_path}"
+        )
+
+    with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        rows = list(csv.reader(handle))
+
+    if not rows:
+        raise ValueError(f"Summary CSV is empty: {csv_path}")
+
+    header = rows[0]
+    data_rows = rows[1:]
+
+    required_columns = [
+        "q",
+        "Ra",
+        "Ek",
+        "Pm",
+        "Pr",
+        "Ro",
+    ]
+
+    missing = [
+        column for column in required_columns
+        if column not in header
+    ]
+
+    if missing:
+        raise ValueError(
+            "Summary CSV is missing required columns: "
+            + ", ".join(missing)
+        )
+
+    new_columns = [
+        "flow_degree",
+        "degree_over_pi",
+        "local_Ro",
+    ]
+
+    for column in new_columns:
+        if column not in header:
+            header.append(column)
+            for row in data_rows:
+                row.append("nan")
+
+    q_index = header.index("q")
+    ra_index = header.index("Ra")
+    ek_index = header.index("Ek")
+    pm_index = header.index("Pm")
+    pr_index = header.index("Pr")
+    ro_index = header.index("Ro")
+
+    flow_index = header.index("flow_degree")
+    degree_pi_index = header.index("degree_over_pi")
+    local_ro_index = header.index("local_Ro")
+
+    degree_over_pi = flow_degree / np.pi
+
+    updated = False
+
+    for row in data_rows:
+        if not (
+            _numeric_values_match(row[q_index], q)
+            and _numeric_values_match(row[ra_index], Ra)
+            and _numeric_values_match(row[ek_index], Ek)
+            and _numeric_values_match(row[pm_index], Pm)
+            and _numeric_values_match(row[pr_index], Pr)
+        ):
+            continue
+
+        try:
+            rossby_number = float(row[ro_index])
+        except (TypeError, ValueError):
+            rossby_number = np.nan
+
+        if np.isfinite(rossby_number):
+            local_rossby = rossby_number * degree_over_pi
+        else:
+            local_rossby = np.nan
+
+        row[flow_index] = f"{flow_degree:.6g}"
+        row[degree_pi_index] = f"{degree_over_pi:.6g}"
+        row[local_ro_index] = (
+            f"{local_rossby:.6g}"
+            if np.isfinite(local_rossby)
+            else "nan"
+        )
+
+        updated = True
+        break
+
+    if not updated:
+        raise ValueError(
+            "Could not find matching case in summary CSV: "
+            f"q={q}, Ra={Ra}, Ek={Ek}, Pm={Pm}, Pr={Pr}"
+        )
+
+    with csv_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(header)
+        writer.writerows(data_rows)
+
+    print(
+        "[OK] Updated spectral diagnostics: "
+        f"flow_degree={flow_degree:.4f}, "
+        f"degree_over_pi={degree_over_pi:.4f}"
     )

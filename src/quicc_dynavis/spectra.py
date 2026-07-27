@@ -8,6 +8,11 @@ import re
 
 from .spectra_utils import calculate_flow_degree
 
+from .spectra_diagnostics import (
+    SpectraDiagnostics,
+    compute_spectra_diagnostics,
+)
+
 def _load_km_spectra(
     folder_file,
     mode="single",
@@ -64,12 +69,12 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     """
 
     kinetic, magnetic, label_k, label_m = _load_km_spectra(
-    folderFile,
-    mode=mode,
-    start_time=start_time,
-    stop_time=stop_time,
-    which=which,
-    )
+                                            folderFile,
+                                            mode=mode,
+                                            start_time=start_time,
+                                            stop_time=stop_time,
+                                            which=which,
+                                            )
 
     (
         lk,
@@ -82,11 +87,9 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
         mpol_k,
     ) = kinetic
 
-    flow_degree = calculate_flow_degree(
-        lk,
-        ltot_k,
-    )
-
+    spectra_diagnostics = compute_spectra_diagnostics(
+                            degrees=lk,
+                            kinetic_spectrum=ltot_k,)
     #flow_degree_over_pi = flow_degree / np.pi
 
     (
@@ -130,7 +133,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     ax1.text(
         0.03,
         0.95,
-        rf"$\ell_u={flow_degree:.2f}$",
+        rf"$\ell_u={spectra_diagnostics.flow_degree:.2f}$",
         transform=ax1.transAxes,
         ha="left",
         va="top",
@@ -205,7 +208,8 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     else:
         plt.close(fig)
 
-    return fig, axes, save_path
+    #return fig, axes, save_path
+    return fig, axes, save_path, spectra_diagnostics
 
 def plot_spectra_kt(
     folderFile,
