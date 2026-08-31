@@ -83,7 +83,7 @@ def _format_summary_row(
     """Format one dynamo diagnostic row for CSV output."""
 
     return [
-        f"{q:.6g}",
+        f"{q:.2f}",
         f"{Ra:.2e}",
         f"{Ek:.2e}",
         _format_control_parameter(Pm),
