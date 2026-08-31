@@ -72,9 +72,19 @@ def main():
     # Update spectral diagnostics in the existing summary CSV
     # ---------------------------------------------------------
     #Ek, q, Ra = input_params_from_path(str(case_dir))
+    
+    # get information of input parameters
+    parameter_files = sorted(
+        (case_dir / "runs").glob("run*/parameters.cfg")
+    )
 
+    if not parameter_files:
+        raise FileNotFoundError(
+            f"No parameters.cfg found under {case_dir / 'runs'}"
+        )
 
-    parameter_file = case_dir / "runs/run000/parameters.cfg"
+    parameter_file = parameter_files[0]
+
     Ek, Pm, Pr, q, Ra, _ = get_parameters(
         filepath=str(parameter_file),
         output=None,

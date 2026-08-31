@@ -27,7 +27,12 @@ def get_parameters(filepath,output):
     Ro: Rosby number (if other nondim is used)
     """
     f = open(filepath, 'r')
-    Ek = 0;Pm=0;Ra=0;Pr=0;q=0;Ro=0
+    Ek =0;
+    q=0;
+    Ra=0;
+    Pr=0;
+    Pm=0;
+    Ro=0
     for line in f:
         if '<ekman>' in line:
             ss = line.find('<ekman>') + len('<ekman>')
