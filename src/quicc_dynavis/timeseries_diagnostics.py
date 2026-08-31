@@ -199,7 +199,12 @@ def compute_dynamo_diagnostics(
     )
      
     # compue Rossby number based on mean Rm
-    mean_rossby = 2*magnetic_reynolds_number * data.Ek / data.Pm
+    if data.Pm != 0 and data.Pr != 0:
+        mean_rossby = 2*magnetic_reynolds_number * data.Ek / data.Pm
+    
+    else:
+        #else return nan
+        mean_rossby = np.nan
 
     elsasser_number = 2.0 * mean_magnetic_energy
 
@@ -405,7 +410,7 @@ def compute_hydro_diagnostics(
         data.kin_total,
         dtype=float,
     ).copy()
-
+    
     if data.Pm != 0 and data.Pr != 0:
         physical_kinetic_energy *= data.Ek / data.Pm
 

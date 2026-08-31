@@ -48,7 +48,9 @@ def calculate_local_rossby(
 ):
     """
     Calculate the local Rossby number.
-
+    
+    Christensen & Aubert (2006)
+    
     Ro_l = Ro * l_u / pi
     """
     if rossby_number < 0.0:
