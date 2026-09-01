@@ -85,7 +85,7 @@ def _format_summary_row(
     return [
         f"{q:.2f}",
         f"{Ra:.2e}",
-        f"{Ek:.2e}",
+        f"{Ek:.3e}",
         _format_control_parameter(Pm),
         _format_control_parameter(Pr),
         f"{E0mag:.2e}",
