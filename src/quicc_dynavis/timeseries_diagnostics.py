@@ -129,7 +129,7 @@ def _detect_reversal(
 def compute_dynamo_diagnostics(
     data: TimeseriesData,
     averaging_fraction: float = 0.3,
-    dynamo_energy_threshold: float = 1e-4,
+    dynamo_energy_threshold: float = 6e-4,
     dynamo_rm_threshold: float = 30.0,
 ) -> DynamoDiagnostics:
     """Compute dynamo diagnostics from raw time-series data."""
