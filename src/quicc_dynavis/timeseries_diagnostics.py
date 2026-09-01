@@ -258,8 +258,8 @@ def compute_dynamo_diagnostics(
     ):
         vel_dis_length_scale = float(
             np.sqrt(
-                  mean_kinetic_energy
-                / mean_viscous_dissipation
+                  np.mean(data.kin_total[start_index:])
+                / np.mean(data.kin_dis_total[start_index:])
             )
         )
     else:
@@ -272,8 +272,8 @@ def compute_dynamo_diagnostics(
     ):
         mag_dis_length_scale = float(
             np.sqrt(
-                mean_magnetic_energy
-                / mean_ohmic_dissipation
+                 np.mean(data.mag_total[start_index:])
+                / np.mean(data.mag_dis_total[start_index:])
             )
         )
     else:
