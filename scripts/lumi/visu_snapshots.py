@@ -252,49 +252,41 @@ def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
         Ek, q, Ra = _input_params_from_path(case_dir)
 
     # Create 2x4 grid with custom width ratios
-    fig = plt.figure(figsize=(24, 10))
-    gs = fig.add_gridspec(2, 4, 
-                          width_ratios=[1, 1, 1, 1.45], 
-                          wspace=0.15, 
+    fig = plt.figure(figsize=(18, 10))
+    gs = fig.add_gridspec(2, 3, 
+                          width_ratios=[1, 1, 1.45], 
+                          wspace=0.1, 
                           hspace=0.25)
 
     # Row 1 (equatorial plane views)
-    ax00 = fig.add_subplot(gs[0, 0])  # u_r equatorial
-    ax01 = fig.add_subplot(gs[0, 1])  # u_phi equatorial  
-    ax02 = fig.add_subplot(gs[0, 2])  # curl_u_axial equatorial
-    ax03 = fig.add_subplot(gs[0, 3])  # zonal flow meridional
+    ax00 = fig.add_subplot(gs[0, 0])  
+    ax01 = fig.add_subplot(gs[0, 1])  
+    ax02 = fig.add_subplot(gs[0, 2])  
 
     # Row 2
     ax10 = fig.add_subplot(gs[1, 0])  # T equatorial
     ax11 = fig.add_subplot(gs[1, 1])
-    ax12 = fig.add_subplot(gs[1, 2])  
-    ax13 = fig.add_subplot(gs[1, 3],  projection="mollweide")  # B_r CMB
+    ax12 = fig.add_subplot(gs[1, 2],  projection="mollweide")  # B_r CMB
 
     # Adjust aspect ratios
-    for ax in (ax03, ax13,  #ax03, #ax13
+    for ax in (ax02, ax12,  #ax03, #ax13
                ):
         ax.set_aspect("auto")
 
     # Row 1 plots
     fields_snapshot.plot_equatorial(str(case_dir), data, "u_r", ax=ax00)
-    #fields_snapshot.plot_equatorial(str(case_dir), data, "u_phi", ax=ax01)
-
-    fields_snapshot.plot_equatorial(str(case_dir), data, "u_phi", ax=ax01)
-     
     # Plot zonal flow (u_phi zonal average) in meridional plane
     fields_snapshot.plot_meridional(str(case_dir), data, "u_phi_zonal_3d",
-                                    ax=ax02, cmap='RdBu_r')
+                                    ax=ax01, cmap='RdBu_r')
     ax02.set_title(r'$\langle u_\phi \rangle_\phi$', fontsize=12)
-     
-    fields_snapshot.plot_equatorial(str(case_dir), data, "curl_u_axial", ax=ax03)
+    fields_snapshot.plot_equatorial(str(case_dir), data, "curl_u_axial", ax=ax02)
     
   
     # Row 2 plots
     fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax10, include_background=True)
     ax10.set_title(r'$T_0 + T$', pad=10, fontsize=16)
-    fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax11, include_background=False)
-    fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax12)
-    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax13, show_grid=False)
+    fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax11)
+    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax12, show_grid=False)
     
 
     # Add panel labels
@@ -302,8 +294,7 @@ def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
                     '(e)', '(f)', #'(g)',
                     #'(h)'
                     ]
-    axes = [ax00, ax01, ax02, 
-            ax03, 
+    axes = [ax00, ax01, ax02,  
             ax10, ax11, ax12, 
             #ax13
             ]
@@ -320,8 +311,8 @@ def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
     #             y=0.98, fontsize=14)
     
     time = data["time"]
-    fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
-                  y=0.98, fontsize=16)
+    #fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
+    #              y=0.98, fontsize=16)
  
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
