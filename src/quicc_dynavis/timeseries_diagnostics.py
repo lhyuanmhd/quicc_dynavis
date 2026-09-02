@@ -259,7 +259,7 @@ def compute_dynamo_diagnostics(
         vel_dis_length_scale = float(
             np.sqrt(
                   np.mean(data.kin_total[start_index:])
-                / 2*np.mean(data.kin_dis_total[start_index:]) # mising a factor of 2 before!
+                / 0.5*np.mean(data.kin_dis_total[start_index:]) # mising a factor of 0.5 before!
             )
         )
     else:
