@@ -171,6 +171,20 @@ def _find_vis_fields_npz(run_dir: Path, tag: str) -> Path:
 
     raise FileNotFoundError("No vis_fields*.npz found in {}".format(visu))
 
+# -----------------------------
+# Path parsing (Ek/q/Ra)
+# -----------------------------
+def _input_params_from_path(case_dir: Path):
+    s = str(case_dir)
+
+    def find_after(prefix):
+        m = re.search(r"{}([^/]+)".format(prefix), s)
+        return m.group(1) if m else None
+
+    Ek = find_after("E")
+    q = find_after("q_")
+    Ra = find_after("Ra")
+    return Ek, q, Ra
 
 # -----------------------------
 # Path parsing (Ek/q/Ra)
@@ -193,15 +207,9 @@ def plot_snapshot_panel(
 
     try:
         from quicc_dynavis import timeseries as ts
-
-        Ek, q, Ra = ts.input_params_from_path(
-            str(case_dir)
-        )
-
+        Ek, q, Ra = ts.input_params_from_path(str(case_dir))
     except Exception:
-        Ek, q, Ra = _input_params_from_path(
-            case_dir
-        )
+        Ek, q, Ra = _input_params_from_path(case_dir)
 
     # Common scale
     vmax = np.nanmax(
