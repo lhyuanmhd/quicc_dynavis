@@ -243,7 +243,7 @@ def plot_snapshot_panel(
         vmin=vmin,
         vmax=vmax,
         cmap="RdBu_r",
-        dd_colorbar=False,
+        add_colorbar=False,
     )
 
     ax00.set_title(
@@ -261,7 +261,7 @@ def plot_snapshot_panel(
         vmin=vmin,
         vmax=vmax,
         cmap="RdBu_r",
-        dd_colorbar=False,
+        add_colorbar=False,
     )
 
     ax01.set_title(
@@ -279,7 +279,7 @@ def plot_snapshot_panel(
         vmin=vmin,
         vmax=vmax,
         cmap="RdBu_r",
-        dd_colorbar=False,
+        add_colorbar=False,
     )
 
     ax02.set_title(
