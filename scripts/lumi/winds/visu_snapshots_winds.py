@@ -175,23 +175,6 @@ def _find_vis_fields_npz(run_dir: Path, tag: str) -> Path:
 # -----------------------------
 # Path parsing (Ek/q/Ra)
 # -----------------------------
-def _input_params_from_path(case_dir: Path):
-    s = str(case_dir)
-
-    def find_after(prefix):
-        m = re.search(r"{}([^/]+)".format(prefix), s)
-        return m.group(1) if m else None
-
-    Ek = find_after("E")
-    q = find_after("q_")
-    Ra = find_after("Ra")
-    return Ek, q, Ra
-
-
-
-# -----------------------------
-# Plot panel
-# -----------------------------
 def plot_snapshot_panel(
     case_dir: Path,
     data,
@@ -220,20 +203,13 @@ def plot_snapshot_panel(
             case_dir
         )
 
-    # -------------------------------------------------
-    # Common scale: full radial velocity
-    # -------------------------------------------------
-
+    # Common scale
     vmax = np.nanmax(
         np.abs(data["u_r"])
     )
-
     vmin = -vmax
 
-    # -------------------------------------------------
     # Figure
-    # -------------------------------------------------
-
     fig = plt.figure(
         figsize=(15, 5)
     )
@@ -242,7 +218,7 @@ def plot_snapshot_panel(
         1,
         3,
         width_ratios=[1, 1, 1],
-        wspace=0.15,
+        wspace=0.12,
     )
 
     ax00 = fig.add_subplot(gs[0, 0])
@@ -250,7 +226,7 @@ def plot_snapshot_panel(
     ax02 = fig.add_subplot(gs[0, 2])
 
     # Full velocity
-    fields_snapshot.plot_equatorial(
+    im = fields_snapshot.plot_equatorial(
         str(case_dir),
         data,
         "u_r",
@@ -258,6 +234,8 @@ def plot_snapshot_panel(
         include_background=True,
         vmin=vmin,
         vmax=vmax,
+        cmap="RdBu_r",
+        dd_colorbar=False,
     )
 
     ax00.set_title(
@@ -274,6 +252,8 @@ def plot_snapshot_panel(
         ax=ax01,
         vmin=vmin,
         vmax=vmax,
+        cmap="RdBu_r",
+        dd_colorbar=False,
     )
 
     ax01.set_title(
@@ -290,6 +270,8 @@ def plot_snapshot_panel(
         ax=ax02,
         vmin=vmin,
         vmax=vmax,
+        cmap="RdBu_r",
+        dd_colorbar=False,
     )
 
     ax02.set_title(
@@ -297,10 +279,6 @@ def plot_snapshot_panel(
         pad=10,
         fontsize=16,
     )
-
-    # -------------------------------------------------
-    # Panel labels
-    # -------------------------------------------------
 
     axes = [ax00, ax01, ax02]
 
@@ -318,9 +296,13 @@ def plot_snapshot_panel(
             fontsize=14,
         )
 
-    # -------------------------------------------------
-    # Save
-    # -------------------------------------------------
+    # Shared colorbar
+    fig.colorbar(
+        im,
+        ax=axes,
+        fraction=0.025,
+        pad=0.02,
+    )
 
     save_path.parent.mkdir(
         parents=True,

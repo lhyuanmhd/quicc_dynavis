@@ -140,7 +140,8 @@ def _add_dashed_circles(ax):
 
 
 def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
-                    ax=None, savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
+                    ax=None, savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None,
+                    add_colorbar=True):
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
         
@@ -255,14 +256,32 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
     
     label_str = field_latex.get(field_name, field_name)
     #plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    # Force scientific notation (x10^n)
-    fmt = ScalarFormatter(useMathText=True)
-    fmt.set_powerlimits((0, 0))  # always use scientific notation
-    cbar.formatter = fmt
-    cbar.update_ticks()
-    
+
+    # cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    # # Force scientific notation (x10^n)
+    # fmt = ScalarFormatter(useMathText=True)
+    # fmt.set_powerlimits((0, 0))  # always use scientific notation
+    # cbar.formatter = fmt
+    # cbar.update_ticks()
+
+    if add_colorbar:
+        cbar = plt.colorbar(
+            im,
+            ax=ax,
+            fraction=0.046,
+            pad=0.04,
+        )
+
+        fmt = ScalarFormatter(
+            useMathText=True
+        )
+        fmt.set_powerlimits((0, 0))
+
+        cbar.formatter = fmt
+        cbar.update_ticks()
+
     ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
     if title is not None:
@@ -272,7 +291,7 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
     if savefig is not None:
         savefig_field_snapshot(folderFile, field_name, savefig, type="equ")
 
-
+    return im
 
 
 def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap="RdBu_r", atphi = 0.5, ax=None, 
