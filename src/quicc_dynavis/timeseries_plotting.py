@@ -156,7 +156,7 @@ def plot_magnetic_energy_panel(
         data.tmag,
         data.mag_total,
         color=DEFAULT_COLORS["magnetic"],
-        label=r"$\mathcal{E}_{mag}$",
+        label=r"$\mathcal{E}_{mag}$", #fixed y label 
     )
 
     ax.set_title(
@@ -164,7 +164,7 @@ def plot_magnetic_energy_panel(
         rf"q: {data.q:.2f}, "
         rf"(N,L,M): ({data.N},{data.L},{data.M})$"
     )
-    ax.set_ylabel(r"$E_{mag}$")
+    ax.set_ylabel(r"$\mathcal{E}_{mag}$") 
     ax.set_yscale("log")
     ax.set_xlim(time_limits)
 
