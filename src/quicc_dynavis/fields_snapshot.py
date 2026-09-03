@@ -22,6 +22,9 @@ field_latex = {
     "u_phi": r"u_\phi",
     "u_phi_zonal_3d": r"\langle u_\phi \rangle_\phi",
 
+    "thermal_wind_r": r"$u_{T,r}",
+    "magnetic_wind_r": r"u_{M,r}",
+
     # magnetic field
     "B_r": r"B_r",
     "B_theta": r"B_\theta",
@@ -40,6 +43,8 @@ field_latex = {
     "curlB_r": r"(\nabla\times\mathbf{B})_r",
     "curlB_theta": r"(\nabla\times\mathbf{B})_\theta",
     "curlB_phi": r"(\nabla\times\mathbf{B})_\phi",
+
+
     
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
@@ -59,7 +64,7 @@ def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
 
 # set colomap for each field
 def cmap_for_field(field_name):
-    if field_name in ["u_r", "u_theta", "u_phi", "u_phi_zonal_3d"]:
+    if field_name in ["u_r", "u_theta", "u_phi", "u_phi_zonal_3d", "thermal_wind_r",  "magnetic_wind_r" ]:
         return "RdBu_r"
     elif field_name in ["B_r", "B_theta", "B_phi"]:
         return "PuOr"

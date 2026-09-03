@@ -200,7 +200,9 @@ def plot_snapshot_panel(
     show_grid=False,
 ):
     """
-    1x3 panel layout:
+    1x3 panel layout with common color scale
+    set by the maximum amplitude of the full radial velocity:
+
         (a) radial velocity
         (b) radial magnetic wind
         (c) radial thermal wind
@@ -208,11 +210,33 @@ def plot_snapshot_panel(
 
     try:
         from quicc_dynavis import timeseries as ts
-        Ek, q, Ra = ts.input_params_from_path(str(case_dir))
-    except Exception:
-        Ek, q, Ra = _input_params_from_path(case_dir)
 
-    fig = plt.figure(figsize=(15, 5))
+        Ek, q, Ra = ts.input_params_from_path(
+            str(case_dir)
+        )
+
+    except Exception:
+        Ek, q, Ra = _input_params_from_path(
+            case_dir
+        )
+
+    # -------------------------------------------------
+    # Common scale: full radial velocity
+    # -------------------------------------------------
+
+    vmax = np.nanmax(
+        np.abs(data["u_r"])
+    )
+
+    vmin = -vmax
+
+    # -------------------------------------------------
+    # Figure
+    # -------------------------------------------------
+
+    fig = plt.figure(
+        figsize=(15, 5)
+    )
 
     gs = fig.add_gridspec(
         1,
@@ -225,42 +249,58 @@ def plot_snapshot_panel(
     ax01 = fig.add_subplot(gs[0, 1])
     ax02 = fig.add_subplot(gs[0, 2])
 
+    # Full velocity
     fields_snapshot.plot_equatorial(
         str(case_dir),
         data,
         "u_r",
         ax=ax00,
         include_background=True,
+        vmin=vmin,
+        vmax=vmax,
     )
+
     ax00.set_title(
         r"$u_r$",
         pad=10,
         fontsize=16,
     )
 
+    # Magnetic wind
     fields_snapshot.plot_equatorial(
         str(case_dir),
         data,
         "magnetic_wind_r",
         ax=ax01,
+        vmin=vmin,
+        vmax=vmax,
     )
+
     ax01.set_title(
         r"$u_{M,r}$",
         pad=10,
         fontsize=16,
     )
 
+    # Thermal wind
     fields_snapshot.plot_equatorial(
         str(case_dir),
         data,
         "thermal_wind_r",
         ax=ax02,
+        vmin=vmin,
+        vmax=vmax,
     )
+
     ax02.set_title(
         r"$u_{T,r}$",
         pad=10,
         fontsize=16,
     )
+
+    # -------------------------------------------------
+    # Panel labels
+    # -------------------------------------------------
 
     axes = [ax00, ax01, ax02]
 
@@ -277,6 +317,10 @@ def plot_snapshot_panel(
             va="top",
             fontsize=14,
         )
+
+    # -------------------------------------------------
+    # Save
+    # -------------------------------------------------
 
     save_path.parent.mkdir(
         parents=True,
