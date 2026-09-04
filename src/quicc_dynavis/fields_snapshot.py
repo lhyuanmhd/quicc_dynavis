@@ -57,7 +57,7 @@ field_latex = {
 
 def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
    Ek,q,Ra = input_params_from_path(folderFile)
-   savepath = f"{savefig}/Ek_{Ek}_q{q}_Ra{Ra}_{field_name}_{type}.png"
+   savepath = f"{savefig}/Ek_{Ek}_q{q}_Ra{Ra}_{field_name}_{type}.pdf"
    plt.savefig(savepath, dpi=300, bbox_inches="tight")
    print(f"Saved figure: {savepath}")
 
@@ -406,7 +406,7 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
 
     if savefig is not None:
         savefig_field_snapshot(folderFile, field_name, savefig, type="meridional")
-        #plt.savefig(f"{savefig}/{field_name}_merid_slice.png", dpi=300, bbox_inches="tight")
+        #plt.savefig(f"{savefig}/{field_name}_merid_slice.pdf", dpi=300, bbox_inches="tight")
 
     
 def plot_cmb(

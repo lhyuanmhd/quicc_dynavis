@@ -475,10 +475,10 @@ def _plot_one_visu_dir(visu_dir: Path,
         vmax_suffix = f"_vmax{common_vmax:.2e}" if common_vmax is not None else ""
         
         if mode == "all":
-            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{tag}_all_forces{vmax_suffix}.png"
+            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{tag}_all_forces{vmax_suffix}.pdf"
         elif mode == "single" and force_key:
             short = FORCE_CONFIG[force_key]['short']
-            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{tag}_{short}{vmax_suffix}.png"
+            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{tag}_{short}{vmax_suffix}.pdf"
     else:
         out = out.resolve()
 
@@ -667,10 +667,10 @@ def main():
         vmax_suffix = f"_vmax{common_vmax:.2e}" if common_vmax is not None else ""
         
         if args.all:
-            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{t}_all_forces{vmax_suffix}.png"
+            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{t}_all_forces{vmax_suffix}.pdf"
         else:
             short = FORCE_CONFIG[force_key]['short']
-            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{t}_{short}{vmax_suffix}.png"
+            out = fig_dir / f"Ek_{ekman}_q{roberts}_Ra{rayleigh}_{run_dir.name}_{t}_{short}{vmax_suffix}.pdf"
 
         if out.exists() and not args.force:
             print(f"[SKIP] Output exists (use --force to overwrite): {out}")

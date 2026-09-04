@@ -221,7 +221,7 @@ def compare_energy_multi(
         save_dir = Path(save_dir)
         save_dir.mkdir(parents=True, exist_ok=True)
 
-        save_path = save_dir / "compare_energy_multi.png"
+        save_path = save_dir / "compare_energy_multi.pdf"
 
         fig.savefig(
             save_path,

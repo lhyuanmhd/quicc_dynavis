@@ -339,11 +339,11 @@ def _plot_one_visu_dir(visu_dir: Path,
             Ek, q, Ra = _input_params_from_path(case_dir)
         
         if mode == "combined":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_combined.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_combined.pdf"
         elif mode == "udotgradu":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_udotgradu.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_udotgradu.pdf"
         elif mode == "coriolis":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_coriolis.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{tag}_coriolis.pdf"
     else:
         out = out.resolve()
 
@@ -471,11 +471,11 @@ def main():
         npz_path = _find_vis_fields_npz(run_dir, t)
         
         if args.mode == "combined":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_combined.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_combined.pdf"
         elif args.mode == "udotgradu":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_udotgradu.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_udotgradu.pdf"
         elif args.mode == "coriolis":
-            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_coriolis.png"
+            out = fig_dir / f"Ek_{Ek}_q{q}_Ra{Ra}_{run_dir.name}_{t}_coriolis.pdf"
 
         if out.exists() and not args.force:
             print("[SKIP] Output exists (use --force to overwrite): {}".format(out))

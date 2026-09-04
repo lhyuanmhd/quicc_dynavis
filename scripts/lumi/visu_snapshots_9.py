@@ -350,7 +350,7 @@ def _plot_one_visu_dir(visu_dir: Path,
             Ek, q, Ra = ts.input_params_from_path(str(case_dir))
         except Exception:
             Ek, q, Ra = _input_params_from_path(case_dir)
-        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_9_snapshots.png".format(Ek, q, Ra, run_dir.name, tag)
+        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_9_snapshots.pdf".format(Ek, q, Ra, run_dir.name, tag)
     else:
         out = out.resolve()
 
@@ -465,7 +465,7 @@ def main():
 
     for t in chosen_tags:
         npz_path = _find_vis_fields_npz(run_dir, t)
-        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_9_snapshots.png".format(Ek, q, Ra, run_dir.name, t)
+        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_9_snapshots.pdf".format(Ek, q, Ra, run_dir.name, t)
 
         if out.exists() and not args.force:
             print("[SKIP] Output exists (use --force to overwrite): {}".format(out))

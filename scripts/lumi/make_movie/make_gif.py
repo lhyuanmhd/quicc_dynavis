@@ -7,13 +7,13 @@ from typing import List, Tuple, Optional
 from PIL import Image
 
 # Example:
-# Ek_1.0e-05_q2.0_Ra2.0e+03_run2_0005_snapshots.png
-PAT = re.compile(r".*_run(?P<run>\d+)_(?P<tag>\d{4})_snapshots\.png$")
+# Ek_1.0e-05_q2.0_Ra2.0e+03_run2_0005_snapshots.pdf
+PAT = re.compile(r".*_run(?P<run>\d+)_(?P<tag>\d{4})_snapshots\.pdf$")
 
 
 def collect_frames(fig_dir: Path) -> List[Tuple[int, int, Path]]:
     frames: List[Tuple[int, int, Path]] = []
-    for p in fig_dir.glob("*_snapshots.png"):
+    for p in fig_dir.glob("*_snapshots.pdf"):
         m = PAT.match(p.name)
         if not m:
             continue
@@ -68,7 +68,7 @@ def main() -> None:
     frames = collect_frames(fig_dir)
     if not frames:
         raise FileNotFoundError(
-            f"No matching frames found in {fig_dir}\nExpected: *_runX_YYYY_snapshots.png"
+            f"No matching frames found in {fig_dir}\nExpected: *_runX_YYYY_snapshots.pdf"
         )
 
     print("========================================")

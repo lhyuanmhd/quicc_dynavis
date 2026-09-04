@@ -172,7 +172,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     # Original snapshots figure
     # -----------------------------
     if [[ "$DO_SNAPSHOTS" == "1" ]]; then
-      pattern_snap="$CASE_DIR/figures/*_${run_base}_${visu_idx}_snapshots.png"
+      pattern_snap="$CASE_DIR/figures/*_${run_base}_${visu_idx}_snapshots.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern_snap"; then
         echo "[SKIP] $visu_dir (snapshots exist)"
       else
@@ -189,7 +189,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     # All forces in one panel
     # -----------------------------
     if [[ "$DO_ALL_FORCES" == "1" ]]; then
-      pattern_all="$CASE_DIR/figures/*_${run_base}_${visu_idx}_all_forces.png"
+      pattern_all="$CASE_DIR/figures/*_${run_base}_${visu_idx}_all_forces.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern_all"; then
         echo "[SKIP] $visu_dir (all forces exist)"
       else
@@ -207,7 +207,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     # Individual forces
     # -----------------------------
     if [[ "$DO_INERTIA" == "1" ]]; then
-      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_inertia.png"
+      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_inertia.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern"; then
         echo "[SKIP] $visu_dir (inertia exist)"
       else
@@ -222,7 +222,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     fi
 
     if [[ "$DO_CORIOLIS" == "1" ]]; then
-      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_coriolis.png"
+      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_coriolis.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern"; then
         echo "[SKIP] $visu_dir (coriolis exist)"
       else
@@ -237,7 +237,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     fi
 
     if [[ "$DO_VISCOUS" == "1" ]]; then
-      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_viscous.png"
+      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_viscous.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern"; then
         echo "[SKIP] $visu_dir (viscous exist)"
       else
@@ -252,7 +252,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     fi
 
     if [[ "$DO_LORENTZ" == "1" ]]; then
-      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_lorentz.png"
+      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_lorentz.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern"; then
         echo "[SKIP] $visu_dir (lorentz exist)"
       else
@@ -267,7 +267,7 @@ for run_dir in "$RUNS_ROOT"/run[0-9]*; do
     fi
 
     if [[ "$DO_BUOYANCY" == "1" ]]; then
-      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_buoyancy.png"
+      pattern="$CASE_DIR/figures/*_${run_base}_${visu_idx}_buoyancy.pdf"
       if [[ "$FORCE" == "0" && "$MODE_MISSING" == "1" ]] && figure_exists "$pattern"; then
         echo "[SKIP] $visu_dir (buoyancy exist)"
       else

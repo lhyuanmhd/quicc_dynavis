@@ -199,7 +199,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     tag = 'single' if mode == 'single' else 'average'
 
     Ek,q,Ra = input_params_from_path(folderFile)
-    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_{tag}.png')
+    save_path = os.path.join(save_dir, f'Ek_{Ek}_q{q}_Ra{Ra}_spectra_{tag}.pdf')
     plt.savefig(save_path, dpi=270)
     
 
@@ -376,7 +376,7 @@ def plot_spectra_kt(
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_kt_{tag}.png",
+        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_kt_{tag}.pdf",
     )
 
     fig.savefig(
@@ -628,7 +628,7 @@ def plot_spectra(
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{Ek}_Ra{Ra}_q{q}_spectra_{tag}.png",
+        f"Ek_{Ek}_Ra{Ra}_q{q}_spectra_{tag}.pdf",
     )
 
     fig.savefig(
@@ -969,7 +969,7 @@ def plot_lmn_spectra(
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_with_nlmap.png",
+        f"Ek_{Ek}_q{q}_Ra{Ra}_spectra_with_nlmap.pdf",
     )
 
     fig.savefig(
@@ -1131,7 +1131,7 @@ def plot_normalized_spectra_single_run(run_path, save_dir=None, which='last', sh
     # ----- Save -----
     if save_dir is not None:
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, "normalized_spectra.png")
+        save_path = os.path.join(save_dir, "normalized_spectra.pdf")
         fig.savefig(save_path, dpi=300, bbox_inches='tight')
         print(f"Saved spectra plot to: {save_path}")
     else:

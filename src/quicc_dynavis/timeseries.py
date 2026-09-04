@@ -127,13 +127,13 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
 
     # save_path = os.path.join(
     #     save_dir,
-    #     f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}_timeseries.png",
+    #     f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}_timeseries.pdf",
         
     # )
 
     save_path = os.path.join(
         save_dir,
-        f"Ek_{data.Ek:.1e}_Pr_{data.Pr:.3g}_Pm_{data.Pm:.3g}_q_{data.q:.3g}_Ra_{data.Ra:.2e}_timeseries.png",
+        f"Ek_{data.Ek:.1e}_Pr_{data.Pr:.3g}_Pm_{data.Pm:.3g}_q_{data.q:.3g}_Ra_{data.Ra:.2e}_timeseries.pdf",
     )
     
     fig.savefig(
@@ -186,7 +186,7 @@ def plot_timeseries_dipolarity(
             #f"Ek_{data.Ek}_q{data.q}_Ra{data.Ra}"
             #f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}"
             f"Ek_{data.Ek:.1e}_Pr_{data.Pr:.3g}_Pm_{data.Pm:.3g}_q_{data.q:.3g}_Ra_{data.Ra:.2e}"
-            "_timeseries_Emag_fdip_tiltAngle.png"
+            "_timeseries_Emag_fdip_tiltAngle.pdf"
         ),
     )
 
@@ -237,8 +237,8 @@ def plot_timeseries_hydro(
 
     save_path = os.path.join(
         save_dir,
-        #f"Ek_{data.Ek}_Ra{data.Ra}_timeseries.png",
-        f"Ek_{data.Ek:.1e}_Ra_{data.Ra:.2e}_timeseries.png",
+        #f"Ek_{data.Ek}_Ra{data.Ra}_timeseries.pdf",
+        f"Ek_{data.Ek:.1e}_Ra_{data.Ra:.2e}_timeseries.pdf",
     )
 
     fig.savefig(
@@ -262,4 +262,4 @@ if __name__ == "__main__":
     plot_timeseries(start_folder=args.folder, show=True, save_path=args.save)
     
     # TO RUN it in terminal:
-    #python -m quicc_dynavis.timeseries /path/to/my/simulation --save timeseries.png
+    #python -m quicc_dynavis.timeseries /path/to/my/simulation --save timeseries.pdf
