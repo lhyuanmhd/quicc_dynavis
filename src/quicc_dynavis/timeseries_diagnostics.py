@@ -274,7 +274,7 @@ def compute_dynamo_diagnostics(
         mag_dis_length_scale = float(
             np.sqrt(
                  np.sqrt(
-                 (2*4/3*np/pi)*_mean_after_start(data.mag_total,start_index,)
+                 (2*4/3*np.pi)*_mean_after_start(data.mag_total,start_index,)
                 / _mean_after_start(data.mag_dis_total,start_index,)
             )
             )
