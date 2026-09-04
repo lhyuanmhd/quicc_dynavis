@@ -257,9 +257,10 @@ def compute_dynamo_diagnostics(
         and np.isfinite(mean_kinetic_energy)
     ):
         vel_dis_length_scale = float(
+            # sqrt(2*V) 
             np.sqrt(
-                  np.mean(data.kin_total[start_index:])
-                / 0.5*np.mean(data.kin_dis_total[start_index:]) # mising a factor of 0.5 before!
+                 (2*4/3*np/pi)*_mean_after_start(data.kin_total,start_index,)
+                / _mean_after_start(data.kin_dis_total,start_index,)
             )
         )
     else:
@@ -272,8 +273,10 @@ def compute_dynamo_diagnostics(
     ):
         mag_dis_length_scale = float(
             np.sqrt(
-                 np.mean(data.mag_total[start_index:])
-                / np.mean(data.mag_dis_total[start_index:])
+                 np.sqrt(
+                 (2*4/3*np/pi)*_mean_after_start(data.mag_total,start_index,)
+                / _mean_after_start(data.mag_dis_total,start_index,)
+            )
             )
         )
     else:
