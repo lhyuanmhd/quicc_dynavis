@@ -1306,7 +1306,8 @@ def plot_wind_spectra(
     plt.close("all")
 
     fig, ax = plt.subplots(
-        figsize=(6.2, 7.2),
+        #figsize=(6.2, 7.2),
+        figsize=(5.0, 6.2),
         dpi=180,
     )
 
