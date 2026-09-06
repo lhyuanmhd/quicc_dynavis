@@ -1316,6 +1316,7 @@ def plot_wind_spectra(
         ltot_k[1:],
         ".-",
         label=r"$\mathbf{u}$",
+        color ='k',
     )
 
     ax.loglog(
