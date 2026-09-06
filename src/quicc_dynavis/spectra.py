@@ -15,15 +15,17 @@ from .spectra_diagnostics import (
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({
-    "figure.figsize": (8, 6),
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+
     "font.size": 16,
     "axes.labelsize": 20,
     "axes.titlesize": 20,
     "xtick.labelsize": 16,
     "ytick.labelsize": 16,
-    "legend.fontsize": 14,
+    "legend.fontsize": 15,
 })
-
 
 def _load_km_spectra(
     folder_file,
@@ -1338,9 +1340,9 @@ def plot_wind_spectra(
         "Energy"
     )
 
-    ax.set_title(
-        "Time-averaged velocity spectra"
-    )
+    # ax.set_title(
+    #     "Time-averaged velocity spectra"
+    # )
 
     ax.legend()
 
