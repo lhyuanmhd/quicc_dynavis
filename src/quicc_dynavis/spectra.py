@@ -5,7 +5,7 @@ import numpy as np
 from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new, avg_l_spectrum 
 from .timeseries_utils import input_params_from_path
 import re
-
+from .spectra_utils import calculate_flow_degree
 
 from .spectra_diagnostics import (
     SpectraDiagnostics,
