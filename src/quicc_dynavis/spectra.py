@@ -42,7 +42,7 @@ def _load_km_spectra(
     if mode == "average":
         if start_time is None or stop_time is None:
             start_time = 0
-            stop_time = 1
+            stop_time  = 100
 
         kinetic = avgSpectra_new(
             folder_file,
