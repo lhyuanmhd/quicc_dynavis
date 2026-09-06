@@ -33,6 +33,12 @@ def calculate_flow_degree(
 
     total_energy = np.sum(kinetic_spectrum)
 
+    print("valid points =", np.sum(valid))
+    print("filtered spectrum shape =", kinetic_spectrum.shape)
+    print("spectrum min =", np.min(kinetic_spectrum))
+    print("spectrum max =", np.max(kinetic_spectrum))
+    print("total_energy =", total_energy)
+
     if total_energy <= 0.0:
         raise ValueError(
             "The kinetic spectrum must have positive total energy."
