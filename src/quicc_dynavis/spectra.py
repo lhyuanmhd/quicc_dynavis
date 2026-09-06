@@ -2,7 +2,7 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new 
+from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new, avg_l_spectrum 
 from .timeseries_utils import input_params_from_path
 import re
 
@@ -1149,3 +1149,253 @@ def plot_normalized_spectra_single_run(run_path, save_dir=None, which='last', sh
         plt.close(fig)
 
     return fig, axes, save_path
+
+
+def plot_wind_spectra(
+    folderFile,
+    save_dir,
+    start_time=0.0,
+    stop_time=10.0,
+    show=True,
+):
+    """
+    Plot time-averaged l-spectra of the total velocity,
+    magnetic wind, and thermal wind.
+
+    Parameters
+    ----------
+    folderFile : str or Path
+        Case directory.
+
+    save_dir : str or Path
+        Directory where the figure is saved.
+
+    start_time : float
+        Start time for averaging.
+
+    stop_time : float
+        Stop time for averaging.
+
+    show : bool
+        Whether to display the figure.
+
+    Returns
+    -------
+    fig, ax, save_path
+    """
+
+    # ---------------------------------------------------------
+    # Load averaged l-spectra
+    # ---------------------------------------------------------
+
+    (
+        l_k,
+        ltot_k,
+        ltor_k,
+        lpol_k,
+    ) = avg_l_spectrum(
+        folderFile,
+        "kinetic",
+        start_time=start_time,
+        stop_time=stop_time,
+    )
+
+    (
+        l_m,
+        ltot_m,
+        ltor_m,
+        lpol_m,
+    ) = avg_l_spectrum(
+        folderFile,
+        "magnetic_wind",
+        start_time=start_time,
+        stop_time=stop_time,
+    )
+
+    (
+        l_t,
+        ltot_t,
+        ltor_t,
+        lpol_t,
+    ) = avg_l_spectrum(
+        folderFile,
+        "thermal_wind",
+        start_time=start_time,
+        stop_time=stop_time,
+    )
+
+    # ---------------------------------------------------------
+    # Convert to NumPy arrays
+    # ---------------------------------------------------------
+
+    l_k = np.asarray(l_k)
+    l_m = np.asarray(l_m)
+    l_t = np.asarray(l_t)
+
+    ltot_k = np.asarray(ltot_k)
+    ltot_m = np.asarray(ltot_m)
+    ltot_t = np.asarray(ltot_t)
+
+    # ---------------------------------------------------------
+    # Sanity checks
+    # ---------------------------------------------------------
+
+    if (
+        l_k.shape != ltot_k.shape
+        or l_m.shape != ltot_m.shape
+        or l_t.shape != ltot_t.shape
+    ):
+        raise ValueError(
+            "Degree arrays and spectra must have "
+            "matching shapes."
+        )
+
+    # ---------------------------------------------------------
+    # Characteristic spherical-harmonic degrees
+    # ---------------------------------------------------------
+
+    l_u = calculate_flow_degree(
+        l_k,
+        ltot_k,
+    )
+
+    l_M = calculate_flow_degree(
+        l_m,
+        ltot_m,
+    )
+
+    l_T = calculate_flow_degree(
+        l_t,
+        ltot_t,
+    )
+
+    # ---------------------------------------------------------
+    # Integrated spectral amplitudes
+    # ---------------------------------------------------------
+
+    E_u = np.sum(ltot_k)
+    E_M = np.sum(ltot_m)
+    E_T = np.sum(ltot_t)
+
+    if E_T > 0.0:
+        wind_ratio = np.sqrt(
+            E_M / E_T
+        )
+    else:
+        wind_ratio = np.nan
+
+    # ---------------------------------------------------------
+    # Plot
+    # ---------------------------------------------------------
+
+    plt.close("all")
+
+    fig, ax = plt.subplots(
+        figsize=(7.5, 6.0),
+        dpi=180,
+    )
+
+    # ignore l = 0 on log x-axis
+    ax.loglog(
+        l_k[1:],
+        ltot_k[1:],
+        ".-",
+        label=r"$\mathbf{u}$",
+    )
+
+    ax.loglog(
+        l_m[1:],
+        ltot_m[1:],
+        ".-",
+        label=r"$\mathbf{u}_M$",
+    )
+
+    ax.loglog(
+        l_t[1:],
+        ltot_t[1:],
+        ".-",
+        label=r"$\mathbf{u}_T$",
+    )
+
+    ax.set_xlabel(
+        r"$\ell$"
+    )
+
+    ax.set_ylabel(
+        "Energy"
+    )
+
+    ax.set_title(
+        "Time-averaged velocity spectra"
+    )
+
+    ax.legend()
+
+    # ---------------------------------------------------------
+    # Diagnostics annotation
+    # ---------------------------------------------------------
+
+    text = (
+        rf"$\ell_u={l_u:.2f}$"
+        "\n"
+        rf"$\ell_M={l_M:.2f}$"
+        "\n"
+        rf"$\ell_T={l_T:.2f}$"
+        "\n"
+        rf"$U_M/U_T={wind_ratio:.2f}$"
+    )
+
+    ax.text(
+        0.97,
+        0.95,
+        text,
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=10,
+        bbox={
+            "facecolor": "white",
+            "alpha": 0.8,
+            "edgecolor": "none",
+        },
+    )
+
+    fig.tight_layout()
+
+    # ---------------------------------------------------------
+    # Save
+    # ---------------------------------------------------------
+
+    os.makedirs(
+        save_dir,
+        exist_ok=True,
+    )
+
+    Ek, q, Ra = input_params_from_path(
+        folderFile
+    )
+
+    save_path = os.path.join(
+        save_dir,
+        (
+            f"Ek_{Ek}_q{q}_Ra{Ra}_"
+            "wind_spectra_average.pdf"
+        ),
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=270,
+        bbox_inches="tight",
+    )
+
+    if show:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return (
+        fig,
+        ax,
+        save_path,
+    )

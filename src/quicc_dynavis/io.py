@@ -913,60 +913,6 @@ def read_single_spectrum(folderpath, spec_type="kinetic", which="last"):
 
     return l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
 
-# def read_single_spectrum(folderpath, spec_type='kinetic', which='last'):
-#     """
-#     Return the last/first/selected single spectrum from folder.
-# 
-#     spec_type: 'kinetic', 'magnetic', or 'temperature'
-# 
-#     Returns:
-#         l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
-#         (Note: for temperature spectra, ltor/lpol/mtor/mpol = None)
-#     """
-#     indexList = ['_m*', '_l*']
-#     l = m = None
-#     ltot = ltor = lpol = None
-#     mtot = mtor = mpol = None
-#     time = None
-# 
-#     for h in range(2):
-#         pattern = spec_type + indexList[h]
-#         FileList = []
-#         for path, subdirs, files in sorted(os.walk(folderpath)):
-#             if fnmatch.fnmatch(path, '*run*'):
-#                 for name in files:
-#                     if fnmatch.fnmatch(name, pattern):
-#                         FileList.append(os.path.join(path, name))
-# 
-#         FileList = sorted(FileList)
-#         if not FileList:
-#             raise FileNotFoundError(f'No files matching {pattern} in {folderpath}')
-# 
-#         if which == 'last':
-#             chosen_file = FileList[-1]
-#         elif which == 'first':
-#             chosen_file = FileList[0]
-#         elif isinstance(which, int):
-#             chosen_file = FileList[which]
-#         else:
-#             raise ValueError("`which` must be 'last', 'first', or an integer index")
-# 
-#         lm_vals, ltot_vals, ltor_vals, lpol_vals, time = read_spectra(chosen_file)
-# 
-#         if h == 0:
-#             m = lm_vals
-#             mtot = ltot_vals
-#             mtor = ltor_vals
-#             mpol = lpol_vals
-#         else:
-#             l = lm_vals
-#             ltot = ltot_vals
-#             ltor = ltor_vals
-#             lpol = lpol_vals
-# 
-#     return l, m, ltot, ltor, lpol, mtot, mtor, mpol, time
-
-
 def avgSpectra_new(folderpath,spec_type,start_time,stop_time):
     """
     Averaging kinetic or magnetic spectra in time
@@ -1149,3 +1095,129 @@ def read_single_n_spectrum(folderpath, spec_type='kinetic', which='last', plot=F
         plt.show()
 
     return n_tot, l_tot, e_tot, e_tor, e_pol, time
+
+
+
+
+def avg_l_spectrum(
+    folderpath,
+    spec_type,
+    start_time=0.0,
+    stop_time=10.0,
+):
+    """
+    Time-average an l-spectrum.
+
+    Parameters
+    ----------
+    folderpath : str or Path
+        Path containing the run folders.
+
+    spec_type : str
+        Spectrum type, e.g.
+        "kinetic",
+        "thermal_wind",
+        "magnetic_wind".
+
+    start_time : float
+        Start time of averaging interval.
+
+    stop_time : float
+        End time of averaging interval.
+
+    Returns
+    -------
+    l : ndarray
+        Spherical-harmonic degree.
+
+    ltot : ndarray
+        Time-averaged total spectrum.
+
+    ltor : ndarray
+        Time-averaged toroidal spectrum.
+
+    lpol : ndarray
+        Time-averaged poloidal spectrum.
+    """
+
+    pattern = f"{spec_type}_l*"
+
+    file_list = []
+
+    for path, subdirs, files in sorted(
+        os.walk(folderpath)
+    ):
+        if fnmatch.fnmatch(path, "*run*"):
+            for name in files:
+                if fnmatch.fnmatch(
+                    name,
+                    pattern,
+                ):
+                    file_list.append(
+                        os.path.join(
+                            path,
+                            name,
+                        )
+                    )
+
+    if not file_list:
+        raise FileNotFoundError(
+            f"No files matching "
+            f"'{pattern}' found under "
+            f"{folderpath}"
+        )
+
+    spectra_tot = []
+    spectra_tor = []
+    spectra_pol = []
+
+    l = None
+
+    for filename in file_list:
+        (
+            l_i,
+            ltot,
+            ltor,
+            lpol,
+            time,
+        ) = read_spectra(filename)
+
+        if (
+            time > start_time
+            and time < stop_time
+        ):
+            if l is None:
+                l = l_i
+
+            spectra_tot.append(ltot)
+            spectra_tor.append(ltor)
+            spectra_pol.append(lpol)
+
+    if not spectra_tot:
+        raise ValueError(
+            "No spectra found in averaging "
+            f"interval [{start_time}, "
+            f"{stop_time}]."
+        )
+
+    ltot_avg = np.mean(
+        np.asarray(spectra_tot),
+        axis=0,
+    )
+
+    ltor_avg = np.mean(
+        np.asarray(spectra_tor),
+        axis=0,
+    )
+
+    lpol_avg = np.mean(
+        np.asarray(spectra_pol),
+        axis=0,
+    )
+
+    return (
+        np.asarray(l),
+        ltot_avg,
+        ltor_avg,
+        lpol_avg,
+    )
