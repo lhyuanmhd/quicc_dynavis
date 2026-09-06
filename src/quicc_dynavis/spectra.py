@@ -88,7 +88,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     ) = kinetic
 
     spectra_diagnostics = compute_spectra_diagnostics(
-                            degrees=lk,
+                            #degrees=lk,
                             kinetic_spectrum=ltot_k,)
     #flow_degree_over_pi = flow_degree / np.pi
 
