@@ -86,6 +86,13 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
         mpol_k,
     ) = kinetic
 
+    print(f"[DEBUG] mode = {mode}")
+    print("lk.shape =", np.shape(lk))
+    print("ltot_k.shape =", np.shape(ltot_k))
+    print("lk[:5] =", lk[:5])
+    print("ltot_k[:5] =", ltot_k[:5])
+    print("lk[-5:] =", lk[-5:])
+
     spectra_diagnostics = compute_spectra_diagnostics(
                             degrees=lk,
                             kinetic_spectrum=ltot_k,)
