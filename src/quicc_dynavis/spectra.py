@@ -12,6 +12,19 @@ from .spectra_diagnostics import (
     compute_spectra_diagnostics,
 )
 
+import matplotlib.pyplot as plt
+
+plt.rcParams.update({
+    "figure.figsize": (8, 6),
+    "font.size": 16,
+    "axes.labelsize": 20,
+    "axes.titlesize": 20,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "legend.fontsize": 14,
+})
+
+
 def _load_km_spectra(
     folder_file,
     mode="single",
@@ -1291,7 +1304,7 @@ def plot_wind_spectra(
     plt.close("all")
 
     fig, ax = plt.subplots(
-        figsize=(7.5, 6.0),
+        figsize=(6.2, 7.2),
         dpi=180,
     )
 
