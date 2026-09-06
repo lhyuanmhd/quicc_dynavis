@@ -42,6 +42,17 @@ def main():
     # ---------------------------------------------------------
     # Single spectra at the last timestep
     # ---------------------------------------------------------
+    # spectra.plot_spectra_km(
+    #     folderFile=str(case_dir),
+    #     save_dir=str(fig_dir),
+    #     mode="single",
+    #     which="last",
+    #     show=False,
+    #     ref_scaling=True,
+    # )
+
+    print("[INFO] Plotting single spectrum")
+
     spectra.plot_spectra_km(
         folderFile=str(case_dir),
         save_dir=str(fig_dir),
@@ -51,9 +62,26 @@ def main():
         ref_scaling=True,
     )
 
+
     # ---------------------------------------------------------
     # Average spectra
     # ---------------------------------------------------------
+    # (
+    #     _,
+    #     _,
+    #     _,
+    #     spectra_diagnostics,
+    # ) = spectra.plot_spectra_km(
+    #     folderFile=str(case_dir),
+    #     save_dir=str(fig_dir),
+    #     mode="average",
+    #     which="last",
+    #     show=False,
+    #     ref_scaling=True,
+    # )
+
+    print("[INFO] Plotting average spectrum")
+
     (
         _,
         _,
@@ -67,7 +95,6 @@ def main():
         show=False,
         ref_scaling=True,
     )
-
     # ---------------------------------------------------------
     # Update spectral diagnostics in the existing summary CSV
     # ---------------------------------------------------------

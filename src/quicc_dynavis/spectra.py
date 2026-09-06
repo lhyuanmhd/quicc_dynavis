@@ -6,7 +6,6 @@ from .io import read_single_spectrum,read_single_n_spectrum, avgSpectra_new
 from .timeseries_utils import input_params_from_path
 import re
 
-from .spectra_utils import calculate_flow_degree
 
 from .spectra_diagnostics import (
     SpectraDiagnostics,
@@ -88,7 +87,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
     ) = kinetic
 
     spectra_diagnostics = compute_spectra_diagnostics(
-                            #degrees=lk,
+                            degrees=lk,
                             kinetic_spectrum=ltot_k,)
     #flow_degree_over_pi = flow_degree / np.pi
 
