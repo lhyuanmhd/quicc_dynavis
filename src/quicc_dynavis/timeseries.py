@@ -192,7 +192,7 @@ def plot_timeseries_dipolarity(
 
     fig.savefig(
         save_path,
-        dpi=270,
+        dpi=180,
         bbox_inches="tight",
     )
 

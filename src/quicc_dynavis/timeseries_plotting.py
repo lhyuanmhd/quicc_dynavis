@@ -84,7 +84,7 @@ def create_dipolarity_figure():
     fig, axes_array = plt.subplots(
         3,
         1,
-        figsize=(12, 4.5),
+        figsize=(12, 5),
         sharex=True,
         dpi=180,
         squeeze=False,
@@ -250,8 +250,10 @@ def plot_dipole_angle_panel(
         alpha=0.4,
         label=r"$90^{\circ}$",
     )
+
     ax.set_ylabel(ylabel)
     ax.set_ylim(-5, 185)
+    ax.set_yticks([0, 90, 180])
     ax.set_xlim(time_limits)
 
     if set_xlabel:
