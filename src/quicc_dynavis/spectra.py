@@ -19,11 +19,11 @@ plt.rcParams.update({
     "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "mathtext.fontset": "stix",
 
-    "font.size": 16,
-    "axes.labelsize": 20,
-    "axes.titlesize": 20,
-    "xtick.labelsize": 16,
-    "ytick.labelsize": 16,
+    "font.size": 15,
+    "axes.labelsize": 15,
+    "axes.titlesize": 15,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
     "legend.fontsize": 15,
 })
 
@@ -126,7 +126,7 @@ def plot_spectra_km(folderFile, save_dir, mode='single', start_time=None, stop_t
 
     # --- create figure ---
     plt.close('all')
-    fig, axes = plt.subplots(2, 2, figsize=(8, 9), dpi=180)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 12), dpi=180)
     fig.subplots_adjust(wspace=0.3, hspace=0.35, left=0.12, top=0.92, right=0.97, bottom=0.12)
     
 

@@ -45,7 +45,12 @@ field_latex = {
     "curlB_phi": r"(\nabla\times\mathbf{B})_\phi",
 
 
-    
+    # axial helicity
+    "axial_helicity": r"\mathbf{u}_{z}\cdot(\nabla\times\mathbf{u})_{z}",
+
+    # helicity along cylinderical s direction
+    "s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
+
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
     
@@ -78,6 +83,8 @@ def cmap_for_field(field_name):
                         "buoyancy_magnitude",
                         "viscous_magnitude"]:
         return "cividis" 
+    elif field_name in ["axial_helicity"]:
+         return "PiYG"
 
     #elif field_name == "coriolis_magnitude":
     #    return "magma"    
@@ -321,10 +328,22 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     mid_phi = np.argmin(np.abs(phi - atphi)) # meridional slice at phi = 90 degrees
 
     if field_name == "u_phi_zonal_3d":
-        field = data[field_name][:, :, 0]
+        field = data[field_name][:, :, 0]    
+    elif field_name == "axial_helicity":
+        # cpompute axial helicity uz dot curl(u)
+        # axial velocity
+        wz = data["curl_u_axial"][:, :, mid_phi]
+
+        #axial velocity
+        uz = data["u_r"][:, :, mid_phi] * np.cos(theta) - data["u_theta"][:, :, mid_phi] * np.sin(theta)
+
+        # axial helicity
+        field = uz * wz
+    
     else:
         field = data[field_name][:, :, mid_phi]
         field = apply_temperature_background(field_name, field, r, include_background)
+    
     
     if field_name ==  "inertia_magnitude":
         field  = 1e-9 * field
@@ -353,7 +372,8 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     POSITIVE_DEFINITE_FIELDS = {"T"}
     MAGNITUDE_FIELDS = {
         "inertia_magnitude", "coriolis_magnitude", 
-        "lorentz_magnitude", "buoyancy_magnitude"
+        "lorentz_magnitude", "buoyancy_magnitude",
+         "curl_u_axial"
     }
     BOUNDARY_FIELDS= {"viscous_magnitude"}
 
