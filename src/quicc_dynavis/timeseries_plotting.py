@@ -388,16 +388,32 @@ def plot_equatorial_dipole_orientation_panel(
         and len(data.g11) > 0
         and len(data.h11) > 0
     ):
+        # phi_ed = np.degrees(
+        #     np.arctan2(data.h11, data.g11)
+        # )
+
+        # # Map orientation to [0, 360) degrees
+        # phi_ed = np.mod(phi_ed, 360.0)
+
+        # ax.plot(
+        #     data.tdip,
+        #     phi_ed,
+        #     alpha=0.7,
+        # )
         phi_ed = np.degrees(
             np.arctan2(data.h11, data.g11)
         )
 
-        # Map orientation to [0, 360) degrees
         phi_ed = np.mod(phi_ed, 360.0)
+
+        # Break the line at the 0/360-degree branch cut
+        phi_plot = phi_ed.copy()
+        jumps = np.abs(np.diff(phi_ed)) > 180.0
+        phi_plot[1:][jumps] = np.nan
 
         ax.plot(
             data.tdip,
-            phi_ed,
+            phi_plot,
             alpha=0.7,
         )
 
@@ -440,7 +456,7 @@ def plot_dipole_amplitudes_panel(
         ax.semilogy(
             data.tdip,
             equatorial_dipole,
-            label=r"$D_{\mathrm{ED}}$",
+            label=r"$D_{\mathrm{ED} = \sqrt{(g_1^1})^2 + h_1^1})^2}$",
             alpha=0.7,
         )
 
