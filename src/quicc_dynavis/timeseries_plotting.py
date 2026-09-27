@@ -113,7 +113,7 @@ def create_equatorial_dipole_figure():
     """Create the equatorial-dipole evolution figure."""
 
     fig, axes = plt.subplots(
-        2,
+        1,
         1,
         figsize=(12, 5),
         sharex=True,
