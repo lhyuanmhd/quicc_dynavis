@@ -720,10 +720,10 @@ def populate_equatorial_dipole_figure(
     ylim=None,
 ) -> None:
     """Populate the equatorial-dipole evolution figure."""
-    if len(axes) != 1:
-        raise ValueError(
-            f"Expected 1 axis, received {len(axes)}"
-        )
+    # if len(axes) != 1:
+    #     raise ValueError(
+    #         f"Expected 1 axis, received {len(axes)}"
+        # )
     # # (a) Magnetic energy
     # plot_magnetic_energy_panel(
     #     axes[0],
@@ -761,7 +761,7 @@ def populate_equatorial_dipole_figure(
 
     # (d) Equatorial-dipole orientation
     plot_equatorial_dipole_orientation_panel(
-        axes[0],
+        axes,
         data,
         time_limits,
         set_xlabel=True,
