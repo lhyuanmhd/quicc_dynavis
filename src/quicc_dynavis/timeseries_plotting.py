@@ -699,7 +699,7 @@ def populate_dipolarity_figure(
         data,
         time_limits,
         set_xlabel=False,
-        ylabel="Dipole coefficients",
+        ylabel="Dipole moment",
     )
 
     plot_dipole_angle_panel(
