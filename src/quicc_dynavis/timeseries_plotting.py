@@ -82,9 +82,9 @@ def create_dipolarity_figure():
     plt.close("all")
 
     fig, axes_array = plt.subplots(
-        3,
+        4,
         1,
-        figsize=(12, 5),
+        figsize=(12, 7),
         sharex=True,
         dpi=180,
         squeeze=False,
@@ -261,6 +261,66 @@ def plot_dipole_angle_panel(
 
     ax.legend()
 
+def plot_dipole_components_panel(
+    ax: Axes,
+    data: TimeseriesData,
+    time_limits: tuple[float, float],
+    *,
+    set_xlabel: bool,
+    ylabel: str = "Dipole Gauss coefficients",
+) -> None:
+    """Plot axial and equatorial dipole Gauss coefficients."""
+
+    if (
+        len(data.tdip) > 0
+        and len(data.g10) > 0
+        and len(data.g11) > 0
+        and len(data.h11) > 0
+    ):
+        ed_amp = np.sqrt(data.g11**2 + data.h11**2)
+
+        ax.plot(
+            data.tdip,
+            data.g10,
+            label=r"$g_1^0$",
+            alpha=0.7,
+        )
+
+        ax.plot(
+            data.tdip,
+            data.g11,
+            label=r"$g_1^1$",
+            alpha=0.7,
+        )
+
+        ax.plot(
+            data.tdip,
+            data.h11,
+            label=r"$h_1^1$",
+            alpha=0.7,
+        )
+
+        ax.plot(
+            data.tdip,
+            ed_amp,
+            label=r"$\sqrt{(g_1^1)^2+(h_1^1)^2}$",
+            linestyle="--",
+            linewidth=1.5,
+        )
+
+    ax.axhline(
+        0,
+        linestyle="--",
+        alpha=0.4,
+    )
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlim(time_limits)
+
+    if set_xlabel:
+        ax.set_xlabel("Time")
+
+    ax.legend()
 
 def plot_dissipation_panel(
     ax: Axes,
@@ -429,6 +489,43 @@ def populate_timeseries_figure(
 
 
 
+# def populate_dipolarity_figure(
+#     axes: Sequence[Axes],
+#     data: TimeseriesData,
+#     diagnostics: DynamoDiagnostics,
+#     time_limits: tuple[float, float],
+#     ylim=None,
+# ) -> None:
+#     """Populate the compact magnetic-energy and dipole figure."""
+#     if len(axes) != 3:
+#         raise ValueError(
+#             f"Expected 3 axes, received {len(axes)}"
+#         )
+
+#     plot_magnetic_energy_panel(
+#         axes[0],
+#         data,
+#         diagnostics,
+#         time_limits,
+#         ylim=ylim,
+#     )
+
+#     plot_dipolarity_panel(
+#         axes[1],
+#         data,
+#         time_limits,
+#         ylabel=r"$f_{\mathrm{dip}}$",
+#     )
+
+#     plot_dipole_angle_panel(
+#         axes[2],
+#         data,
+#         diagnostics,
+#         time_limits,
+#         set_xlabel=True,
+#         ylabel=r"$\theta$ (deg)",
+#     )
+
 def populate_dipolarity_figure(
     axes: Sequence[Axes],
     data: TimeseriesData,
@@ -437,9 +534,9 @@ def populate_dipolarity_figure(
     ylim=None,
 ) -> None:
     """Populate the compact magnetic-energy and dipole figure."""
-    if len(axes) != 3:
+    if len(axes) != 4:
         raise ValueError(
-            f"Expected 3 axes, received {len(axes)}"
+            f"Expected 4 axes, received {len(axes)}"
         )
 
     plot_magnetic_energy_panel(
@@ -457,15 +554,22 @@ def populate_dipolarity_figure(
         ylabel=r"$f_{\mathrm{dip}}$",
     )
 
-    plot_dipole_angle_panel(
+    plot_dipole_components_panel(
         axes[2],
+        data,
+        time_limits,
+        set_xlabel=False,
+        ylabel="Dipole coefficients",
+    )
+
+    plot_dipole_angle_panel(
+        axes[3],
         data,
         diagnostics,
         time_limits,
         set_xlabel=True,
         ylabel=r"$\theta$ (deg)",
     )
-
 
 def populate_hydro_timeseries_figure(
     axes: Sequence[Axes],
