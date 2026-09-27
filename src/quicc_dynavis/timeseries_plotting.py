@@ -28,7 +28,7 @@ plt.rcParams.update({
 
 DEFAULT_COLORS = {
     "kinetic": "royalblue",
-    "magnetic": "orange",
+    "magnetic": "maroon",
     "dipolarity": "coral",
     "dipole_angle": "gray",
     "nusselt": "purple",
@@ -36,6 +36,7 @@ DEFAULT_COLORS = {
     "viscous": "teal",
     "ohmic": "peru",
     "fohm": "dimgray",
+    "ED_orientation": "darkgreen",
 }
 
 def resolve_time_limits(
@@ -395,33 +396,24 @@ def plot_equatorial_dipole_orientation_panel(
     *,
     set_xlabel: bool,
     ylabel: str = r"$\phi_{\mathrm{ED}}$ (deg)",
+    fit_xlim: tuple[float, float] | None = None,
 ) -> None:
-    """Plot the azimuthal orientation of the equatorial dipole."""
+    """Plot ED orientation and optionally measure its azimuthal drift rate."""
 
     if (
         len(data.tdip) > 0
         and len(data.g11) > 0
         and len(data.h11) > 0
     ):
-        # phi_ed = np.degrees(
-        #     np.arctan2(data.h11, data.g11)
-        # )
+        # Raw phase in radians: (-pi, pi]
+        phi_raw = np.arctan2(data.h11, data.g11)
 
-        # # Map orientation to [0, 360) degrees
-        # phi_ed = np.mod(phi_ed, 360.0)
+        # ------------------------------------------------------------
+        # Wrapped phase for plotting: [0, 360)
+        # ------------------------------------------------------------
+        phi_ed = np.mod(np.degrees(phi_raw), 360.0)
 
-        # ax.plot(
-        #     data.tdip,
-        #     phi_ed,
-        #     alpha=0.7,
-        # )
-        phi_ed = np.degrees(
-            np.arctan2(data.h11, data.g11)
-        )
-
-        phi_ed = np.mod(phi_ed, 360.0)
-
-        # Break the line at the 0/360-degree branch cut
+        # Break lines across the 0/360 branch cut
         phi_plot = phi_ed.copy()
         jumps = np.abs(np.diff(phi_ed)) > 180.0
         phi_plot[1:][jumps] = np.nan
@@ -430,7 +422,44 @@ def plot_equatorial_dipole_orientation_panel(
             data.tdip,
             phi_plot,
             alpha=0.7,
+            color=DEFAULT_COLORS["ED_orientation"],
         )
+
+        # ------------------------------------------------------------
+        # Unwrapped phase for measuring the drift rate
+        # ------------------------------------------------------------
+        phi_unwrapped = np.degrees(np.unwrap(phi_raw))
+
+        if fit_xlim is not None:
+            tmin, tmax = fit_xlim
+
+            mask = (
+                (data.tdip >= tmin)
+                & (data.tdip <= tmax)
+            )
+            if np.count_nonzero(mask) >= 2:
+                omega_ed, phi0 = np.polyfit(
+                    data.tdip[mask],
+                    phi_unwrapped[mask],
+                    1,
+                )
+
+                drift_period = 360.0 / abs(omega_ed)
+
+                ax.text(
+                    0.02,
+                    0.05,
+                    (
+                        rf"$\omega_{{\mathrm{{ED}}}} = {omega_ed:.2f}^\circ$ / time"
+                        "\n"
+                        rf"$T_{{\mathrm{{drift}}}} = {drift_period:.3f}$"
+                    ),
+                    transform=ax.transAxes,
+                    ha="left",
+                    va="bottom",
+                    fontsize=10,
+                )
+            
 
     ax.set_ylabel(ylabel)
     ax.set_xlim(time_limits)
