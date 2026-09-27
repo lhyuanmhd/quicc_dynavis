@@ -744,7 +744,7 @@ def populate_equatorial_dipole_figure(
 
     # (b) Axial vs equatorial dipole amplitudes
     plot_dipole_amplitudes_panel(
-        axes[1],
+        axes[2],
         data,
         time_limits,
         set_xlabel=False,
@@ -752,7 +752,7 @@ def populate_equatorial_dipole_figure(
 
     # (c) Dipole tilt angle
     plot_dipole_angle_panel(
-        axes[2],
+        axes[3],
         data,
         diagnostics,
         time_limits,
@@ -762,7 +762,7 @@ def populate_equatorial_dipole_figure(
 
     # (d) Equatorial-dipole orientation
     plot_equatorial_dipole_orientation_panel(
-        axes[3],
+        axes[4],
         data,
         time_limits,
         set_xlabel=True,
