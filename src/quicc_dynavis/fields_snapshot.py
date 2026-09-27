@@ -255,7 +255,7 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6,6))
-    im = ax.pcolormesh(X, Y, field, shading="auto", cmap=cmap, vmin=vmin, vmax=vmax)
+    im = ax.pcolormesh(X, Y, field, shading="auto", cmap=cmap, vmin=vmin, vmax=vmax, rasterized=True,)
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -405,7 +405,7 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6,6))
-    im = ax.pcolormesh(X, Z, field, shading="auto", cmap=cmap, vmin=vmin, vmax=vmax)
+    im = ax.pcolormesh(X, Z, field, shading="auto", cmap=cmap, vmin=vmin, vmax=vmax, rasterized=True)
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -523,7 +523,7 @@ def plot_cmb(
 
     # Plot field
     im = ax.pcolormesh(Lon, Lat, field.T, shading="auto",
-                       cmap=cmap, vmin=vmin, vmax=vmax)
+                       cmap=cmap, vmin=vmin, vmax=vmax, rasterized=True)
     ax.set_axis_off()
 
     # -----------------------------
@@ -538,7 +538,8 @@ def plot_cmb(
             Lon, Lat, field.T,
             shading="auto",
             cmap=cmap,
-            norm=norm
+            norm=norm,
+            rasterized=True
         )
 
         cbar = plt.colorbar(
@@ -555,7 +556,8 @@ def plot_cmb(
             Lon, Lat, field.T,
             shading="auto",
             cmap=cmap,
-            vmin=vmin, vmax=vmax
+            vmin=vmin, vmax=vmax,
+            rasterized=True
         )
         cbar = plt.colorbar(im, ax=ax, orientation="horizontal",
                             pad=0.05, fraction=0.05)
