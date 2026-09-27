@@ -115,7 +115,7 @@ def create_equatorial_dipole_figure():
     fig, axes = plt.subplots(
         5,
         1,
-        figsize=(15, 9),
+        figsize=(12, 11.5),
         sharex=True,
     )
 
@@ -720,9 +720,9 @@ def populate_equatorial_dipole_figure(
     ylim=None,
 ) -> None:
     """Populate the equatorial-dipole evolution figure."""
-    if len(axes) != 4:
+    if len(axes) != 5:
         raise ValueError(
-            f"Expected 4 axes, received {len(axes)}"
+            f"Expected 5 axes, received {len(axes)}"
         )
 
     # (a) Magnetic energy
