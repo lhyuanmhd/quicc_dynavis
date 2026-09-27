@@ -113,9 +113,9 @@ def create_equatorial_dipole_figure():
     """Create the equatorial-dipole evolution figure."""
 
     fig, axes = plt.subplots(
+        2,
         1,
-        1,
-        figsize=(8, 6),
+        figsize=(12, 5),
         sharex=True,
     )
 
@@ -722,10 +722,44 @@ def populate_equatorial_dipole_figure(
     """Populate the equatorial-dipole evolution figure."""
     if len(axes) != 1:
         raise ValueError(
-            f"Expected 1 axes, received {len(axes)}"
+            f"Expected 1 axis, received {len(axes)}"
         )
+    # # (a) Magnetic energy
+    # plot_magnetic_energy_panel(
+    #     axes[0],
+    #     data,
+    #     diagnostics,
+    #     time_limits,
+    #     ylim=ylim,
+    # )
 
-    # Equatorial-dipole orientation
+    # plot_dipolarity_panel(
+    #     axes[1],
+    #     data,
+    #     time_limits,
+    #     ylabel=r"$f_{\mathrm{dip}}$",
+    # )
+
+
+    # (b) Axial vs equatorial dipole amplitudes
+    # plot_dipole_amplitudes_panel(
+    #     axes[0],
+    #     data,
+    #     time_limits,
+    #     set_xlabel=False,
+    # )
+
+    # # (c) Dipole tilt angle
+    # plot_dipole_angle_panel(
+    #     axes[3],
+    #     data,
+    #     diagnostics,
+    #     time_limits,
+    #     set_xlabel=False,
+    #     ylabel=r"$\theta$ (deg)",
+    # )
+
+    # (d) Equatorial-dipole orientation
     plot_equatorial_dipole_orientation_panel(
         axes[0],
         data,
@@ -734,8 +768,6 @@ def populate_equatorial_dipole_figure(
         ylabel=r"$\phi_{\mathrm{ED}}$ (deg)",
         fit_xlim=(1.0, 10), # 
     )   
-
-    
 
 def populate_hydro_timeseries_figure(
     axes: Sequence[Axes],
