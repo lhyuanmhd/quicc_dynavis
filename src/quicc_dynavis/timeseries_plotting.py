@@ -281,22 +281,22 @@ def plot_dipole_components_panel(
 
         ax.semilogy(
             data.tdip,
-            data.g10,
-            label=r"$g_1^0$",
+            abs(data.g10),
+            label=r"$|g_1^0|$",
             alpha=0.7,
         )
 
         ax.semilogy(
             data.tdip,
-            data.g11,
-            label=r"$g_1^1$",
+            abs(data.g11),
+            label=r"$|g_1^1|$",
             alpha=0.7,
         )
 
         ax.semilogy(
             data.tdip,
-            data.h11,
-            label=r"$h_1^1$",
+            abs(data.h11),
+            label=r"$|h_1^1|$",
             alpha=0.7,
         )
 
