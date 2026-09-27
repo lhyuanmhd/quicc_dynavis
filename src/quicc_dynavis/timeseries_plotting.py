@@ -425,7 +425,7 @@ def plot_dipole_amplitudes_panel(
     time_limits: tuple[float, float],
     *,
     set_xlabel: bool,
-    ylabel: str = "Dipole amplitude",
+    ylabel: str = "Dipole moment",
 ) -> None:
     """Plot axial- and equatorial-dipole amplitudes."""
 
