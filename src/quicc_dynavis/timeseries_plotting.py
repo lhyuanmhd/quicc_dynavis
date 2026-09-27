@@ -450,14 +450,14 @@ def plot_equatorial_dipole_orientation_panel(
                     0.02,
                     0.05,
                     (
-                        rf"$\omega_{{\mathrm{{ED}}}} = {omega_ed:.2f}^\circ$ / time"
+                        rf"$\omega_{{\mathrm{{ED}}}} = {omega_ed:.2f}^\circ / \tau_\eta$"
                         "\n"
                         rf"$T_{{\mathrm{{drift}}}} = {drift_period:.3f}$"
                     ),
                     transform=ax.transAxes,
                     ha="left",
                     va="bottom",
-                    fontsize=10,
+                    fontsize=12,
                 )
             
 
