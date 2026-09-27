@@ -99,7 +99,7 @@ def create_dipolarity_figure():
     fig, axes_array = plt.subplots(
         4,
         1,
-        figsize=(12, 7),
+        figsize=(12, 8),
         sharex=True,
         dpi=180,
         squeeze=False,
