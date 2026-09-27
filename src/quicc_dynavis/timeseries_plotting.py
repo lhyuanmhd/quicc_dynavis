@@ -313,28 +313,14 @@ def plot_dipole_components_panel(
         ax.semilogy(
             data.tdip,
             abs(data.g10),
-            label=r"$|g_1^0|$",
-            alpha=0.7,
-        )
-
-        ax.semilogy(
-            data.tdip,
-            abs(data.g11),
-            label=r"$|g_1^1|$",
-            alpha=0.7,
-        )
-
-        ax.semilogy(
-            data.tdip,
-            abs(data.h11),
-            label=r"$|h_1^1|$",
+            label=r"$D_{\mathrm{AD}} = g_1^0$",
             alpha=0.7,
         )
 
         ax.semilogy(
             data.tdip,
             ed_amp,
-            label=r"$\sqrt{(g_1^1)^2+(h_1^1)^2}$",
+            label=r"$D_{\mathrm{ED}} = \sqrt{(g_1^1)^2+(h_1^1)^2}$",
             linestyle="--",
             linewidth=1.5,
         )
@@ -353,42 +339,6 @@ def plot_dipole_components_panel(
 
     ax.legend()
 
-
-# def plot_equatorial_dipole_orientation_panel(
-#     ax: Axes,
-#     data: TimeseriesData,
-#     time_limits: tuple[float, float],
-#     *,
-#     set_xlabel: bool,
-#     ylabel: str = r"$\phi_{\mathrm{ED}}$ (deg)",
-# ) -> None:
-#     """Plot the azimuthal orientation of the equatorial dipole."""
-
-#     if (
-#         len(data.tdip) > 0
-#         and len(data.g11) > 0
-#         and len(data.h11) > 0
-#     ):
-#         phi_ed = np.degrees(
-#             np.arctan2(data.h11, data.g11)
-#         )
-
-#         # Map orientation to [0, 360) degrees
-#         phi_ed = np.mod(phi_ed, 360.0)
-
-#         ax.plot(
-#             data.tdip,
-#             phi_ed,
-#             alpha=0.7,
-#         )
-
-#     ax.set_ylabel(ylabel)
-#     ax.set_xlim(time_limits)
-#     ax.set_ylim(0, 360)
-#     ax.set_yticks([0, 90, 180, 270, 360])
-
-#     if set_xlabel:
-#         ax.set_xlabel("Time")
 def plot_equatorial_dipole_orientation_panel(
     ax: Axes,
     data: TimeseriesData,
@@ -493,7 +443,7 @@ def plot_dipole_amplitudes_panel(
         ax.semilogy(
             data.tdip,
             axial_dipole,
-            label=r"$|g_1^0|$",
+            label=r"$D_{\mathrm{AD}} = g_1^0$",
             alpha=0.7,
         )
 
