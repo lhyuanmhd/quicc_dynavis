@@ -11,6 +11,21 @@ from .timeseries_data import TimeseriesData, HydroTimeseriesData
 from .timeseries_diagnostics import DynamoDiagnostics, HydroDiagnostics
 
 
+import matplotlib.pyplot as plt
+
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+
+    "font.size": 15,
+    "axes.labelsize": 15,
+    "axes.titlesize": 15,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "legend.fontsize": 15,
+})
+
 DEFAULT_COLORS = {
     "kinetic": "royalblue",
     "magnetic": "orange",
@@ -456,7 +471,7 @@ def plot_dipole_amplitudes_panel(
         ax.semilogy(
             data.tdip,
             equatorial_dipole,
-            label=r"$D_{\mathrm{ED} = \sqrt{(g_1^1})^2 + h_1^1})^2}$",
+            label=r"$D_{\mathrm{ED} = \sqrt{ (g_1^1)^2 + (h_1^1)^2 }$",
             alpha=0.7,
         )
 
