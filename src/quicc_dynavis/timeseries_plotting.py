@@ -279,28 +279,28 @@ def plot_dipole_components_panel(
     ):
         ed_amp = np.sqrt(data.g11**2 + data.h11**2)
 
-        ax.plot(
+        ax.semilogy(
             data.tdip,
             data.g10,
             label=r"$g_1^0$",
             alpha=0.7,
         )
 
-        ax.plot(
+        ax.semilogy(
             data.tdip,
             data.g11,
             label=r"$g_1^1$",
             alpha=0.7,
         )
 
-        ax.plot(
+        ax.semilogy(
             data.tdip,
             data.h11,
             label=r"$h_1^1$",
             alpha=0.7,
         )
 
-        ax.plot(
+        ax.semilog(
             data.tdip,
             ed_amp,
             label=r"$\sqrt{(g_1^1)^2+(h_1^1)^2}$",
