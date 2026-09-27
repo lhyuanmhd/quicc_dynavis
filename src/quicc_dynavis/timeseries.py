@@ -20,6 +20,8 @@ from .timeseries_plotting import (
     create_timeseries_figure,
     populate_timeseries_figure,
     resolve_time_limits,
+    populate_equatorial_dipole_figure,
+    create_equatorial_dipole_figure
 )
 
 from .timeseries_plotting import (
@@ -187,6 +189,58 @@ def plot_timeseries_dipolarity(
             #f"Ek_{data.Ek:.1e}_q{data.q:.3g}_Ra_{data.Ra:.2e}"
             f"Ek_{data.Ek:.1e}_Pr_{data.Pr:.3g}_Pm_{data.Pm:.3g}_q_{data.q:.3g}_Ra_{data.Ra:.2e}"
             "_timeseries_Emag_fdip_tiltAngle.pdf"
+        ),
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=180,
+        bbox_inches="tight",
+    )
+
+    if show:
+        plt.show()
+
+    return fig, axes
+
+
+def plot_timeseries_equatorial_dipole(
+    folderFile,
+    save_dir,
+    show=True,
+    xlim=None,
+    ylim=None,
+):
+    """Plot the evolution of the equatorial-dipole state."""
+    data = load_timeseries_data(folderFile)
+
+    diagnostics = compute_dynamo_diagnostics(data)
+    # print_dynamo_diagnostics(data, diagnostics)
+
+    time_limits = resolve_time_limits(
+        data.tkin,
+        xlim=xlim,
+    )
+
+    fig, axes = create_equatorial_dipole_figure()
+
+    populate_equatorial_dipole_figure(
+        axes=axes,
+        data=data,
+        diagnostics=diagnostics,
+        time_limits=time_limits,
+        ylim=ylim,
+    )
+
+    save_dir = os.fspath(save_dir)
+    os.makedirs(save_dir, exist_ok=True)
+
+    save_path = os.path.join(
+        save_dir,
+        (
+            f"Ek_{data.Ek:.1e}_Pr_{data.Pr:.3g}_Pm_{data.Pm:.3g}"
+            f"_q_{data.q:.3g}_Ra_{data.Ra:.2e}"
+            "_timeseries_equatorial_dipole.pdf"
         ),
     )
 

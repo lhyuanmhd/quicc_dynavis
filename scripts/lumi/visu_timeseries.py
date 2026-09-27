@@ -15,6 +15,7 @@ from quicc_dynavis import io
 from quicc_dynavis.timeseries import (
     plot_timeseries,
     plot_timeseries_dipolarity,
+    plot_timeseries_equatorial_dipole
 )
 
 
@@ -79,6 +80,12 @@ def main() -> None:
         show=False,
     )
     plot_timeseries_dipolarity(
+        folderFile=str(case_dir),
+        save_dir=str(fig_dir),
+        show=False,
+    )
+
+    plot_timeseries_equatorial_dipole(
         folderFile=str(case_dir),
         save_dir=str(fig_dir),
         show=False,

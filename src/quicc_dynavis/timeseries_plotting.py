@@ -93,6 +93,21 @@ def create_dipolarity_figure():
     axes = tuple(axes_array[:, 0])
     return fig, axes
 
+def create_equatorial_dipole_figure():
+    """Create the equatorial-dipole evolution figure."""
+
+    fig, axes = plt.subplots(
+        4,
+        1,
+        figsize=(12, 9),
+        sharex=True,
+    )
+
+    fig.subplots_adjust(
+        hspace=0.08,
+    )
+
+    return fig, axes
 
 def create_hydro_timeseries_figure(
     has_dissipation: bool,
@@ -313,6 +328,82 @@ def plot_dipole_components_panel(
         linestyle="--",
         alpha=0.4,
     )
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlim(time_limits)
+
+    if set_xlabel:
+        ax.set_xlabel("Time")
+
+    ax.legend()
+
+
+def plot_equatorial_dipole_orientation_panel(
+    ax: Axes,
+    data: TimeseriesData,
+    time_limits: tuple[float, float],
+    *,
+    set_xlabel: bool,
+    ylabel: str = r"$\phi_{\mathrm{ED}}$ (deg)",
+) -> None:
+    """Plot the azimuthal orientation of the equatorial dipole."""
+
+    if (
+        len(data.tdip) > 0
+        and len(data.g11) > 0
+        and len(data.h11) > 0
+    ):
+        phi_ed = np.arctan2(data.h11, data.g11)
+        phi_ed = np.unwrap(phi_ed)
+        phi_ed = np.degrees(phi_ed)
+
+        ax.plot(
+            data.tdip,
+            phi_ed,
+            alpha=0.7,
+        )
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlim(time_limits)
+
+    if set_xlabel:
+        ax.set_xlabel("Time")
+
+
+def plot_dipole_amplitudes_panel(
+    ax: Axes,
+    data: TimeseriesData,
+    time_limits: tuple[float, float],
+    *,
+    set_xlabel: bool,
+    ylabel: str = "Dipole amplitude",
+) -> None:
+    """Plot axial- and equatorial-dipole amplitudes."""
+
+    if (
+        len(data.tdip) > 0
+        and len(data.g10) > 0
+        and len(data.g11) > 0
+        and len(data.h11) > 0
+    ):
+        axial_dipole = np.abs(data.g10)
+        equatorial_dipole = np.sqrt(
+            data.g11**2 + data.h11**2
+        )
+
+        ax.semilogy(
+            data.tdip,
+            axial_dipole,
+            label=r"$|g_1^0|$",
+            alpha=0.7,
+        )
+
+        ax.semilogy(
+            data.tdip,
+            equatorial_dipole,
+            label=r"$D_{\mathrm{ED}}$",
+            alpha=0.7,
+        )
 
     ax.set_ylabel(ylabel)
     ax.set_xlim(time_limits)
@@ -570,6 +661,56 @@ def populate_dipolarity_figure(
         set_xlabel=True,
         ylabel=r"$\theta$ (deg)",
     )
+
+
+def populate_equatorial_dipole_figure(
+    axes: Sequence[Axes],
+    data: TimeseriesData,
+    diagnostics: DynamoDiagnostics,
+    time_limits: tuple[float, float],
+    ylim=None,
+) -> None:
+    """Populate the equatorial-dipole evolution figure."""
+    if len(axes) != 4:
+        raise ValueError(
+            f"Expected 4 axes, received {len(axes)}"
+        )
+
+    # (a) Magnetic energy
+    plot_magnetic_energy_panel(
+        axes[0],
+        data,
+        diagnostics,
+        time_limits,
+        ylim=ylim,
+    )
+
+    # (b) Axial vs equatorial dipole amplitudes
+    plot_dipole_amplitudes_panel(
+        axes[1],
+        data,
+        time_limits,
+        set_xlabel=False,
+    )
+
+    # (c) Dipole tilt angle
+    plot_dipole_angle_panel(
+        axes[2],
+        data,
+        diagnostics,
+        time_limits,
+        set_xlabel=False,
+        ylabel=r"$\theta$ (deg)",
+    )
+
+    # (d) Equatorial-dipole orientation
+    plot_equatorial_dipole_orientation_panel(
+        axes[3],
+        data,
+        time_limits,
+        set_xlabel=True,
+        ylabel=r"$\phi_{\mathrm{ED}}$ (deg)",
+    )   
 
 def populate_hydro_timeseries_figure(
     axes: Sequence[Axes],
