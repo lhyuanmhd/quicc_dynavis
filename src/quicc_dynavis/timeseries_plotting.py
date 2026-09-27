@@ -471,7 +471,7 @@ def plot_dipole_amplitudes_panel(
         ax.semilogy(
             data.tdip,
             equatorial_dipole,
-            label=r"$D_{\mathrm{ED} = \sqrt{ (g_1^1)^2 + (h_1^1)^2 }$",
+            label=r"$D_{\mathrm{ED}} = \sqrt{(g_1^1)^2+(h_1^1)^2}$",
             alpha=0.7,
         )
 
