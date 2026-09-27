@@ -809,6 +809,7 @@ def populate_equatorial_dipole_figure(
         time_limits,
         set_xlabel=True,
         ylabel=r"$\phi_{\mathrm{ED}}$ (deg)",
+        fit_xlim=(1.0, 10), # 
     )   
 
 def populate_hydro_timeseries_figure(
