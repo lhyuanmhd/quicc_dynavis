@@ -113,9 +113,9 @@ def create_equatorial_dipole_figure():
     """Create the equatorial-dipole evolution figure."""
 
     fig, axes = plt.subplots(
-        4,
+        5,
         1,
-        figsize=(12, 9),
+        figsize=(15, 9),
         sharex=True,
     )
 
@@ -733,6 +733,14 @@ def populate_equatorial_dipole_figure(
         time_limits,
         ylim=ylim,
     )
+
+    plot_dipolarity_panel(
+        axes[1],
+        data,
+        time_limits,
+        ylabel=r"$f_{\mathrm{dip}}$",
+    )
+
 
     # (b) Axial vs equatorial dipole amplitudes
     plot_dipole_amplitudes_panel(
