@@ -87,6 +87,12 @@ SUPPORTED_QUANTITIES = (
     "temperature",
 )
 
+def _trapezoid(y, *, x=None, axis=-1):
+    """NumPy-version-compatible trapezoidal integration."""
+    if hasattr(np, "trapezoid"):
+        return np.trapezoid(y, x=x, axis=axis)
+
+    return _trapezoid(y, x=x, axis=axis)
 
 def available_quantities() -> tuple[str, ...]:
     """Return scalar quantities supported by the analyzer."""
@@ -596,26 +602,26 @@ def azimuthal_profile(
     weighted_field = field_selected * jacobian
 
     # Integrate over theta first.
-    numerator_theta = np.trapz(
+    numerator_theta = _trapezoid(
         weighted_field,
         x=theta_selected,
         axis=1,
     )
 
-    denominator_theta = np.trapz(
+    denominator_theta = _trapezoid(
         jacobian,
         x=theta_selected,
         axis=1,
     )
 
     # Then integrate over radius.
-    numerator = np.trapz(
+    numerator = _trapezoid(
         numerator_theta,
         x=r,
         axis=0,
     )
 
-    denominator = np.trapz(
+    denominator = _trapezoid(
         denominator_theta,
         x=r,
         axis=0,
