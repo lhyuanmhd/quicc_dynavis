@@ -1206,7 +1206,7 @@ def save_azimuthal_csv(
     output.to_csv(
         filename,
         index=False,
-        float_format="%.12e",
+        float_format="%.6e",
     )
 
     print(
