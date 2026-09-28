@@ -1182,6 +1182,7 @@ def save_azimuthal_csv(
             "uphi_abs",
             "umag",
             "Hz_abs",
+            "Hz",
         ]
 
         columns = metadata.copy()
