@@ -72,6 +72,7 @@ SUPPORTED_QUANTITIES = (
     "velocity_phi",
     "velocity_magnitude",
     "velocity_z",
+    "velocity_s",
     "vorticity_r",
     "vorticity_theta",
     "vorticity_phi",
@@ -370,6 +371,15 @@ def construct_scalar_field(
 
         if quantity == "velocity_phi":
             return u_phi
+        
+        if quantity == "velocity_s":
+            ur, utheta, _ = _read_velocity(h5)
+
+            theta = np.asarray(h5["/mesh/grid_theta"])
+            sin_theta = np.sin(theta)[None, :, None]
+            cos_theta = np.cos(theta)[None, :, None]
+
+            return ur * sin_theta + utheta * cos_theta
 
         if quantity == "velocity_magnitude":
             return np.sqrt(
@@ -1195,17 +1205,43 @@ def save_azimuthal_csv(
         #     "Hz",
         # ]
 
+        # diagnostics = [
+        #     "ur_abs",
+        #     "utheta_abs",
+        #     "uphi_abs",
+        #     "umag",
+        #     "wr_abs",
+        #     "wtheta_abs",
+        #     "wphi_abs",
+        #     "wmag",
+        #     "wz_abs",
+        #     "wz",
+        #     "Hz_abs",
+        #     "Hz",
+        # ]
         diagnostics = [
+            # Velocity
             "ur_abs",
+            "ur",
             "utheta_abs",
             "uphi_abs",
             "umag",
+
+            # Cylindrical / axial velocity
+            "us_abs",
+            "us",
+            "uz_abs",
+            "uz",
+
+            # Vorticity
             "wr_abs",
             "wtheta_abs",
             "wphi_abs",
             "wmag",
             "wz_abs",
             "wz",
+
+            # Helicity
             "Hz_abs",
             "Hz",
         ]

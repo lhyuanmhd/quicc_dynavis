@@ -65,6 +65,27 @@ diagnostics = {
         "absolute": False,
     },
 
+    "ur": {
+        "quantity": "velocity_r",
+        "absolute": False,
+    },
+    "us": {
+        "quantity": "velocity_s",
+        "absolute": False,
+    },
+    "us_abs": {
+        "quantity": "velocity_s",
+        "absolute": True,
+    },
+    "uz": {
+        "quantity": "velocity_z",
+        "absolute": False,
+    },
+    "uz_abs": {
+        "quantity": "velocity_z",
+        "absolute": True,
+    },
+
     # ----------------------------------------------------------
     # Vorticity
     # ----------------------------------------------------------
