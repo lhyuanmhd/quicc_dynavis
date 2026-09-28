@@ -548,6 +548,15 @@ def _hemisphere_mask(
 # ============================================================================
 
 
+# def azimuthal_profile(
+#     field: np.ndarray,
+#     r: np.ndarray,
+#     theta: np.ndarray,
+#     *,
+#     hemisphere: str = "north",
+#     use_absolute: bool = False,
+# ) -> np.ndarray:
+    
 def azimuthal_profile(
     field: np.ndarray,
     r: np.ndarray,
@@ -555,6 +564,7 @@ def azimuthal_profile(
     *,
     hemisphere: str = "north",
     use_absolute: bool = False,
+    z_max: float | None = None,
 ) -> np.ndarray:
     """
     Compute volume-weighted (r, theta) average at every longitude.
@@ -608,6 +618,11 @@ def azimuthal_profile(
     tt = theta_selected[None, :, None]
 
     jacobian = rr**2 * np.sin(tt)
+
+    if z_max is not None:
+        z = rr * np.cos(tt)
+        spatial_mask = np.abs(z) <= z_max
+        jacobian = jacobian * spatial_mask
 
     weighted_field = field_selected * jacobian
 
@@ -842,6 +857,17 @@ def fourier_decomposition(
 # ============================================================================
 
 
+# def analyze_azimuthal_structure(
+#     field: np.ndarray,
+#     r: np.ndarray,
+#     theta: np.ndarray,
+#     phi: np.ndarray,
+#     *,
+#     hemisphere: str = "north",
+#     use_absolute: bool = False,
+#     max_m: int | None = 10,
+# ) -> dict:
+    
 def analyze_azimuthal_structure(
     field: np.ndarray,
     r: np.ndarray,
@@ -851,6 +877,7 @@ def analyze_azimuthal_structure(
     hemisphere: str = "north",
     use_absolute: bool = False,
     max_m: int | None = 10,
+    z_max: float | None = None,
 ) -> dict:
     """
     Analyze azimuthal organization of an arbitrary scalar field.
@@ -884,12 +911,21 @@ def analyze_azimuthal_structure(
                 "FFT analysis is not valid."
             )
 
+    # profile = azimuthal_profile(
+    #     field,
+    #     r,
+    #     theta,
+    #     hemisphere=hemisphere,
+    #     use_absolute=use_absolute,
+    # )
+
     profile = azimuthal_profile(
         field,
         r,
         theta,
         hemisphere=hemisphere,
         use_absolute=use_absolute,
+        z_max=z_max,
     )
 
     fourier = fourier_decomposition(
@@ -918,6 +954,7 @@ def analyze_snapshots(
     *,
     hemisphere: str = "north",
     modes: Iterable[int] = (1,),
+    z_max: float | None = None,
 ) -> pd.DataFrame:
     """
     Analyze multiple diagnostics over multiple QUICC snapshots.
@@ -1018,6 +1055,8 @@ def analyze_snapshots(
 
             row["time"] = time
             row["timestep"] = timestep
+        
+            row["z_max"] = z_max
 
             for name, config in diagnostics.items():
 
@@ -1032,6 +1071,16 @@ def analyze_snapshots(
                     quantity,
                 )
 
+                # result = analyze_azimuthal_structure(
+                #     field,
+                #     r,
+                #     theta,
+                #     phi,
+                #     hemisphere=hemisphere,
+                #     use_absolute=use_absolute,
+                #     max_m=max_m,
+                # )
+
                 result = analyze_azimuthal_structure(
                     field,
                     r,
@@ -1040,6 +1089,7 @@ def analyze_snapshots(
                     hemisphere=hemisphere,
                     use_absolute=use_absolute,
                     max_m=max_m,
+                    z_max=z_max,
                 )
 
                 for mode in modes:
@@ -1075,6 +1125,8 @@ def analyze_snapshots(
         "path",
         "time",
         "timestep",
+        "hemisphere",
+        "z_max",
     ]
 
     remaining_columns = [
@@ -1184,6 +1236,7 @@ def save_azimuthal_csv(
             "run",
             "visu",
             "time",
+            "z_max",
         ]
 
         # diagnostics = [

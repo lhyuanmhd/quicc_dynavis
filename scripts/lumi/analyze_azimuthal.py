@@ -130,13 +130,20 @@ diagnostics = {
 }
 
 
+# df = analyze_snapshots(
+#     files,
+#     diagnostics,
+#     hemisphere="north",
+#     modes=(1,),
+# )
+
 df = analyze_snapshots(
     files,
     diagnostics,
     hemisphere="north",
     modes=(1,),
+    z_max=0.2,
 )
-
 
 save_azimuthal_csv(
     df,
