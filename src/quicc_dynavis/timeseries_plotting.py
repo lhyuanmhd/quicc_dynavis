@@ -740,7 +740,6 @@ def populate_equatorial_dipole_figure(
     #     ylabel=r"$f_{\mathrm{dip}}$",
     # )
 
-
     # (b) Axial vs equatorial dipole amplitudes
     # plot_dipole_amplitudes_panel(
     #     axes[0],
