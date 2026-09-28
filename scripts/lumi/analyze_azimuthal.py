@@ -142,7 +142,7 @@ df = analyze_snapshots(
     diagnostics,
     hemisphere="north",
     modes=(1,),
-    z_max=0.2,
+    z_max=0.7,
 )
 
 save_azimuthal_csv(
