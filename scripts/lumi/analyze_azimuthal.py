@@ -44,11 +44,12 @@ df = analyze_snapshots(
     files,
     diagnostics,
     hemisphere="north",
-    modes=(1, 2, 3),
+    modes=(1,),
 )
 
 
 save_azimuthal_csv(
     df,
     "azimuthal_timeseries.csv",
+    compact=True,
 )

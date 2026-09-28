@@ -1044,16 +1044,50 @@ def analyze_snapshots(
 # ============================================================================
 
 
+# def _extract_mode_row(
+#     result: dict,
+#     mode: int,
+#     *,
+#     prefix: str,
+# ) -> dict:
+#     """Extract one Fourier mode into flat CSV-friendly columns."""
+#     m = result["m"]
+
+#     index = np.where(m == mode)[0]
+
+#     if len(index) == 0:
+#         raise ValueError(
+#             f"Mode m={mode} is not available."
+#         )
+
+#     i = index[0]
+
+#     return {
+#         f"{prefix}_m{mode}_amplitude":
+#             float(result["amplitude"][i]),
+
+#         f"{prefix}_m{mode}_power_fraction":
+#             float(result["power_fraction"][i]),
+
+#         f"{prefix}_m{mode}_phase_rad":
+#             float(result["phase"][i]),
+
+#         f"{prefix}_m{mode}_orientation_rad":
+#             float(result["orientation"][i]),
+
+#         f"{prefix}_m{mode}_orientation_deg":
+#             float(result["orientation_deg"][i]),
+#     }
+
 def _extract_mode_row(
     result: dict,
     mode: int,
     *,
     prefix: str,
 ) -> dict:
-    """Extract one Fourier mode into flat CSV-friendly columns."""
-    m = result["m"]
+    """Extract one Fourier mode into flat output columns."""
 
-    index = np.where(m == mode)[0]
+    index = np.where(result["m"] == mode)[0]
 
     if len(index) == 0:
         raise ValueError(
@@ -1065,6 +1099,9 @@ def _extract_mode_row(
     return {
         f"{prefix}_m{mode}_amplitude":
             float(result["amplitude"][i]),
+
+        f"{prefix}_m{mode}_relative":
+            float(result["relative_to_mean"][i]),
 
         f"{prefix}_m{mode}_power_fraction":
             float(result["power_fraction"][i]),
@@ -1083,15 +1120,51 @@ def _extract_mode_row(
 # CSV output
 # ============================================================================
 
-
 def save_azimuthal_csv(
     dataframe: pd.DataFrame,
     filename: str | Path,
+    *,
+    compact: bool = True,
 ) -> None:
     """Save azimuthal time-series results to CSV."""
+
     filename = Path(filename)
 
-    dataframe.to_csv(
+    if compact:
+        metadata = [
+            "run",
+            "visu",
+            "time",
+        ]
+
+        diagnostics = [
+            "ur_abs",
+            "utheta_abs",
+            "uphi_abs",
+            "umag",
+            "Hz_abs",
+        ]
+
+        columns = metadata.copy()
+
+        for diagnostic in diagnostics:
+            columns.extend([
+                f"{diagnostic}_m1_relative",
+                f"{diagnostic}_m1_orientation_deg",
+            ])
+
+        columns = [
+            column
+            for column in columns
+            if column in dataframe.columns
+        ]
+
+        output = dataframe[columns]
+
+    else:
+        output = dataframe
+
+    output.to_csv(
         filename,
         index=False,
         float_format="%.12e",
@@ -1100,3 +1173,5 @@ def save_azimuthal_csv(
     print(
         f"Saved azimuthal analysis to {filename}"
     )
+
+    
