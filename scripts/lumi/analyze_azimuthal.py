@@ -37,6 +37,10 @@ diagnostics = {
         "quantity": "axial_helicity",
         "absolute": True,
     },
+    "Hz": {
+    "quantity": "axial_helicity",
+    "absolute": False,
+    }
 }
 
 
