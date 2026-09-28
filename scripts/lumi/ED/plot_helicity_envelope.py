@@ -13,17 +13,61 @@ from quicc_dynavis.azimuthal import (
 
 
 # ============================================================
+# Plot style
+# ============================================================
+
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+
+    "font.size": 15,
+    "axes.labelsize": 15,
+    "axes.titlesize": 15,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "legend.fontsize": 15,
+})
+
+
+# ============================================================
 # Settings
 # ============================================================
 
 RUNS_DIR = Path("runs")
-
-M_MAX = 5
+FIGURES_DIR = Path("figures")
 
 HEMISPHERE = "north"
 Z_MAX = 0.7
 
 QUANTITY = "axial_helicity"
+
+
+# ============================================================
+# Ask user for maximum m
+# ============================================================
+
+def ask_m_max():
+    """Ask the user for the maximum azimuthal mode."""
+
+    while True:
+        value = input(
+            "Enter maximum azimuthal mode m: "
+        ).strip()
+
+        try:
+            m_max = int(value)
+
+            if m_max < 1:
+                raise ValueError
+
+            return m_max
+
+        except ValueError:
+            print(
+                "Please enter a positive integer, "
+                "for example 1, 3, 5, or 20."
+            )
 
 
 # ============================================================
@@ -60,7 +104,8 @@ def find_snapshots(runs_dir):
 
 def reconstruct_low_m(result, m_max):
     """
-    Reconstruct azimuthal profile using Fourier modes 0 <= m <= m_max.
+    Reconstruct azimuthal profile using Fourier modes
+    0 <= m <= m_max.
     """
 
     phi = result["phi"]
@@ -75,7 +120,10 @@ def reconstruct_low_m(result, m_max):
     envelope += coeff[0].real
 
     # m > 0
-    for m in range(1, min(m_max + 1, len(coeff))):
+    for m in range(
+        1,
+        min(m_max + 1, len(coeff)),
+    ):
         envelope += 2.0 * np.real(
             coeff[m] * np.exp(1j * m * phi)
         )
@@ -87,7 +135,7 @@ def reconstruct_low_m(result, m_max):
 # Analyze one snapshot
 # ============================================================
 
-def analyze_snapshot(filename):
+def analyze_snapshot(filename, m_max):
 
     print(f"Processing {filename} ...")
 
@@ -109,13 +157,13 @@ def analyze_snapshot(filename):
             phi,
             hemisphere=HEMISPHERE,
             use_absolute=True,
-            max_m=M_MAX,
+            max_m=m_max,
             z_max=Z_MAX,
         )
 
     envelope = reconstruct_low_m(
         result,
-        M_MAX,
+        m_max,
     )
 
     return {
@@ -131,13 +179,22 @@ def analyze_snapshot(filename):
 # Main
 # ============================================================
 
+m_max = ask_m_max()
+
+print(
+    f"\nAnalyzing helicity envelope with m <= {m_max}\n"
+)
+
 files = find_snapshots(RUNS_DIR)
 
 results = []
 
 for filename in files:
     results.append(
-        analyze_snapshot(filename)
+        analyze_snapshot(
+            filename,
+            m_max,
+        )
     )
 
 
@@ -194,7 +251,7 @@ ax.set_xlabel(
 )
 
 ax.set_ylabel(
-    rf"$\langle |H_z| \rangle_{{r,\theta}},\ m\leq{M_MAX}$"
+    rf"$\langle |H_z| \rangle_{{r,\theta}},\ m\leq {m_max}$"
 )
 
 ax.set_yticks([])
@@ -202,15 +259,33 @@ ax.set_yticks([])
 ax.legend(
     loc="center left",
     bbox_to_anchor=(1.02, 0.5),
-    fontsize=9,
 )
 
 fig.tight_layout()
 
+
+# ============================================================
+# Save figure
+# ============================================================
+
+FIGURES_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+output_file = (
+    FIGURES_DIR
+    / f"helicity_m{m_max}_envelope.png"
+)
+
 fig.savefig(
-    "helicity_m5_envelope.png",
+    output_file,
     dpi=300,
     bbox_inches="tight",
+)
+
+print(
+    f"\nFigure saved to: {output_file}"
 )
 
 plt.show()
