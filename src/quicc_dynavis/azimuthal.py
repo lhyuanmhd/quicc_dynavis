@@ -1176,11 +1176,36 @@ def save_azimuthal_csv(
             "time",
         ]
 
+        # diagnostics = [
+        #     "ur_abs",
+        #     "utheta_abs",
+        #     "uphi_abs",
+        #     "umag",
+        #     "Hz_abs",
+        #     "Hz",
+        # ]
+        # diagnostics = [
+        #     "ur_abs",
+        #     "utheta_abs",
+        #     "uphi_abs",
+        #     "umag",
+        #     "wz_abs",
+        #     "wz",
+        #     "Hz_abs",
+        #     "Hz",
+        # ]
+
         diagnostics = [
             "ur_abs",
             "utheta_abs",
             "uphi_abs",
             "umag",
+            "wr_abs",
+            "wtheta_abs",
+            "wphi_abs",
+            "wmag",
+            "wz_abs",
+            "wz",
             "Hz_abs",
             "Hz",
         ]
