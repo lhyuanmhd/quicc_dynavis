@@ -641,7 +641,6 @@ def azimuthal_profile(
 # Fourier analysis
 # ============================================================================
 
-
 def fourier_decomposition(
     profile: np.ndarray,
     *,
@@ -671,25 +670,34 @@ def fourier_decomposition(
             Complex Fourier coefficient.
 
         amplitude
-            Real cosine-mode amplitude.
+            Real cosine-mode amplitude A_m.
+
+        relative_to_mean
+            Relative Fourier amplitude A_m / A_0.
+            Returns NaN if the axisymmetric amplitude A_0
+            is too small for the ratio to be meaningful.
 
         phase
             Complex phase arg(Fhat_m), radians.
 
         orientation
             Physical orientation -phase/m, radians.
+            For m > 0, defined modulo 2*pi/m.
 
         orientation_deg
             Physical orientation in degrees.
 
-
         power_fraction
             Fraction of total non-axisymmetric Fourier power.
+            The denominator includes all resolved m > 0 modes,
+            even when max_m truncates the returned arrays.
     """
     profile = np.asarray(profile)
 
     if profile.ndim != 1:
-        raise ValueError("profile must be one-dimensional.")
+        raise ValueError(
+            "profile must be one-dimensional."
+        )
 
     nphi = len(profile)
 
@@ -698,10 +706,14 @@ def fourier_decomposition(
             "At least two longitude samples are required."
         )
 
-    coeff_all = np.fft.rfft(profile) / nphi
+    # --------------------------------------------------------------
+    # Fourier coefficients
+    # --------------------------------------------------------------
 
+    coeff_all = np.fft.rfft(profile) / nphi
     m_all = np.arange(len(coeff_all))
 
+    # Real cosine-mode amplitudes.
     amplitude_all = 2.0 * np.abs(coeff_all)
 
     # m = 0 is not doubled.
@@ -710,6 +722,32 @@ def fourier_decomposition(
     # Nyquist mode is also not doubled for even nphi.
     if nphi % 2 == 0:
         amplitude_all[-1] = np.abs(coeff_all[-1])
+
+    # --------------------------------------------------------------
+    # Relative amplitude A_m / A_0
+    # --------------------------------------------------------------
+
+    relative_to_mean_all = np.full(
+        len(coeff_all),
+        np.nan,
+        dtype=float,
+    )
+
+    amplitude_scale = np.max(amplitude_all)
+
+    # Avoid meaningless ratios when the mean of a signed field
+    # is zero or numerically very small.
+    if (
+        amplitude_scale > 0.0
+        and amplitude_all[0] > 1.0e-12 * amplitude_scale
+    ):
+        relative_to_mean_all = (
+            amplitude_all / amplitude_all[0]
+        )
+
+    # --------------------------------------------------------------
+    # Phase and physical orientation
+    # --------------------------------------------------------------
 
     phase_all = np.angle(coeff_all)
 
@@ -745,15 +783,15 @@ def fourier_decomposition(
     )
 
     if len(coeff_all) > 1:
-        nonaxis_power = np.abs(
-            coeff_all[1:]
-        ) ** 2
+        nonaxis_power = (
+            np.abs(coeff_all[1:]) ** 2
+        )
 
         total_nonaxis_power = np.sum(
             nonaxis_power
         )
 
-        if total_nonaxis_power > 0:
+        if total_nonaxis_power > 0.0:
             power_fraction_all[1:] = (
                 nonaxis_power
                 / total_nonaxis_power
@@ -765,6 +803,7 @@ def fourier_decomposition(
 
     if max_m is None:
         stop = len(coeff_all)
+
     else:
         if max_m < 0:
             raise ValueError(
@@ -780,11 +819,11 @@ def fourier_decomposition(
         "m": m_all[:stop],
         "coefficient": coeff_all[:stop],
         "amplitude": amplitude_all[:stop],
+        "relative_to_mean": relative_to_mean_all[:stop],
         "phase": phase_all[:stop],
         "orientation": orientation_all[:stop],
         "orientation_deg": orientation_deg_all[:stop],
         "power_fraction": power_fraction_all[:stop],
-
     }
 
 
