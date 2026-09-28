@@ -117,17 +117,22 @@ for i, result in enumerate(results):
     profile = result["profile"]
 
     # Remove azimuthal mean.
-    y = profile - np.mean(profile)
+    # y = profile - np.mean(profile)
 
     # Normalize each snapshot independently.
     # This emphasizes morphology and peak position.
-    scale = np.max(np.abs(y))
+    # scale = np.max(np.abs(y))
 
-    if scale > 0.0:
-        y = y / scale
+    # if scale > 0.0:
+    #     y = y / scale
 
-    # Vertical offset.
-    y = y + i * OFFSET
+    # # Vertical offset.
+    # y = y + i * OFFSET
+
+
+    # Keep the original signed helicity profile:
+    # no mean removal and no normalization.
+    y = profile.copy()
 
     ax.plot(
         phi_deg,
