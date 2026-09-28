@@ -50,6 +50,6 @@ df = analyze_snapshots(
 
 save_azimuthal_csv(
     df,
-    "azimuthal_timeseries.csv",
+    "diagnostics/azimuthal_timeseries.csv",
     compact=True,
 )
