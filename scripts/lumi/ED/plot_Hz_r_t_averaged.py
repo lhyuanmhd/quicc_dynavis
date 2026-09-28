@@ -102,55 +102,37 @@ results.sort(
 # Plot full azimuthal profiles
 # ============================================================
 
-fig, ax = plt.subplots(
-    figsize=(9, 8)
+# Global range across ALL snapshots
+all_profiles = np.concatenate(
+    [r["profile"] for r in results]
 )
 
-OFFSET = 1.5
+global_range = np.max(all_profiles) - np.min(all_profiles)
+
+# Same physical offset for every snapshot
+OFFSET = 1.1 * global_range
+
+fig, ax = plt.subplots(figsize=(9, 8))
 
 for i, result in enumerate(results):
 
-    phi_deg = np.degrees(
-        result["phi"]
-    )
+    phi_deg = np.degrees(result["phi"])
 
-    profile = result["profile"]
-
-    # Remove azimuthal mean.
-    # y = profile - np.mean(profile)
-
-    # Normalize each snapshot independently.
-    # This emphasizes morphology and peak position.
-    # scale = np.max(np.abs(y))
-
-    # if scale > 0.0:
-    #     y = y / scale
-
-    # # Vertical offset.
-    # y = y + i * OFFSET
-
-
-    # Keep the original signed helicity profile:
-    # no mean removal and no normalization.
-    y = profile.copy()
+    # Raw profile:
+    # no mean removal
+    # no normalization
+    y = result["profile"] + i * OFFSET
 
     ax.plot(
         phi_deg,
         y,
-        linewidth=1.2,
+        linewidth=1.0,
         label=rf"$t={result['time']:.3f}$",
     )
 
-
 ax.set_xlim(0, 360)
-
-ax.set_xlabel(
-    r"$\phi$ (deg)"
-)
-
-ax.set_ylabel(
-    r"$\langle H_z\rangle_{r,\theta}$"
-)
+ax.set_xlabel(r"$\phi$ (deg)")
+ax.set_ylabel(r"$\langle H_z\rangle_{r,\theta}$")
 
 ax.set_yticks([])
 
@@ -158,6 +140,66 @@ ax.legend(
     loc="center left",
     bbox_to_anchor=(1.02, 0.5),
 )
+
+# fig.tight_layout()
+# plt.show()
+
+# fig, ax = plt.subplots(
+#     figsize=(9, 8)
+# )
+
+# OFFSET = 1.5
+
+# for i, result in enumerate(results):
+
+#     phi_deg = np.degrees(
+#         result["phi"]
+#     )
+
+#     profile = result["profile"]
+
+#     # Remove azimuthal mean.
+#     # y = profile - np.mean(profile)
+
+#     # Normalize each snapshot independently.
+#     # This emphasizes morphology and peak position.
+#     # scale = np.max(np.abs(y))
+
+#     # if scale > 0.0:
+#     #     y = y / scale
+
+#     # # Vertical offset.
+#     # y = y + i * OFFSET
+
+
+#     # Keep the original signed helicity profile:
+#     # no mean removal and no normalization.
+#     y = profile.copy()
+
+#     ax.plot(
+#         phi_deg,
+#         y,
+#         linewidth=1.2,
+#         label=rf"$t={result['time']:.3f}$",
+#     )
+
+
+# ax.set_xlim(0, 360)
+
+# ax.set_xlabel(
+#     r"$\phi$ (deg)"
+# )
+
+# ax.set_ylabel(
+#     r"$\langle H_z\rangle_{r,\theta}$"
+# )
+
+# ax.set_yticks([])
+
+# ax.legend(
+#     loc="center left",
+#     bbox_to_anchor=(1.02, 0.5),
+# )
 
 fig.tight_layout()
 
