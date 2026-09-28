@@ -41,7 +41,7 @@ HEMISPHERE = "north"
 Z_MAX = 0.7
 
 #QUANTITY = "axial_helicity"
-QUANTITY = "axial_vorticity"
+QUANTITY = "vorticity_z"
 
 
 # ============================================================
