@@ -1,16 +1,19 @@
 from pathlib import Path
 
 from quicc_dynavis.azimuthal import (
+    discover_snapshots,
     analyze_snapshots,
     save_azimuthal_csv,
 )
 
 
-snapshot_dir = Path(".")
-
-files = sorted(
-    snapshot_dir.glob("visState*.hdf5")
+root = Path(
+    "runs"
 )
+
+files = discover_snapshots(root)
+
+print(f"Found {len(files)} snapshots.")
 
 
 diagnostics = {
@@ -49,8 +52,3 @@ save_azimuthal_csv(
     df,
     "azimuthal_timeseries.csv",
 )
-
-
-print(df.head())
-print()
-print(f"Processed {len(df)} snapshots.")

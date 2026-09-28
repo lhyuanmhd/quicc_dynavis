@@ -92,6 +92,72 @@ def available_quantities() -> tuple[str, ...]:
     """Return scalar quantities supported by the analyzer."""
     return SUPPORTED_QUANTITIES
 
+def snapshot_metadata(
+    filename: str | Path,
+) -> dict[str, str]:
+    """
+    Extract run and visualization-directory information
+    from a snapshot path.
+    """
+    path = Path(filename)
+
+    run = ""
+    visu = ""
+
+    for parent in path.parents:
+        if parent.name.startswith("visu_") and not visu:
+            visu = parent.name
+
+        if parent.name.startswith("run") and not run:
+            run = parent.name
+
+    return {
+        "run": run,
+        "visu": visu,
+        "filename": path.name,
+        "path": str(path),
+    }
+
+def discover_snapshots(
+    root: str | Path,
+    *,
+    pattern: str = "visState*.hdf5",
+) -> list[Path]:
+    """
+    Recursively discover QUICC visualization snapshots.
+
+    Examples
+    --------
+    root/
+        runs/
+            run001/
+                visu_0001/
+                    visState0000.hdf5
+            run002/
+                visu_0035/
+                    visState0000.hdf5
+
+    Notes
+    -----
+    The filename itself is not assumed to uniquely identify a snapshot.
+    Physical simulation time stored in /run/time is used later for
+    chronological ordering.
+    """
+    root = Path(root)
+
+    if not root.exists():
+        raise FileNotFoundError(
+            f"Snapshot root does not exist: {root}"
+        )
+
+    files = list(root.rglob(pattern))
+
+    if not files:
+        raise FileNotFoundError(
+            f"No files matching '{pattern}' found under {root}"
+        )
+
+    return sorted(files)
 
 # ============================================================================
 # Basic HDF5 utilities
@@ -881,9 +947,11 @@ def analyze_snapshots(
 
         print(f"Processing {filename} ...")
 
-        row = {
-            "filename": filename.name,
-        }
+        # row = {
+        #     "filename": filename.name,
+        # }
+
+        row = snapshot_metadata(filename)
 
         # Open each snapshot only once.
         with h5py.File(filename, "r") as h5:
@@ -939,8 +1007,17 @@ def analyze_snapshots(
         kind="stable",
     ).reset_index(drop=True)
 
+    # metadata_columns = [
+    #     "filename",
+    #     "time",
+    #     "timestep",
+    # ]
+
     metadata_columns = [
+        "run",
+        "visu",
         "filename",
+        "path",
         "time",
         "timestep",
     ]
@@ -995,153 +1072,6 @@ def _extract_mode_row(
         f"{prefix}_m{mode}_orientation_deg":
             float(result["orientation_deg"][i]),
     }
-
-
-# ============================================================================
-# Multi-snapshot analysis
-# ============================================================================
-
-
-def analyze_snapshots(
-    filenames: Iterable[str | Path],
-    quantities: Iterable[str],
-    *,
-    hemisphere: str = "north",
-    use_absolute: bool = True,
-    modes: Iterable[int] = (1,),
-) -> pd.DataFrame:
-    """
-    Analyze multiple quantities over multiple snapshots.
-
-    Parameters
-    ----------
-    filenames
-        Snapshot filenames.
-
-    quantities
-        Scalar quantities to analyze.
-
-    hemisphere
-        'north', 'south', or 'full'.
-
-    use_absolute
-        Apply absolute value before the spatial average.
-
-        This is useful for intensity diagnostics such as
-        |u_r|, |u_theta| and |H_z|.
-
-        For intrinsically positive quantities such as
-        velocity_magnitude this has no effect.
-
-    modes
-        Fourier modes written to the output table.
-
-    Returns
-    -------
-    dataframe
-        One row per snapshot.
-    """
-    filenames = [
-        Path(filename)
-        for filename in filenames
-    ]
-
-    quantities = tuple(quantities)
-    modes = tuple(sorted(set(modes)))
-
-    if not filenames:
-        raise ValueError(
-            "No snapshot files supplied."
-        )
-
-    if not quantities:
-        raise ValueError(
-            "No quantities supplied."
-        )
-
-    if not modes:
-        raise ValueError(
-            "No Fourier modes supplied."
-        )
-
-    if min(modes) < 1:
-        raise ValueError(
-            "modes should contain positive "
-            "non-axisymmetric mode numbers."
-        )
-
-    max_m = max(modes)
-
-    rows = []
-
-    for filename in filenames:
-
-        print(f"Processing {filename} ...")
-
-        row = {
-            "filename": filename.name,
-        }
-
-        snapshot_time = None
-        snapshot_timestep = None
-
-        for quantity in quantities:
-
-            result = analyze_snapshot(
-                filename,
-                quantity,
-                hemisphere=hemisphere,
-                use_absolute=use_absolute,
-                max_m=max_m,
-            )
-
-            if snapshot_time is None:
-                snapshot_time = result["time"]
-                snapshot_timestep = result["timestep"]
-
-            for mode in modes:
-
-                mode_data = _extract_mode_row(
-                    result,
-                    mode,
-                    prefix=quantity,
-                )
-
-                row.update(mode_data)
-
-        row["time"] = snapshot_time
-        row["timestep"] = snapshot_timestep
-
-        rows.append(row)
-
-    dataframe = pd.DataFrame(rows)
-
-    # Put metadata first.
-    metadata_columns = [
-        "filename",
-        "time",
-        "timestep",
-    ]
-
-    remaining_columns = [
-        column
-        for column in dataframe.columns
-        if column not in metadata_columns
-    ]
-
-    dataframe = dataframe[
-        metadata_columns
-        + remaining_columns
-    ]
-
-    # Sort chronologically rather than by filename.
-    dataframe = dataframe.sort_values(
-        "time",
-        kind="stable",
-    ).reset_index(drop=True)
-
-    return dataframe
-
 
 # ============================================================================
 # CSV output
