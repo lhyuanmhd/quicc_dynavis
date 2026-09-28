@@ -93,7 +93,8 @@ def _trapezoid(y, *, x=None, axis=-1):
     if hasattr(np, "trapezoid"):
         return np.trapezoid(y, x=x, axis=axis)
 
-    return _trapezoid(y, x=x, axis=axis)
+    #return _trapezoid(y, x=x, axis=axis)
+    return np.trapz(y, x=x, axis=axis)
 
 def available_quantities() -> tuple[str, ...]:
     """Return scalar quantities supported by the analyzer."""
