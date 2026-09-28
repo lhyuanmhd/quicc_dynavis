@@ -1125,7 +1125,6 @@ def analyze_snapshots(
         "path",
         "time",
         "timestep",
-        "hemisphere",
         "z_max",
     ]
 
