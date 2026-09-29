@@ -13,6 +13,7 @@ DYNAMO_SUMMARY_HEADER = [
     "Pm",
     "Pr",
     "E0mag",
+    "dEm_dt", # time averaged magnetic energy growth rate
     "dyn",
     "fdip",
     "Lambda",
@@ -53,6 +54,7 @@ def _format_summary_row(
     Ra,
     Ek,
     E0mag,
+    dEm_dt, #new addition for time averaged magnetic energy growth rate
     dynamo,
     dipolarity,
     Elsasser,
@@ -89,6 +91,7 @@ def _format_summary_row(
         _format_control_parameter(Pm),
         _format_control_parameter(Pr),
         f"{E0mag:.2e}",
+        f"{dEm_dt:.3e}" if np.isfinite(dEm_dt) else "nan", #new addition for time averaged magnetic energy growth rate
         int(dynamo),
         f"{dipolarity:.2f}",
         f"{Elsasser:.2e}",
@@ -250,6 +253,7 @@ def write_dynamo_summary_csv(
     Ra,
     Ek,
     E0mag,
+    dEm_dt,
     dynamo,
     dipolarity,
     Elsasser,
@@ -285,6 +289,7 @@ def write_dynamo_summary_csv(
         Ra=Ra,
         Ek=Ek,
         E0mag=E0mag,
+        dEm_dt=dEm_dt,
         dynamo=dynamo,
         dipolarity=dipolarity,
         Elsasser=Elsasser,

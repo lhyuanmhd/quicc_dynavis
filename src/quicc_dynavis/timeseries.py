@@ -99,6 +99,7 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         Ra=data.Ra,
         Ek=data.Ek,
         E0mag=diagnostics.initial_magnetic_energy,
+        dEm_dt=diagnostics.mean_dEm_dt,
         dynamo=int(diagnostics.dynamo_active),
         dipolarity=diagnostics.mean_dipolarity,
         Elsasser=diagnostics.elsasser_number,

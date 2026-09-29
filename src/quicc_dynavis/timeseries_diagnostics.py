@@ -22,6 +22,7 @@ class DynamoDiagnostics:
     initial_magnetic_energy: float
     mean_kinetic_energy: float
     mean_magnetic_energy: float
+    mean_dEm_dt: float #new added to compute the time derivative of magnetic energy
     mean_thermal_perturbation: float
     mean_nusselt: float
 
@@ -172,6 +173,24 @@ def compute_dynamo_diagnostics(
         data.mag_total,
         start_index,
     )
+
+    # mag_start_index = _averaging_start_index(
+    #     data.tmag,
+    #     fraction=averaging_fraction,
+    # )
+
+    if len(data.mag_total) > 1:
+        dEm_dt = np.gradient(
+            data.mag_total,
+            data.tmag,
+        )
+        mean_dEm_dt = _mean_after_start(
+            dEm_dt,
+            start_index,
+        )
+    else:
+        mean_dEm_dt = float("nan")
+
     mean_thermal_perturbation = _mean_after_start(
         thermal_perturbation,
         start_index,
@@ -235,12 +254,27 @@ def compute_dynamo_diagnostics(
         mean_viscous_dissipation = float("nan")
 
     if len(data.mag_dis_total) > 0:
+        # mean_ohmic_dissipation = float(
+        #     2 *4/3 * np.pi * np.mean(data.mag_dis_total)
+        # )
         mean_ohmic_dissipation = float(
-            2 *4/3 * np.pi * np.mean(data.mag_dis_total)
+            2 * 4/3 * np.pi
+            * _mean_after_start(
+                data.mag_dis_total,
+                start_index,
+            )
         )
     else:
         mean_ohmic_dissipation = float("nan")
 
+    mean_viscous_dissipation = float(
+        data.Ek
+        * _mean_after_start(
+            data.kin_dis_total,
+            start_index,
+        )
+    )
+    
     total_dissipation = (
         mean_viscous_dissipation
         + mean_ohmic_dissipation
@@ -292,6 +326,7 @@ def compute_dynamo_diagnostics(
         initial_magnetic_energy=initial_magnetic_energy,
         mean_kinetic_energy=mean_kinetic_energy,
         mean_magnetic_energy=mean_magnetic_energy,
+        mean_dEm_dt=mean_dEm_dt,# new added to compute the time derivative of magnetic energy
         mean_thermal_perturbation=mean_thermal_perturbation,
         mean_nusselt=mean_nusselt,
         magnetic_reynolds_number=magnetic_reynolds_number,
@@ -339,6 +374,10 @@ def print_dynamo_diagnostics(
     print(
         "Time-averaged magnetic energy = "
         f"{diagnostics.mean_magnetic_energy:.2e}"
+    )
+    print(
+        "Time-averaged dEm/dt = "
+        f"{diagnostics.mean_dEm_dt:.3e}"
     )
     print(
         "Elsasser number Lambda = "
