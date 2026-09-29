@@ -174,13 +174,8 @@ def compute_dynamo_diagnostics(
         start_index,
     )
 
-    # mag_start_index = _averaging_start_index(
-    #     data.tmag,
-    #     fraction=averaging_fraction,
-    # )
-
     if len(data.mag_total) > 1:
-        dEm_dt = np.gradient(
+        dEm_dt = 0.5 * 4/3 * np.pi * np.gradient(
             data.mag_total,
             data.tmag,
         )
