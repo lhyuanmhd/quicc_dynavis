@@ -119,8 +119,8 @@ def get_field_data(data, field_name):
         sin_theta = np.sin(theta)[None, :, None]
 
         return (
-            data["curl_u_r"] * cos_theta
-            - data["curl_u_theta"] * sin_theta
+            data["w_r"] * cos_theta
+            - data["w_theta"] * sin_theta
         )
 
     if field_name == "w_s" or field_name == "curl_u_s":
@@ -129,8 +129,8 @@ def get_field_data(data, field_name):
         cos_theta = np.cos(theta)[None, :, None]
 
         return (
-            data["curl_u_r"] * sin_theta
-            + data["curl_u_theta"] * cos_theta
+            data["w_r"] * sin_theta
+            + data["w_theta"] * cos_theta
         )
 
     # -------------------------
