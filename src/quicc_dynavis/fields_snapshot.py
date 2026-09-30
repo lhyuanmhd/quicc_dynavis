@@ -115,17 +115,23 @@ def get_field_data(data, field_name):
     # Derived vorticity
     # -------------------------
     if field_name == "w_z" or field_name == "curl_u_axial":
-        return data["w_z"]
+        cos_theta = np.cos(theta)[None, :, None]
+        sin_theta = np.sin(theta)[None, :, None]
+
+        return (
+            data["curl_u_r"] * cos_theta
+            - data["curl_u_theta"] * sin_theta
+        )
 
     if field_name == "w_s" or field_name == "curl_u_s":
-        return data["w_s"]
-        # sin_theta = np.sin(theta)[None, :, None]
-        # cos_theta = np.cos(theta)[None, :, None]
+       
+        sin_theta = np.sin(theta)[None, :, None]
+        cos_theta = np.cos(theta)[None, :, None]
 
-        # return (
-        #     data["curl_u_r"] * sin_theta
-        #     + data["curl_u_theta"] * cos_theta
-        # )
+        return (
+            data["curl_u_r"] * sin_theta
+            + data["curl_u_theta"] * cos_theta
+        )
 
     # -------------------------
     # Helicity components
