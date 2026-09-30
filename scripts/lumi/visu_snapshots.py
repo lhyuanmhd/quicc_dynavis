@@ -232,7 +232,7 @@ def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
     fields_snapshot.plot_meridional(str(case_dir), data, "u_phi", phi_average=True,
                                     ax=ax01, cmap='RdBu_r')
     ax02.set_title(r'$\langle u_\phi \rangle_\phi$', fontsize=12)
-    fields_snapshot.plot_equatorial(str(case_dir), data, "curl_u_axial", ax=ax02)
+    fields_snapshot.plot_equatorial(str(case_dir), data, "w_z", ax=ax02)
     
   
     # Row 2 plots
