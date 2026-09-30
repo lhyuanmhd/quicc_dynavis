@@ -250,9 +250,17 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
     cmap = cmap_for_field(field_name)
 
     r, theta, phi = data["r"], data["theta"], data["phi"]
-    eq_idx = np.argmin(np.abs(theta - np.pi/2))
-    field = data[field_name][:, eq_idx, :]
-    field = apply_temperature_background(field_name, field, r, include_background)
+
+    # Get either a stored field or a derived field
+    field_3d = get_field_data(data, field_name)
+
+    # Extract equatorial plane
+    eq_idx = np.argmin(np.abs(theta - np.pi / 2))
+    field = field_3d[:, eq_idx, :]
+
+    field = apply_temperature_background(
+        field_name, field, r, include_background
+    )
     
     if field_name ==  "inertia_magnitude":
         field  = 1e-9 * field
@@ -442,6 +450,7 @@ def plot_meridional(
         r,
         include_background,
     )
+    
 
     if len(r) < 120:
         # Make phi periodic
