@@ -229,9 +229,58 @@ def _add_dashed_circles(ax):
         ax.add_artist(circle)
 
 
+def extract_horizontal_plane(field_3d, r, theta, phi, z=0.0):
+    """
+    Extract field on the horizontal plane z = const.
+
+    Parameters
+    ----------
+    field_3d : ndarray
+        Shape (Nr, Ntheta, Nphi).
+    r, theta, phi : ndarray
+        Spherical coordinates.
+    z : float
+        Height of the horizontal plane.
+
+    Returns
+    -------
+    field : ndarray
+        Shape (Nr, Nphi). Values with r < |z| are NaN.
+    """
+
+    field = np.full(
+        (len(r), len(phi)),
+        np.nan,
+        dtype=float,
+    )
+
+    # Ensure theta is increasing for np.interp
+    if theta[0] > theta[-1]:
+        theta_interp = theta[::-1]
+        field_interp = field_3d[:, ::-1, :]
+    else:
+        theta_interp = theta
+        field_interp = field_3d
+
+    for ir, rr in enumerate(r):
+
+        if rr < abs(z):
+            continue
+
+        theta_target = np.arccos(z / rr)
+
+        for ip in range(len(phi)):
+            field[ir, ip] = np.interp(
+                theta_target,
+                theta_interp,
+                field_interp[ir, :, ip],
+            )
+
+    return field
+
 def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
                     ax=None, savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None,
-                    add_colorbar=True):
+                    add_colorbar=True, z = 0.0):
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
         
@@ -254,9 +303,21 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
     # Get either a stored field or a derived field
     field_3d = get_field_data(data, field_name)
 
-    # Extract equatorial plane
-    eq_idx = np.argmin(np.abs(theta - np.pi / 2))
-    field = field_3d[:, eq_idx, :]
+    field = extract_horizontal_plane(
+        field_3d,
+        r,
+        theta,
+        phi,
+        z=z,
+    )
+
+    field = apply_temperature_background(
+        field_name,
+        field,
+        r,
+        include_background,
+    )
+
 
     field = apply_temperature_background(
         field_name, field, r, include_background
@@ -336,8 +397,16 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
             sym_cbar = True
             vmin, vmax = _get_color_limits(field, sym_cbar, q)    
     
+    #R, Phi = np.meshgrid(r, phi, indexing="ij")
+    #X, Y = R * np.cos(Phi), R * np.sin(Phi)
+
     R, Phi = np.meshgrid(r, phi, indexing="ij")
-    X, Y = R * np.cos(Phi), R * np.sin(Phi)
+
+    S = np.sqrt(np.maximum(R**2 - z**2, 0.0))
+
+    X = S * np.cos(Phi)
+    Y = S * np.sin(Phi)
+     
      
     # Mask values outside outer boundary (r > 1)
     mask = R > 1.0

@@ -401,16 +401,20 @@ def plot_helicity_figures(
     print("[OK] Saved figure: {}".format(save_path))
 
 
-    #Fig. 4: s-helicity in equatorial plane
+    #Fig. 4: s-helicity in horizontal plane at i.e. z=0.2
+    zt = 0.2
     fig, ax = plt.subplots(figsize=(6, 6))
     fields_snapshot.plot_equatorial(
         str(case_dir),
         data,
         "s_helicity",
         ax=ax,
+        z=zt
     )
 
-    save_path = output_dir / "{}_s_helicity_equatorial.pdf".format(prefix)
+
+    save_path = output_dir / "{}_s_helicity_horizontal_z={:.2f}.pdf".format(prefix, zt)
+
     fig.savefig(
         save_path,
         dpi=300,
@@ -420,7 +424,25 @@ def plot_helicity_figures(
     plt.close(fig)
 
     print("[OK] Saved figure: {}".format(save_path))
+
+
+    #Fig 5: axial helicity in horizontal plane at i.e. z=0.2
+    zt = 0.2
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fields_snapshot.plot_equatorial(
+        str(case_dir),
+        data,
+        "axial_helicity",
+        ax=ax,
+        z=zt
+    )
+
+    save_path = output_dir / "{}_axial_helicity_horizontal_z={:.2f}.pdf".format(prefix, zt)
+    plt.claose(fig)
+
+    print("[OK] Saved figure: {}".format(save_path))
     
+
 
 
 # -----------------------------
