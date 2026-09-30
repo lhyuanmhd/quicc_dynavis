@@ -306,7 +306,7 @@ def plot_helicity_figures(
 
     fields = [
         "u_z",
-        "omega_z",
+        "curl_u_axial",
         "axial_helicity",
     ]
 
@@ -388,17 +388,17 @@ def plot_helicity_figures(
     #     ax=ax,
     # )
 
-    save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
+    # save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
 
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
+    # fig.savefig(
+    #     save_path,
+    #     dpi=300,
+    #     bbox_inches="tight",
+    #     pad_inches=0.02,
+    # )
+    # plt.close(fig)
 
-    print("[OK] Saved figure: {}".format(save_path))
+    # print("[OK] Saved figure: {}".format(save_path))
 
 # -----------------------------
 # Explicit visu-dir mode

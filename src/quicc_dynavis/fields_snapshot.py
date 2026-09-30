@@ -54,7 +54,7 @@ field_latex = {
     "axial_helicity": r"\mathbf{u}_{z}\cdot(\nabla\times\mathbf{u})_{z}",
 
     # helicity along cylinderical s direction
-    "s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
+    #"s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
 
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
@@ -110,7 +110,7 @@ def get_field_data(data, field_name):
     # -------------------------
     # Derived vorticity
     # -------------------------
-    if field_name == "omega_z":
+    if field_name == "curl_u_axial":
         return data["curl_u_axial"]
 
     # if field_name == "omega_s":
@@ -146,7 +146,9 @@ def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
 
 # set colomap for each field
 def cmap_for_field(field_name):
-    if field_name in ["u_r", "u_theta", "u_phi", "u_phi_zonal_3d", "thermal_wind_r",  "magnetic_wind_r" ]:
+    if field_name in ["u_r", "u_theta", "u_phi", 
+                      "u_z", "u_s",
+                      "u_phi_zonal_3d", "thermal_wind_r",  "magnetic_wind_r" ]:
         return "RdBu_r"
     elif field_name in ["B_r", "B_theta", "B_phi"]:
         return "PuOr"
