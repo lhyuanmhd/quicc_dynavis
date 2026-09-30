@@ -378,15 +378,15 @@ def plot_helicity_figures(
     # ============================================================
     # Fig. 3: phi-averaged s-helicity
     # ============================================================
-    fig, ax = plt.subplots(figsize=(6, 6))
+    # fig, ax = plt.subplots(figsize=(6, 6))
 
-    fields_snapshot.plot_meridional(
-        str(case_dir),
-        data,
-        "s_helicity",
-        phi_average=True,
-        ax=ax,
-    )
+    # fields_snapshot.plot_meridional(
+    #     str(case_dir),
+    #     data,
+    #     "s_helicity",
+    #     phi_average=True,
+    #     ax=ax,
+    # )
 
     save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
 
