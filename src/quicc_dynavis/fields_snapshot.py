@@ -40,9 +40,13 @@ field_latex = {
     "curl_u_theta": r"(\nabla\times\mathbf{u})_\theta",
     "curl_u_phi": r"(\nabla\times\mathbf{u})_\phi",
     "curl_u_axial": r"(\nabla\times\mathbf{u})_z",
-    # "omega_z": r"\omega_z",
-    # "omega_s": r"\omega_s",
 
+    "w_r": r"(\nabla\times\mathbf{u})_r",
+    "w_theta": r"(\nabla\times\mathbf{u})_\theta",
+    "w_phi": r"(\nabla\times\mathbf{u})_\phi",
+
+    "w_s": r"(\nabla\times\mathbf{u})_s",
+    "w_z": r"(\nabla\times\mathbf{u})_z",
 
     # magnetic curl (if you plot these)
     "curlB_r": r"(\nabla\times\mathbf{B})_r",
@@ -54,7 +58,7 @@ field_latex = {
     "axial_helicity": r"\mathbf{u}_{z}\cdot(\nabla\times\mathbf{u})_{z}",
 
     # helicity along cylinderical s direction
-    #"s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
+    "s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
 
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
@@ -110,11 +114,11 @@ def get_field_data(data, field_name):
     # -------------------------
     # Derived vorticity
     # -------------------------
-    if field_name == "curl_u_axial":
-        return data["curl_u_axial"]
+    if field_name == "w_z" or field_name == "curl_u_axial":
+        return data["w_z"]
 
-    if field_name == "curl_u_s":
-        return data["curl_u_s"]
+    if field_name == "w_s" or field_name == "curl_u_s":
+        return data["w_s"]
         # sin_theta = np.sin(theta)[None, :, None]
         # cos_theta = np.cos(theta)[None, :, None]
 
@@ -128,12 +132,12 @@ def get_field_data(data, field_name):
     # -------------------------
     if field_name == "axial_helicity":
         uz = get_field_data(data, "u_z")
-        omega_z = get_field_data(data, "curl_u_axial")
+        omega_z = get_field_data(data, "w_z")
         return uz * omega_z
 
     if field_name == "s_helicity":
         us = get_field_data(data, "u_s")
-        omega_s = get_field_data(data, "curl_u_s")
+        omega_s = get_field_data(data, "w_s")
         return us * omega_s
 
     raise KeyError(f"Unknown field: {field_name}")
@@ -155,7 +159,9 @@ def cmap_for_field(field_name):
         return "PuOr"
     elif field_name == "temperature":
         return "gist_heat"
-    elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial", "curl_u_s"]:
+    elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial", "curl_u_s"
+                        "w_r", "w_theta", "w_phi", "w_s", "w_z"
+                        ]:
         return "PRGn"
     
     elif field_name in ["inertia_magnitude", 
@@ -164,7 +170,8 @@ def cmap_for_field(field_name):
                         "buoyancy_magnitude",
                         "viscous_magnitude"]:
         return "cividis" 
-    elif field_name in ["axial_helicity"]:
+    elif field_name in ["axial_helicity",
+                        "s_helicity"]:
         #return "PiYG"
         #return "RdBu_r" 
         return "seismic"

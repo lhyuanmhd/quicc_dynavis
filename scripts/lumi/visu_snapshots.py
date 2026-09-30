@@ -306,8 +306,8 @@ def plot_helicity_figures(
 
     fields = [
         "u_z",
-        "curl_u_axial",
-        "axial_helicity",
+        "w_z",
+        "axial_helicity", #helicity
     ]
 
     # ----- Row 1: meridional slice -----
