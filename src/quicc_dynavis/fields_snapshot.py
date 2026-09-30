@@ -40,8 +40,8 @@ field_latex = {
     "curl_u_theta": r"(\nabla\times\mathbf{u})_\theta",
     "curl_u_phi": r"(\nabla\times\mathbf{u})_\phi",
     "curl_u_axial": r"(\nabla\times\mathbf{u})_z",
-    "omega_z": r"\omega_z",
-    "omega_s": r"\omega_s",
+    # "omega_z": r"\omega_z",
+    # "omega_s": r"\omega_s",
 
 
     # magnetic curl (if you plot these)
