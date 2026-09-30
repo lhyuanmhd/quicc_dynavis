@@ -127,7 +127,7 @@ def get_field_data(data, field_name):
     # -------------------------
     if field_name == "axial_helicity":
         uz = get_field_data(data, "u_z")
-        omega_z = get_field_data(data, "omega_z")
+        omega_z = get_field_data(data, "curl_u_axial")
         return uz * omega_z
 
     # if field_name == "s_helicity":
