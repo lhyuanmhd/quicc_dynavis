@@ -156,6 +156,7 @@ def cmap_for_field(field_name):
         return "gist_heat"
     elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial"]:
         return "PRGn"
+    
     elif field_name in ["inertia_magnitude", 
                         "coriolis_magnitude", 
                         "lorentz_magnitude", 
@@ -163,7 +164,8 @@ def cmap_for_field(field_name):
                         "viscous_magnitude"]:
         return "cividis" 
     elif field_name in ["axial_helicity"]:
-         return "PiYG"
+        #return "PiYG"
+        return "RdBu_r"  
 
     #elif field_name == "coriolis_magnitude":
     #    return "magma"    
