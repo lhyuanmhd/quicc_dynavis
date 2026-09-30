@@ -20,7 +20,9 @@ field_latex = {
     "u_r": r"u_r",
     "u_theta": r"u_\theta",
     "u_phi": r"u_\phi",
-    "u_phi_zonal_3d": r"\langle u_\phi \rangle_\phi",
+    "u_z": r"u_z",
+    "u_s": r"u_s",
+    #"u_phi_zonal_3d": r"\langle u_\phi \rangle_\phi",
 
     "thermal_wind_r": r"$u_{T,r}",
     "magnetic_wind_r": r"u_{M,r}",
@@ -38,6 +40,9 @@ field_latex = {
     "curl_u_theta": r"(\nabla\times\mathbf{u})_\theta",
     "curl_u_phi": r"(\nabla\times\mathbf{u})_\phi",
     "curl_u_axial": r"(\nabla\times\mathbf{u})_z",
+    "omega_z": r"\omega_z",
+    "omega_s": r"\omega_s",
+
 
     # magnetic curl (if you plot these)
     "curlB_r": r"(\nabla\times\mathbf{B})_r",
@@ -59,6 +64,78 @@ field_latex = {
 
     }
 
+def get_field_label(field_name, phi_average=False):
+    label = field_latex.get(field_name, field_name)
+
+    if phi_average:
+        return rf"\left\langle {label} \right\rangle_\phi"
+
+    return label
+
+def get_field_data(data, field_name):
+    """
+    Return a 3D field with shape (Nr, Ntheta, Nphi).
+
+    Supports both stored fields and derived quantities.
+    """
+    theta = data["theta"]
+
+    # -------------------------
+    # Directly stored fields
+    # -------------------------
+    if field_name in data:
+        return data[field_name]
+
+    # -------------------------
+    # Derived velocity
+    # -------------------------
+    if field_name == "u_z":
+        cos_theta = np.cos(theta)[None, :, None]
+        sin_theta = np.sin(theta)[None, :, None]
+
+        return (
+            data["u_r"] * cos_theta
+            - data["u_theta"] * sin_theta
+        )
+
+    if field_name == "u_s":
+        sin_theta = np.sin(theta)[None, :, None]
+        cos_theta = np.cos(theta)[None, :, None]
+
+        return (
+            data["u_r"] * sin_theta
+            + data["u_theta"] * cos_theta
+        )
+
+    # -------------------------
+    # Derived vorticity
+    # -------------------------
+    if field_name == "omega_z":
+        return data["curl_u_axial"]
+
+    if field_name == "omega_s":
+        sin_theta = np.sin(theta)[None, :, None]
+        cos_theta = np.cos(theta)[None, :, None]
+
+        return (
+            data["curl_u_r"] * sin_theta
+            + data["curl_u_theta"] * cos_theta
+        )
+
+    # -------------------------
+    # Helicity components
+    # -------------------------
+    if field_name == "axial_helicity":
+        uz = get_field_data(data, "u_z")
+        omega_z = get_field_data(data, "omega_z")
+        return uz * omega_z
+
+    if field_name == "s_helicity":
+        us = get_field_data(data, "u_s")
+        omega_s = get_field_data(data, "omega_s")
+        return us * omega_s
+
+    raise KeyError(f"Unknown field: {field_name}")
 
 def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
    Ek,q,Ra = input_params_from_path(folderFile)
@@ -89,20 +166,6 @@ def cmap_for_field(field_name):
     #elif field_name == "coriolis_magnitude":
     #    return "magma"    
 
-
-#def _get_color_limits(field, sym_cbar):
-#    """
-#        Return vmin, vmax (symmetric if requested).
-#    """
-#    if sym_cbar:
-#        absmax = np.nanmax(np.abs(field))
-#        if field in ["B_r", "B_theta", "B_phi"]:
-#            fc = 0.5
-#            return -fc*absmax, fc*absmax
-#        else:
-#            return -absmax, absmax
-#    else:
-#        return np.nanmin(field), np.nanmax(field)
 
 def _get_color_limits(field, sym_cbar, name=None, q=0.99):
     """
@@ -301,8 +364,24 @@ def plot_equatorial(folderFile, data, field_name, title=None, cmap="RdBu_r",
     return im
 
 
-def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap="RdBu_r", atphi = 0.5, ax=None, 
-                    savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
+# def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap="RdBu_r", atphi = 0.5, ax=None, 
+#                     savefig=None, sym_cbar=True, include_background=False, vmin=None, vmax=None):
+    
+def plot_meridional(
+    folderFile,
+    data,
+    field_name,
+    title=None,
+    cmap="RdBu_r",
+    atphi=0.5,
+    phi_average=False,
+    ax=None,
+    savefig=None,
+    sym_cbar=True,
+    include_background=False,
+    vmin=None,
+    vmax=None,
+):    
     """
         data: dictionary with keys "r", "theta", "phi" and field_name
         
@@ -327,26 +406,22 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     atphi = atphi * np.pi
     mid_phi = np.argmin(np.abs(phi - atphi)) # meridional slice at phi = 90 degrees
 
-    if field_name == "u_phi_zonal_3d":
-        field = data[field_name][:, :, 0]    
-    elif field_name == "axial_helicity":
-        # cpompute axial helicity uz dot curl(u)
-        # axial velocity
-        wz = data["curl_u_axial"][:, :, mid_phi]
 
-        #axial velocity
-        uz = data["u_r"][:, :, mid_phi] * np.cos(theta) - data["u_theta"][:, :, mid_phi] * np.sin(theta)
+    field_3d = get_field_data(data, field_name)
 
-        # axial helicity
-        field = uz * wz
-    
+    if phi_average:
+        field = np.mean(field_3d, axis=2)
     else:
-        field = data[field_name][:, :, mid_phi]
-        field = apply_temperature_background(field_name, field, r, include_background)
-    
-    
-    if field_name ==  "inertia_magnitude":
-        field  = 1e-9 * field
+        atphi_rad = atphi * np.pi
+        phi_idx = np.argmin(np.abs(phi - atphi_rad))
+        field = field_3d[:, :, phi_idx]
+
+    field = apply_temperature_background(
+        field_name,
+        field,
+        r,
+        include_background,
+    )
 
     if len(r) < 120:
         # Make phi periodic
@@ -421,9 +496,15 @@ def plot_meridional(folderFile, data, field_name, title="Meridional slice", cmap
     fmt.set_powerlimits((0, 0))  # always use scientific notation
     cbar.formatter = fmt
     cbar.update_ticks()
-    
-    ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
 
+    label_str = get_field_label(
+        field_name,
+        phi_average=phi_average,
+    )
+
+    ax.set_title(rf"${label_str}$",pad=10,fontsize=16,)
+    
+    #ax.set_title(rf"${label_str}$", pad=10, fontsize=16)
     if savefig is not None:
         savefig_field_snapshot(folderFile, field_name, savefig, type="meridional")
         #plt.savefig(f"{savefig}/{field_name}_merid_slice.pdf", dpi=300, bbox_inches="tight")
