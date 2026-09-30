@@ -113,14 +113,14 @@ def get_field_data(data, field_name):
     if field_name == "omega_z":
         return data["curl_u_axial"]
 
-    if field_name == "omega_s":
-        sin_theta = np.sin(theta)[None, :, None]
-        cos_theta = np.cos(theta)[None, :, None]
+    # if field_name == "omega_s":
+    #     sin_theta = np.sin(theta)[None, :, None]
+    #     cos_theta = np.cos(theta)[None, :, None]
 
-        return (
-            data["curl_u_r"] * sin_theta
-            + data["curl_u_theta"] * cos_theta
-        )
+    #     return (
+    #         data["curl_u_r"] * sin_theta
+    #         + data["curl_u_theta"] * cos_theta
+    #     )
 
     # -------------------------
     # Helicity components
@@ -130,10 +130,10 @@ def get_field_data(data, field_name):
         omega_z = get_field_data(data, "omega_z")
         return uz * omega_z
 
-    if field_name == "s_helicity":
-        us = get_field_data(data, "u_s")
-        omega_s = get_field_data(data, "omega_s")
-        return us * omega_s
+    # if field_name == "s_helicity":
+    #     us = get_field_data(data, "u_s")
+    #     omega_s = get_field_data(data, "omega_s")
+    #     return us * omega_s
 
     raise KeyError(f"Unknown field: {field_name}")
 
