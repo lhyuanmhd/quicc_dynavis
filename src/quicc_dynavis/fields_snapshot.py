@@ -165,7 +165,9 @@ def cmap_for_field(field_name):
         return "cividis" 
     elif field_name in ["axial_helicity"]:
         #return "PiYG"
-        return "RdBu_r"  
+        #return "RdBu_r" 
+        return "seismic"
+     
 
     #elif field_name == "coriolis_magnitude":
     #    return "magma"    
