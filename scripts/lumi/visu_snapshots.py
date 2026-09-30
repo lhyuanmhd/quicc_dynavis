@@ -438,10 +438,10 @@ def plot_helicity_figures(
     )
 
     save_path = output_dir / "{}_axial_helicity_horizontal_z={:.2f}.pdf".format(prefix, zt)
-    plt.claose(fig)
+    plt.close(fig)
 
     print("[OK] Saved figure: {}".format(save_path))
-    
+
 
 
 
