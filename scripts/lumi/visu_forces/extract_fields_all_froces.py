@@ -594,15 +594,7 @@ def extract_forces(hdf5_file, output_file="vis_fields_forces.npz",
             out['w_theta'] = w_theta
             out['w_phi'] = w_phi
             
-            
-            if verbose:
-                 print("\nVorticity statistics:")
-            #     print(f"  |∇×u| mean={np.mean(curl_u_mag):.6e}, median={np.median(curl_u_mag):.6e}")
-                 print(f"  ω_z (axial) mean={np.mean(np.abs(w_z)):.6e}")
-                
-            #     # Compare with enstrophy
-            #     enstrophy = np.mean(curl_u_mag**2)
-            #     print(f"  Enstrophy (mean ω²): {enstrophy:.6e}")
+         
 
 
         # ====================================================================
