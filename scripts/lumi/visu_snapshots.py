@@ -400,6 +400,29 @@ def plot_helicity_figures(
 
     print("[OK] Saved figure: {}".format(save_path))
 
+
+    #Fig. 4: s-helicity in equatorial plane
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fields_snapshot.plot_equatorial(
+        str(case_dir),
+        data,
+        "s_helicity",
+        ax=ax,
+    )
+
+    save_path = output_dir / "{}_s_helicity_equatorial.pdf".format(prefix)
+    fig.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+    plt.close(fig)
+
+    print("[OK] Saved figure: {}".format(save_path))
+    
+
+
 # -----------------------------
 # Explicit visu-dir mode
 # -----------------------------
