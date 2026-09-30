@@ -378,27 +378,27 @@ def plot_helicity_figures(
     # ============================================================
     # Fig. 3: phi-averaged s-helicity
     # ============================================================
-    # fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(6, 6))
 
-    # fields_snapshot.plot_meridional(
-    #     str(case_dir),
-    #     data,
-    #     "s_helicity",
-    #     phi_average=True,
-    #     ax=ax,
-    # )
+    fields_snapshot.plot_meridional(
+        str(case_dir),
+        data,
+        "s_helicity",
+        phi_average=True,
+        ax=ax,
+    )
 
-    # save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
+    save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
 
-    # fig.savefig(
-    #     save_path,
-    #     dpi=300,
-    #     bbox_inches="tight",
-    #     pad_inches=0.02,
-    # )
-    # plt.close(fig)
+    fig.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+    plt.close(fig)
 
-    # print("[OK] Saved figure: {}".format(save_path))
+    print("[OK] Saved figure: {}".format(save_path))
 
 # -----------------------------
 # Explicit visu-dir mode

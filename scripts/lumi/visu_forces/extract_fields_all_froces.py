@@ -583,7 +583,13 @@ def extract_forces(hdf5_file, output_file="vis_fields_forces.npz",
             cosT = np.cos(theta)[None, :, None]
             sinT = np.sin(theta)[None, :, None]
             w_z = w_r * cosT - w_theta * sinT
+            
             out["curl_u_axial"] = w_z  # This is the component along the rotation axis
+
+            w_s = w_r * sinT + w_theta * cosT  # Component along cylindrical radius (s)
+
+            out["curl_u_s"] = w_s  # This is the component along the cylindrical radius
+
             
             if verbose:
                  print("\nVorticity statistics:")
