@@ -19,8 +19,6 @@ class DynamoDiagnostics:
     averaging_end: float
     averaging_span: float
 
-    dt: float
-
     averaging_start_index: int
     
     mean_rossby: float
@@ -343,7 +341,6 @@ def compute_dynamo_diagnostics(
         averaging_end = averaging_end,
         averaging_span = averaging_span,
         averaging_start_index=start_index,
-        dt=data.dt,
         mean_rossby=mean_rossby,
         physical_kinetic_energy=physical_kinetic_energy,
         thermal_perturbation=thermal_perturbation,

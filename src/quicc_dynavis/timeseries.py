@@ -119,6 +119,13 @@ def plot_timeseries(folderFile, save_dir, show=True, xlim=None, ylim=None):
         N=data.N,
         M=data.M,
         L=data.L,
+        dt=data.dt,
+        time_start=diagnostics.time_start, 
+        time_end =diagnostics.time_end,
+        time_span = diagnostics.time_span,
+        averaging_start = diagnostics.averaging_start,
+        averaging_end = diagnostics.averaging_end,
+        averaging_span = diagnostics.averaging_span,
         Pm=data.Pm,
         Pr=data.Pr,
         Ro=diagnostics.mean_rossby
