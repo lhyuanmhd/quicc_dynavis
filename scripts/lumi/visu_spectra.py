@@ -112,7 +112,7 @@ def main():
 
     parameter_file = parameter_files[0]
 
-    Ek, Pm, Pr, q, Ra, _ = get_parameters(
+    Ek, Pm, Pr, q, Ra, _,_ = get_parameters(
         filepath=str(parameter_file),
         output=None,
     )
