@@ -25,6 +25,7 @@ def get_parameters(filepath,output):
     q: Roberts number (if other nondim is used)
     Ra: Rayleigh number
     Ro: Rosby number (if other nondim is used)
+    dt: timestep (if adaptive timestep is used, dt=-1)
     """
     f = open(filepath, 'r')
     Ek =0;
@@ -296,7 +297,7 @@ def print_simulation_summary(filepath):
     print(' Simulation Configuration Summary ')
     print('========================================')
     # Physical parameters
-    Ek, Pm, Pr, q, Ra, Ro = get_parameters(filepath, output='none')
+    Ek, Pm, Pr, q, Ra, Ro, dt = get_parameters(filepath, output='none')
     print('\n--- Physical Parameters ---')
     print(f"Ekman number:          {Ek}")
     print(f"Rayleigh number:       {Ra}")
