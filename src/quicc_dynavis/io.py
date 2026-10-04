@@ -32,7 +32,8 @@ def get_parameters(filepath,output):
     Ra=0;
     Pr=0;
     Pm=0;
-    Ro=0
+    Ro=0;
+    dt =0;
     for line in f:
         if '<ekman>' in line:
             ss = line.find('<ekman>') + len('<ekman>')
@@ -58,6 +59,12 @@ def get_parameters(filepath,output):
             ss = line.find('>')
             ll = line.rfind('<')
             Ro = float(line[ss+1:ll])
+        if '<timestep>' in line:
+            ss = line.find('>')
+            ll = line.rfind('<')
+            dt = float(line[ss+1:ll])
+            if dt < 0:
+                dt = np.nan # adptive timestep, no fixed value
     f.close()
     
     # Calculating missing nondim numbers:
@@ -77,7 +84,7 @@ def get_parameters(filepath,output):
         print('convective Rosby:', np.sqrt(Ek*Ra/Pr))
         print('#---------------------------------#')
     	 
-    return(Ek,Pm,Pr,q,Ra,Ro) 
+    return(Ek,Pm,Pr,q,Ra,Ro,dt) 
 
 
 def get_resolution(filepath,output):

@@ -450,7 +450,6 @@ def plot_helicity_figures(
 
 
 
-
 # -----------------------------
 # Explicit visu-dir mode
 # -----------------------------

@@ -5,12 +5,14 @@ from pathlib import Path
 
 import numpy as np
 
+
 from .io import (
     F_conc_timeseries,
     get_boundary_conditions,
     get_parameters,
     get_resolution,
 )
+
 from .timeseries_utils import discover_run_folders, safe_conc_timeseries
 
 
@@ -19,6 +21,7 @@ class TimeseriesData:
     """Raw time-series data and simulation metadata for one QuICC case."""
 
     run_folders: list[str]
+    
 
     tkin: np.ndarray
     kin_total: np.ndarray
@@ -58,6 +61,7 @@ class TimeseriesData:
     q: float
     Ra: float
     Ro_input: float
+    dt: float
 
     N: int
     M: int
@@ -127,7 +131,7 @@ def load_timeseries_data(case_dir) -> TimeseriesData:
         mag_dis_pol,
     ) = safe_conc_timeseries(run_folders, "magDis")
 
-    Ek, Pm, Pr, q, Ra, Ro_input = get_parameters(
+    Ek, Pm, Pr, q, Ra, Ro_input, dt = get_parameters(
         str(parameter_file),
         "no",
     )
@@ -175,6 +179,7 @@ def load_timeseries_data(case_dir) -> TimeseriesData:
         q=q,
         Ra=Ra,
         Ro_input=Ro_input,
+        dt=dt,
         N=int(N),
         M=int(M),
         L=int(L),

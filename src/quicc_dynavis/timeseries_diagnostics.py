@@ -11,6 +11,16 @@ from .timeseries_data import TimeseriesData, HydroTimeseriesData
 class DynamoDiagnostics:
     """Time-averaged diagnostics derived from one simulation case."""
 
+    time_start: float
+    time_end: float
+    time_span: float
+
+    averaging_start: float
+    averaging_end: float
+    averaging_span: float
+
+    dt: float
+
     averaging_start_index: int
     
     mean_rossby: float
@@ -134,10 +144,23 @@ def compute_dynamo_diagnostics(
     dynamo_rm_threshold: float = 30.0,
 ) -> DynamoDiagnostics:
     """Compute dynamo diagnostics from raw time-series data."""
+
+    #time span of the simulation
+    time_start = float(data.tkin[0])
+    time_end = float(data.tkin[-1])
+    time_span = time_end - time_start 
+
+    # time index to start averaging, based on the specified fraction of the total time span
     start_index = _averaging_start_index(
         data.tkin,
         fraction=averaging_fraction,
     )
+
+    #averaging time span, from the start index to the end of the simulation
+    averaging_start = float(data.tkin[start_index])
+    averaging_end = time_end
+    averaging_span = averaging_end - averaging_start
+    
 
     physical_kinetic_energy = np.asarray(
         data.kin_total,
@@ -313,6 +336,12 @@ def compute_dynamo_diagnostics(
 
 
     return DynamoDiagnostics(
+        time_start = time_start,
+        time_end = time_end,
+        time_span = time_span,
+        averaging_start = averaging_start,
+        averaging_end = averaging_end,
+        averaging_span = averaging_span,
         averaging_start_index=start_index,
         mean_rossby=mean_rossby,
         physical_kinetic_energy=physical_kinetic_energy,

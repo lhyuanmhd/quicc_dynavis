@@ -37,7 +37,13 @@ DYNAMO_SUMMARY_HEADER = [
     "N",
     "M",
     "L",
-
+    "dt",
+    "time_start",
+    "time_end",
+    "time_span",
+    "averaging_start",
+    "averaging_end",
+    "averaging_span",
 ]
 
 
@@ -74,6 +80,13 @@ def _format_summary_row(
     N,
     M,
     L,
+    dt,
+    time_start,
+    time_end,
+    time_span,
+    averaging_start,
+    averaging_end,
+    averaging_span,
     *,
     Pm=np.inf,
     Pr=np.inf,
@@ -147,6 +160,13 @@ def _format_summary_row(
         int(N),
         int(M),
         int(L),
+        f"{dt:.3e}" if np.isfinite(dt) else "nan",
+        f"{time_start:.6g}",
+        f"{time_end:.6g}",
+        f"{time_span:.6g}",
+        f"{averaging_start:.6g}",
+        f"{averaging_end:.6g}",
+        f"{averaging_span:.6g}",
     ]
 
 def _numeric_values_match(old_value, new_value):
@@ -273,6 +293,13 @@ def write_dynamo_summary_csv(
     N,
     M,
     L,
+    dt,
+    time_start,
+    time_end,
+    time_span,
+    averaging_start,
+    averaging_end,
+    averaging_span,
     *,
     Pm=np.inf,
     Pr=np.inf,
@@ -309,6 +336,13 @@ def write_dynamo_summary_csv(
         N=N,
         M=M,
         L=L,
+        dt=dt,
+        time_start=time_start,
+        time_end=time_end,
+        time_span=time_span,
+        averaging_start=averaging_start,
+        averaging_end=averaging_end,
+        averaging_span=averaging_span,
         Pm=Pm,
         Pr=Pr,
         Ro=Ro,
@@ -317,40 +351,6 @@ def write_dynamo_summary_csv(
         local_Ro=local_Ro,
     )
 
-    # data_rows = []
-
-    # if csv_path.is_file():
-    #     with csv_path.open("r", newline="", encoding="utf-8") as handle:
-    #         rows = list(csv.reader(handle))
-
-    #     if rows:
-    #         first_row = rows[0]
-
-    #         if first_row == DYNAMO_SUMMARY_HEADER:
-    #             data_rows = rows[1:]
-
-    #         elif first_row[:3] == ["q", "Ra", "Ek"]:
-    #             # Convert rows from the old CSV format:
-    #             #
-    #             # q, Ra, Ek, E0mag, ...
-    #             #
-    #             # to the new format:
-    #             #
-    #             # q, Ra, Ek, Pm, Pr, E0mag, ...
-    #             old_data_rows = rows[1:]
-
-    #             data_rows = [
-    #                 row[:3] + ["inf", "inf"] + row[3:]
-    #                 for row in old_data_rows
-    #                 if row
-    #             ]
-
-    #         else:
-    #             raise ValueError(
-    #                 f"Unrecognized CSV header in {csv_path}: "
-    #                 f"{first_row}"
-    #             )
-    
     data_rows = []
 
     if csv_path.is_file():
