@@ -86,7 +86,7 @@ def input_params_from_path(case_dir):
             f"No run0 or run000 directory found under {case_path}"
         )
 
-    ekman, _, _, q_value, rayleigh, _ = get_parameters(
+    ekman, _, _, q_value, rayleigh, _,_ = get_parameters(
         str(run_dir / "parameters.cfg"),
         "no",
     )

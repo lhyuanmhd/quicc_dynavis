@@ -264,7 +264,7 @@ def load_hydro_timeseries_data(case_dir) -> HydroTimeseriesData:
         "kinDis",
     )
 
-    Ek, Pm, Pr, q, Ra, Ro_input = get_parameters(
+    Ek, Pm, Pr, q, Ra, Ro_input,dt = get_parameters(
         str(parameter_file),
         "no",
     )

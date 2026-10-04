@@ -149,7 +149,7 @@ def compare_energy_multi(
             Path(run_folders[0]) / "parameters.cfg"
         )
 
-        Ek, Pm, Pr, q, Ra, Ro = get_parameters(
+        Ek, Pm, Pr, q, Ra, Ro,dt = get_parameters(
             str(parameter_file),
             "no",
         )
