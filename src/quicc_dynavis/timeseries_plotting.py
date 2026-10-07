@@ -18,12 +18,12 @@ plt.rcParams.update({
     "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "mathtext.fontset": "stix",
 
-    "font.size": 15,
-    "axes.labelsize": 15,
-    "axes.titlesize": 15,
-    "xtick.labelsize": 15,
-    "ytick.labelsize": 15,
-    "legend.fontsize": 15,
+    "font.size": 14,
+    "axes.labelsize": 14,
+    "axes.titlesize": 14,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
 })
 
 DEFAULT_COLORS = {
@@ -298,7 +298,7 @@ def plot_dipole_components_panel(
     time_limits: tuple[float, float],
     *,
     set_xlabel: bool,
-    ylabel: str = "Dipole Gauss coefficients",
+    ylabel: str = "dipole coefficients",
 ) -> None:
     """Plot axial and equatorial dipole Gauss coefficients."""
 
@@ -313,14 +313,14 @@ def plot_dipole_components_panel(
         ax.semilogy(
             data.tdip,
             abs(data.g10),
-            label=r"$D_{\mathrm{AD}} = g_1^0$",
+            label=r"$|g_1^0|$",
             alpha=0.7,
         )
 
         ax.semilogy(
             data.tdip,
             ed_amp,
-            label=r"$D_{\mathrm{ED}} = \sqrt{(g_1^1)^2+(h_1^1)^2}$",
+            label=r"\sqrt{(g_1^1)^2+(h_1^1)^2}$",
             linestyle="--",
             linewidth=1.5,
         )
@@ -699,7 +699,6 @@ def populate_dipolarity_figure(
         data,
         time_limits,
         set_xlabel=False,
-        ylabel="Dipole moment",
     )
 
     plot_dipole_angle_panel(
