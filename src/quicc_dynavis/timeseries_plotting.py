@@ -298,7 +298,7 @@ def plot_dipole_components_panel(
     time_limits: tuple[float, float],
     *,
     set_xlabel: bool,
-    ylabel: str = "dipole coefficients",
+    ylabel: str = "Dipole amplitude",
 ) -> None:
     """Plot axial and equatorial dipole Gauss coefficients."""
 
