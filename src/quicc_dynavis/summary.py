@@ -188,17 +188,39 @@ def _numeric_values_match(old_value, new_value):
     )
 
 
+# def _row_matches_case(
+#     row,
+#     q,
+#     Ra,
+#     Ek,
+#     *,
+#     Pm=np.inf,
+#     Pr=np.inf,
+# ):
+#     """Return whether an existing CSV row corresponds to the same case."""
+#     if len(row) < 5:
+#         return False
+
+#     return (
+#         _numeric_values_match(row[0], q)
+#         and _numeric_values_match(row[1], Ra)
+#         and _numeric_values_match(row[2], Ek)
+#         and _numeric_values_match(row[3], Pm)
+#         and _numeric_values_match(row[4], Pr)
+#     )
+
 def _row_matches_case(
     row,
     q,
     Ra,
     Ek,
+    E0mag,
     *,
     Pm=np.inf,
     Pr=np.inf,
 ):
     """Return whether an existing CSV row corresponds to the same case."""
-    if len(row) < 5:
+    if len(row) < 6:
         return False
 
     return (
@@ -207,8 +229,8 @@ def _row_matches_case(
         and _numeric_values_match(row[2], Ek)
         and _numeric_values_match(row[3], Pm)
         and _numeric_values_match(row[4], Pr)
+        and _numeric_values_match(row[5], E0mag)
     )
-
 
 def _summary_sort_key(row):
     """Return a numeric sorting key, placing invalid rows last."""
