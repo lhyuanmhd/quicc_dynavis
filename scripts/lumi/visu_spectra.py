@@ -134,6 +134,7 @@ def main():
             Ek=Ek,
             Pm=Pm,
             Pr=Pr,
+            E0mag=spectra_diagnostics.initial_magnetic_energy,
             flow_degree=spectra_diagnostics.flow_degree,
         )
 
