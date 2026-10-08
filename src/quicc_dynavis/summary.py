@@ -169,8 +169,13 @@ def _format_summary_row(
         f"{averaging_span:.6g}",
     ]
 
-def _numeric_values_match(old_value, new_value):
-    """Compare finite or infinite numeric values."""
+def _numeric_values_match(
+    old_value,
+    new_value,
+    *,
+    rtol=1e-6,
+    atol=1e-12,
+):
     try:
         old_value = float(old_value)
         new_value = float(new_value)
@@ -180,13 +185,12 @@ def _numeric_values_match(old_value, new_value):
     if np.isinf(old_value) or np.isinf(new_value):
         return old_value == new_value
 
-    return np.isclose(
+    return bool(np.isclose(
         old_value,
         new_value,
-        rtol=1e-6,
-        atol=1e-12,
-    )
-
+        rtol=rtol,
+        atol=atol,
+    ))
 
 # def _row_matches_case(
 #     row,
@@ -229,7 +233,7 @@ def _row_matches_case(
         and _numeric_values_match(row[2], Ek)
         and _numeric_values_match(row[3], Pm)
         and _numeric_values_match(row[4], Pr)
-        and _numeric_values_match(row[5], E0mag)
+        and _numeric_values_match(row[5],E0mag,rtol=5e-3,atol=0.0,)
     )
 
 def _summary_sort_key(row):
@@ -242,6 +246,7 @@ def _summary_sort_key(row):
             float(row[2]),  # Ek
             float(row[3]),  # Pm
             float(row[4]),  # Pr
+            float(row[5]),  # E0mag
         )
     except (IndexError, TypeError, ValueError):
         return (
@@ -251,6 +256,7 @@ def _summary_sort_key(row):
             float("inf"),
             float("inf"),
             float("inf"),
+            float("inf")
         )
 
 def _convert_summary_row(
@@ -417,6 +423,20 @@ def write_dynamo_summary_csv(
             Pm=Pm,
             Pr=Pr,
         ):
+            # data_rows[index] = new_row
+            # updated = True
+            # break
+
+            for column in (
+                "flow_degree",
+                "degree_over_pi",
+                "local_Ro",
+            ):
+                col_idx = DYNAMO_SUMMARY_HEADER.index(column)
+
+                if new_row[col_idx] == "nan":
+                    new_row[col_idx] = row[col_idx]
+
             data_rows[index] = new_row
             updated = True
             break
@@ -456,6 +476,7 @@ def update_dynamo_summary_spectra(
     Ek,
     flow_degree,
     *,
+    E0mag,
     Pm=np.inf,
     Pr=np.inf,
 ):
@@ -497,6 +518,7 @@ def update_dynamo_summary_spectra(
         "Pm",
         "Pr",
         "Ro",
+        "E0mag"
     ]
 
     missing = [
@@ -528,6 +550,7 @@ def update_dynamo_summary_spectra(
     pm_index = header.index("Pm")
     pr_index = header.index("Pr")
     ro_index = header.index("Ro")
+    e0mag_index = header.index("E0mag")
 
     flow_index = header.index("flow_degree")
     degree_pi_index = header.index("degree_over_pi")
@@ -544,6 +567,7 @@ def update_dynamo_summary_spectra(
             and _numeric_values_match(row[ek_index], Ek)
             and _numeric_values_match(row[pm_index], Pm)
             and _numeric_values_match(row[pr_index], Pr)
+            and _numeric_values_match(row[e0mag_index],E0mag,rtol=5e-3,atol=0.0,)
         ):
             continue
 
@@ -569,9 +593,14 @@ def update_dynamo_summary_spectra(
         break
 
     if not updated:
+        # raise ValueError(
+        #     "Could not find matching case in summary CSV: "
+        #     f"q={q}, Ra={Ra}, Ek={Ek}, Pm={Pm}, Pr={Pr}"
+        # )
         raise ValueError(
             "Could not find matching case in summary CSV: "
-            f"q={q}, Ra={Ra}, Ek={Ek}, Pm={Pm}, Pr={Pr}"
+            f"q={q}, Ra={Ra}, Ek={Ek}, "
+            f"Pm={Pm}, Pr={Pr}, E0mag={E0mag}"
         )
 
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
