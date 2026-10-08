@@ -21,6 +21,7 @@ from quicc_dynavis.io import (
     get_parameters,
 )
 
+from quicc_dynavis.timeseries_data import load_timeseries_data
 
 def main():
     parser = argparse.ArgumentParser()
@@ -117,6 +118,12 @@ def main():
         output=None,
     )
 
+    # Use the same definition of E0mag as timeseries diagnostics
+    data = load_timeseries_data(str(case_dir))
+    E0mag = float(data.mag_total[0])
+
+    print(f"[INFO] Initial magnetic energy: E0mag={E0mag:.10e}")
+
     #Ek_root = extract_ek_root(case_dir)
     Ek_root = Path(extract_ek_root(case_dir))
 
@@ -134,7 +141,7 @@ def main():
             Ek=Ek,
             Pm=Pm,
             Pr=Pr,
-            E0mag=spectra_diagnostics.initial_magnetic_energy,
+            E0mag=E0mag,
             flow_degree=spectra_diagnostics.flow_degree,
         )
 
