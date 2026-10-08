@@ -413,6 +413,7 @@ def write_dynamo_summary_csv(
             q=q,
             Ra=Ra,
             Ek=Ek,
+            E0mag=E0mag,
             Pm=Pm,
             Pr=Pr,
         ):
