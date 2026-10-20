@@ -191,87 +191,234 @@ def _input_params_from_path(case_dir: Path):
 # -----------------------------
 # Plot panel
 # -----------------------------
-def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
-                        atphi=2/3, show_grid=False):
-    """
-    2x4 panel layout:
-    Row 1: u_r (eq), u_phi (eq), curl_u_axial (eq), zonal_flow (meridional)
-    Row 2: T (eq), B_r (mer), B_r (CMB), [reserved for additional field]
-    """
-    try:
-        from quicc_dynavis import timeseries as ts
-        Ek, q, Ra = ts.input_params_from_path(str(case_dir))
-    except Exception:
-        Ek, q, Ra = _input_params_from_path(case_dir)
+# def plot_snapshot_panel(case_dir: Path, data, save_path: Path,
+#                         atphi=2/3, show_grid=False):
+#     """
+#     2x4 panel layout:
+#     Row 1: u_r (eq), u_phi (eq), curl_u_axial (eq), zonal_flow (meridional)
+#     Row 2: T (eq), B_r (mer), B_r (CMB), [reserved for additional field]
+#     """
+#     try:
+#         from quicc_dynavis import timeseries as ts
+#         Ek, q, Ra = ts.input_params_from_path(str(case_dir))
+#     except Exception:
+#         Ek, q, Ra = _input_params_from_path(case_dir)
 
-    # Create 2x4 grid with custom width ratios
-    fig = plt.figure(figsize=(18, 10))
-    gs = fig.add_gridspec(2, 3, 
-                          width_ratios=[1, 1, 1.45], 
-                          wspace=0.1, 
-                          hspace=0.25)
+#     # Create 2x4 grid with custom width ratios
+#     fig = plt.figure(figsize=(18, 10))
+#     gs = fig.add_gridspec(2, 3, 
+#                           width_ratios=[1, 1, 1.45], 
+#                           wspace=0.1, 
+#                           hspace=0.25)
 
-    # Row 1 (equatorial plane views)
-    ax00 = fig.add_subplot(gs[0, 0])  
-    ax01 = fig.add_subplot(gs[0, 1])  
-    ax02 = fig.add_subplot(gs[0, 2])  
+#     # Row 1 (equatorial plane views)
+#     ax00 = fig.add_subplot(gs[0, 0])  
+#     ax01 = fig.add_subplot(gs[0, 1])  
+#     ax02 = fig.add_subplot(gs[0, 2])  
 
-    # Row 2
-    ax10 = fig.add_subplot(gs[1, 0])  # T equatorial
-    ax11 = fig.add_subplot(gs[1, 1])
-    ax12 = fig.add_subplot(gs[1, 2],  projection="mollweide")  # B_r CMB
+#     # Row 2
+#     ax10 = fig.add_subplot(gs[1, 0])  # T equatorial
+#     ax11 = fig.add_subplot(gs[1, 1])
+#     ax12 = fig.add_subplot(gs[1, 2],  projection="mollweide")  # B_r CMB
 
-    # Adjust aspect ratios
-    for ax in (ax02, ax12,  #ax03, #ax13
-               ):
-        ax.set_aspect("auto")
+#     # Adjust aspect ratios
+#     for ax in (ax02, ax12,  #ax03, #ax13
+#                ):
+#         ax.set_aspect("auto")
 
-    # Row 1 plots
-    fields_snapshot.plot_equatorial(str(case_dir), data, "u_r", ax=ax00)
-    # Plot zonal flow (u_phi zonal average) in meridional plane
-    fields_snapshot.plot_meridional(str(case_dir), data, "u_phi", phi_average=True,
-                                    ax=ax01, cmap='RdBu_r')
-    ax02.set_title(r'$\langle u_\phi \rangle_\phi$', fontsize=12)
-    fields_snapshot.plot_equatorial(str(case_dir), data, "w_z", ax=ax02)
+#     # Row 1 plots
+#     fields_snapshot.plot_equatorial(str(case_dir), data, "u_r", ax=ax00)
+#     # Plot zonal flow (u_phi zonal average) in meridional plane
+#     fields_snapshot.plot_meridional(str(case_dir), data, "u_phi", phi_average=True,
+#                                     ax=ax01, cmap='RdBu_r')
+#     ax02.set_title(r'$\langle u_\phi \rangle_\phi$', fontsize=12)
+#     fields_snapshot.plot_equatorial(str(case_dir), data, "w_z", ax=ax02)
     
   
-    # Row 2 plots
-    fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax10, include_background=True)
-    ax10.set_title(r'$T_0 + T$', pad=10, fontsize=16)
-    fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax11)
-    fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax12, show_grid=False)
+#     # Row 2 plots
+#     fields_snapshot.plot_equatorial(str(case_dir), data, "T", ax=ax10, include_background=True)
+#     ax10.set_title(r'$T_0 + T$', pad=10, fontsize=16)
+#     fields_snapshot.plot_meridional(str(case_dir), data, "B_r", atphi=atphi, ax=ax11)
+#     fields_snapshot.plot_cmb(str(case_dir), data, "B_r", ax=ax12, show_grid=False)
     
 
-    # Add panel labels
-    panel_labels = ['(a)', '(b)', '(c)', '(d)', 
-                    '(e)', '(f)', #'(g)',
-                    #'(h)'
-                    ]
-    axes = [ax00, ax01, ax02,  
-            ax10, ax11, ax12, 
-            #ax13
-            ]
-    #for ax, label in zip(axes, panel_labels):
-    #    ax.text(0.02, 0.98, label, transform=ax.transAxes,
-    #            fontsize=12, fontweight='bold',
-    #            verticalalignment='top',
-    #            bbox=dict(boxstyle="round, pad=0.3", facecolor='white', alpha=0.8)
-    #            )
+#     # Add panel labels
+#     panel_labels = ['(a)', '(b)', '(c)', '(d)', 
+#                     '(e)', '(f)', #'(g)',
+#                     #'(h)'
+#                     ]
+#     axes = [ax00, ax01, ax02,  
+#             ax10, ax11, ax12, 
+#             #ax13
+#             ]
+#     #for ax, label in zip(axes, panel_labels):
+#     #    ax.text(0.02, 0.98, label, transform=ax.transAxes,
+#     #            fontsize=12, fontweight='bold',
+#     #            verticalalignment='top',
+#     #            bbox=dict(boxstyle="round, pad=0.3", facecolor='white', alpha=0.8)
+#     #            )
 
-    # Title
-    #time = data["time"]
-    #fig.suptitle(f"Ek={Ek:.2e}, q={q:.2e}, Ra={Ra:.2e}, time={float(time):.2e}",
-    #             y=0.98, fontsize=14)
+#     # Title
+#     #time = data["time"]
+#     #fig.suptitle(f"Ek={Ek:.2e}, q={q:.2e}, Ra={Ra:.2e}, time={float(time):.2e}",
+#     #             y=0.98, fontsize=14)
     
-    time = data["time"]
-    #fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
-    #              y=0.98, fontsize=16)
+#     time = data["time"]
+#     #fig.suptitle("Ek={}, q={}, Ra={}, time={:.2e}".format(Ek, q, Ra, float(time)),
+#     #              y=0.98, fontsize=16)
  
+#     save_path.parent.mkdir(parents=True, exist_ok=True)
+#     fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
+#     plt.close(fig)
+#     print(f"[OK] Saved figure: {save_path}")
+
+def plot_snapshot_panel(
+    case_dir: Path,
+    data,
+    save_path: Path,
+    atphi=2/3,
+    show_grid=False,
+):
+    """
+    Save two figures:
+
+    1. Main 2x3 panel:
+       Row 1: u_r (eq), zonal flow (mer), w_z (eq)
+       Row 2: T_0 + T (eq), B_r (mer), B_r (CMB)
+
+    2. Additional 1x2 panel:
+       u_phi - <u_phi>_phi in equatorial and meridional planes.
+
+    Assumes that the last axis of data["u_phi"] is phi.
+    """
+    case_dir = Path(case_dir)
+    save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(save_path, dpi=180, bbox_inches="tight", pad_inches=0.02)
+
+    # ---------------------------------------------------------
+    # Main figure: 2x3 panels
+    # ---------------------------------------------------------
+    fig = plt.figure(figsize=(18, 10))
+    gs = fig.add_gridspec(
+        2, 3,
+        width_ratios=[1, 1, 1.45],
+        wspace=0.1,
+        hspace=0.25,
+    )
+
+    ax00 = fig.add_subplot(gs[0, 0])
+    ax01 = fig.add_subplot(gs[0, 1])
+    ax02 = fig.add_subplot(gs[0, 2])
+
+    ax10 = fig.add_subplot(gs[1, 0])
+    ax11 = fig.add_subplot(gs[1, 1])
+    ax12 = fig.add_subplot(gs[1, 2], projection="mollweide")
+
+    fields_snapshot.plot_equatorial(
+        str(case_dir), data, "u_r",
+        ax=ax00,
+    )
+
+    fields_snapshot.plot_meridional(
+        str(case_dir), data, "u_phi",
+        phi_average=True,
+        ax=ax01,
+        cmap="RdBu_r",
+    )
+    ax01.set_title(
+        r"$\langle u_\phi\rangle_\phi$",
+        fontsize=14,
+        pad=10,
+    )
+
+    fields_snapshot.plot_equatorial(
+        str(case_dir), data, "w_z",
+        ax=ax02,
+    )
+
+    fields_snapshot.plot_equatorial(
+        str(case_dir), data, "T",
+        ax=ax10,
+        include_background=True,
+    )
+    ax10.set_title(
+        r"$T_0 + T$",
+        fontsize=16,
+        pad=10,
+    )
+
+    fields_snapshot.plot_meridional(
+        str(case_dir), data, "B_r",
+        atphi=atphi,
+        ax=ax11,
+    )
+
+    fields_snapshot.plot_cmb(
+        str(case_dir), data, "B_r",
+        ax=ax12,
+        show_grid=show_grid,
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=180,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
     plt.close(fig)
     print(f"[OK] Saved figure: {save_path}")
 
+    # ---------------------------------------------------------
+    # Additional figure: nonaxisymmetric azimuthal velocity
+    # ---------------------------------------------------------
+    u_phi = np.asarray(data["u_phi"])
+    zonal_flow = np.mean(u_phi, axis=-1, keepdims=True)
+
+    data_nonaxisym = dict(data)
+    data_nonaxisym["u_phi"] = u_phi - zonal_flow
+
+    fig_extra, (ax_eq, ax_mer) = plt.subplots(
+        1, 2,
+        figsize=(10, 5),
+        gridspec_kw={"wspace": 0.3},
+    )
+
+    fields_snapshot.plot_equatorial(
+        str(case_dir), data_nonaxisym, "u_phi",
+        ax=ax_eq,
+        cmap="RdBu_r",
+    )
+    ax_eq.set_title(
+        r"$u_\phi-\langle u_\phi\rangle_\phi$ (equatorial)",
+        fontsize=14,
+        pad=10,
+    )
+
+    fields_snapshot.plot_meridional(
+        str(case_dir), data_nonaxisym, "u_phi",
+        atphi=atphi,
+        phi_average=False,
+        ax=ax_mer,
+        cmap="RdBu_r",
+    )
+    ax_mer.set_title(
+        r"$u_\phi-\langle u_\phi\rangle_\phi$ (meridional)",
+        fontsize=14,
+        pad=10,
+    )
+
+    extra_save_path = save_path.with_name(
+        f"{save_path.stem}_uphi_nonaxisym{save_path.suffix}"
+    )
+
+    fig_extra.savefig(
+        extra_save_path,
+        dpi=180,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+    plt.close(fig_extra)
+    print(f"[OK] Saved figure: {extra_save_path}")
 
 def plot_helicity_figures(
     case_dir: Path,

@@ -15,35 +15,6 @@ files = discover_snapshots(root)
 
 print(f"Found {len(files)} snapshots.")
 
-
-# diagnostics = {
-#     "ur_abs": {
-#         "quantity": "velocity_r",
-#         "absolute": True,
-#     },
-#     "utheta_abs": {
-#         "quantity": "velocity_theta",
-#         "absolute": True,
-#     },
-#     "uphi_abs": {
-#         "quantity": "velocity_phi",
-#         "absolute": True,
-#     },
-#     "umag": {
-#         "quantity": "velocity_magnitude",
-#         "absolute": False,
-#     },
-#     "Hz_abs": {
-#         "quantity": "axial_helicity",
-#         "absolute": True,
-#     },
-
-#     "Hz": {
-#     "quantity": "axial_helicity",
-#     "absolute": False,
-#     }
-# }
-
 diagnostics = {
     # ----------------------------------------------------------
     # Velocity
