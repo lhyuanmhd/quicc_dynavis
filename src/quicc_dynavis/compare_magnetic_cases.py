@@ -17,6 +17,46 @@ DEFAULT_CASE1 = None
 DEFAULT_CASE2 = None
 DEFAULT_LABELS = ("ED-seeded", "AD-seeded")
 
+# Edit these settings to customize the appearance of all three panels.
+PLOT_STYLE = {
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+    "font.size": 15,
+    "axes.labelsize": 15,
+    "axes.titlesize": 16,
+    "figure.titlesize": 16,
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "legend.fontsize": 14,
+    "axes.linewidth": 1.0,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.top": True,
+    "ytick.right": True,
+    "savefig.dpi": 300,
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+}
+
+FIELD_LATEX = {
+    "Lambda": r"\Lambda",
+    "Rm": r"\mathrm{Rm}",
+    "fdip": r"f_{\mathrm{dip}}",
+    "fohm": r"f_{\mathrm{ohm}}",
+    "Emag": r"E_{\mathrm{mag}}",
+    "Ro": r"\mathrm{Ro}",
+    "local_Ro": r"\mathrm{Ro}_{\ell}",
+    "flow_degree": r"\bar{\ell}_u",
+    "degree_over_pi": r"\bar{\ell}_u/\pi",
+    "Nu": r"\mathrm{Nu}",
+    "q": r"q",
+    "Ra": r"\mathrm{Ra}",
+    "Ek": r"E",
+    "Pm": r"\mathrm{Pm}",
+    "Pr": r"\mathrm{Pr}",
+}
+
 
 def _natural_key(path):
     return [
@@ -102,6 +142,8 @@ def plot_magnetic_panels(
     """
     import matplotlib.pyplot as plt
 
+    plt.rcParams.update(PLOT_STYLE)
+
     if any(len(v) != 2 for v in (labels, colors, time_offsets)):
         raise ValueError("labels, colors and time_offsets must have two items.")
     datasets = tuple(load_magnetic_case(p) for p in (case_dir1, case_dir2))
@@ -122,21 +164,22 @@ def plot_magnetic_panels(
             label=rf"{label}: $\sqrt{{g_{{11}}^2+h_{{11}}^2}}$",
         )
         axes[2].plot(tdip, data["tilt"], color=color, lw=1.1)
-    axes[0].set_ylabel(r"$E_{\mathrm{mag}}$")
+    axes[0].set_ylabel(f"${FIELD_LATEX['Emag']}$")
     axes[0].legend(frameon=False)
     if energy_log:
         axes[0].set_yscale("log")
     axes[1].set_ylabel("Dipole coefficients")
     axes[1].axhline(0, color="0.5", ls=":", lw=0.8)
-    axes[1].legend(frameon=False, ncol=2, fontsize=9)
+    axes[1].legend(frameon=False, ncol=2)
     axes[2].set_ylabel(r"Tilt angle ($^\circ$)")
     axes[2].set_ylim(0, 180)
     axes[2].set_yticks([0, 45, 90, 135, 180])
     axes[2].axhline(90, color="0.5", ls=":", lw=0.8)
     axes[2].set_xlabel(r"$t$")
     for ax, tag in zip(axes, ("(a)", "(b)", "(c)")):
-        ax.text(0.015, 0.95, tag, transform=ax.transAxes, va="top")
-        ax.grid(alpha=0.2)
+        ax.text(0.015, 0.95, tag, transform=ax.transAxes, va="top", fontsize=15)
+        ax.tick_params(which="major", length=5, width=1.0)
+        ax.grid(alpha=0.15, linewidth=0.7)
     if xlim is not None:
         axes[2].set_xlim(*xlim)
     if title:
