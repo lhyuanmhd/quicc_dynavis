@@ -154,16 +154,16 @@ def plot_magnetic_panels(
         tmag = data["tmag"] - offset
         tdip = data["tdip"] - offset
         # Use the same color for a case throughout all panels.
-        axes[0].plot(tmag, data["mag_total"], color=color, lw=1.1, label=label)
+        axes[0].plot(tmag, data["mag_total"], color=color, lw=1.5, label=label)
         axes[1].semilogy(
-            tdip, data["g10"], color=color, lw=1.1,
+            tdip, data["g10"], color=color, lw=1.5,
             label=rf"{label}: $g_{{10}}$",
         )
         axes[1].semilogy(
-            tdip, data["equatorial_dipole"], color=color, ls="--", lw=1.1,
+            tdip, data["equatorial_dipole"], color=color, ls="--", lw=1.5,
             label=rf"{label}: $\sqrt{{g_{{11}}^2+h_{{11}}^2}}$",
         )
-        axes[2].plot(tdip, data["tilt"], color=color, lw=1.1)
+        axes[2].plot(tdip, data["tilt"], color=color, lw=1.5)
     axes[0].set_ylabel(f"${FIELD_LATEX['Emag']}$")
     axes[0].legend(frameon=False)
     if energy_log:
