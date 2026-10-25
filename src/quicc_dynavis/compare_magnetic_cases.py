@@ -155,11 +155,11 @@ def plot_magnetic_panels(
         tdip = data["tdip"] - offset
         # Use the same color for a case throughout all panels.
         axes[0].plot(tmag, data["mag_total"], color=color, lw=1.1, label=label)
-        axes[1].plot(
+        axes[1].semilogy(
             tdip, data["g10"], color=color, lw=1.1,
             label=rf"{label}: $g_{{10}}$",
         )
-        axes[1].plot(
+        axes[1].semilogy(
             tdip, data["equatorial_dipole"], color=color, ls="--", lw=1.1,
             label=rf"{label}: $\sqrt{{g_{{11}}^2+h_{{11}}^2}}$",
         )
