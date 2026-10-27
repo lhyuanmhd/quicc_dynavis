@@ -597,7 +597,7 @@ def plot_helicity_figures(
     #     )
     #     ax.set_title(title)
     
-      # ============================================================
+    # ============================================================
     # Fig. 3: helicity slice and phi-averaged helicity magnitude
     # ============================================================
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -857,6 +857,8 @@ def main():
                     output_dir=fig_dir,
                     prefix=prefix,
                     atphi=args.atphi,
+                    helicity_lim=6e6,              # left
+                    helicity_magnitude_max=1e6,  # right
                 )
             else:
                 print(f"[SKIP] Helicity figures exist: {prefix}")
