@@ -356,7 +356,7 @@ def plot_snapshot_panel(
     fields_snapshot.plot_cmb(
         str(case_dir), data, "B_r",
         ax=ax12,
-        show_grid=show_grid,
+        show_grid=False,
     )
 
     fig.savefig(

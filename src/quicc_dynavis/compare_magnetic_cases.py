@@ -20,7 +20,7 @@ DEFAULT_LABELS = ("ED-seeded", "AD-seeded")
 # Edit these settings to customize the appearance of all three panels.
 PLOT_STYLE = {
     "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
+    "font.serif": ["Times New Roman", "Times"], # "DejaVu Serif"],
     "mathtext.fontset": "stix",
     "font.size": 15,
     "axes.labelsize": 15,
@@ -175,7 +175,7 @@ def plot_magnetic_panels(
     axes[2].set_ylim(0, 180)
     axes[2].set_yticks([0, 45, 90, 135, 180])
     axes[2].axhline(90, color="0.5", ls=":", lw=0.8)
-    axes[2].set_xlabel(r"$t$")
+    axes[2].set_xlabel(r"$\rm time$")
     for ax, tag in zip(axes, ("(a)", "(b)", "(c)")):
         ax.text(0.015, 0.95, tag, transform=ax.transAxes, va="top", fontsize=15)
         ax.tick_params(which="major", length=5, width=1.0)
