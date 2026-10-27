@@ -494,14 +494,16 @@ def plot_zonal_flow_figures(
     )
 
     save_figure(fig, "uphi_nonaxisym")
-
+    
 def plot_helicity_figures(
     case_dir: Path,
     data,
     output_dir: Path,
     prefix: str,
     atphi=2/3,
-):
+    helicity_lim=None,
+    helicity_magnitude_max=None,
+):    
     """
     Fig. 1: meridional slices of u_z, omega_z, and h_z.
     Fig. 2: phi-averaged u_z, omega_z, and h_z.
@@ -595,7 +597,7 @@ def plot_helicity_figures(
     #     )
     #     ax.set_title(title)
     
-    # ============================================================
+      # ============================================================
     # Fig. 3: helicity slice and phi-averaged helicity magnitude
     # ============================================================
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -609,6 +611,15 @@ def plot_helicity_figures(
             r"$\langle |h|\rangle_\phi$",
         ),
     ):
+        is_magnitude = field_name == "helicity_magnitude"
+
+        if is_magnitude:
+            vmin = 0
+            vmax = helicity_magnitude_max
+        else:
+            vmin = -helicity_lim if helicity_lim is not None else None
+            vmax = helicity_lim
+
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
@@ -616,8 +627,10 @@ def plot_helicity_figures(
             atphi=atphi,
             phi_average=phi_average,
             ax=ax,
-            cmap="viridis" if phi_average else "seismic",
-            sym_cbar=not phi_average,
+            cmap="inferno" if is_magnitude else "seismic",
+            sym_cbar=not is_magnitude,
+            vmin=vmin,
+            vmax=vmax,
         )
         ax.set_title(title)
 

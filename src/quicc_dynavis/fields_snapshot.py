@@ -194,6 +194,7 @@ def cmap_for_field(field_name):
         "lorentz_magnitude",
         "buoyancy_magnitude",
         "viscous_magnitude",
+        "helicity_magnitude"
     ]:
         return "cividis"
 
