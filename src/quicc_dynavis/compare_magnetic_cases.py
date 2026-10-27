@@ -20,7 +20,7 @@ DEFAULT_LABELS = ("ED-seeded", "AD-seeded")
 # Edit these settings to customize the appearance of all three panels.
 PLOT_STYLE = {
     "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times"], # "DejaVu Serif"],
+    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
     "mathtext.fontset": "stix",
     "font.size": 15,
     "axes.labelsize": 15,
