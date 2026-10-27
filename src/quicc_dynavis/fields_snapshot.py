@@ -53,12 +53,11 @@ field_latex = {
     "curlB_theta": r"(\nabla\times\mathbf{B})_\theta",
     "curlB_phi": r"(\nabla\times\mathbf{B})_\phi",
 
-
-    # axial helicity
-    "axial_helicity": r"\mathbf{u}_{z}\cdot(\nabla\times\mathbf{u})_{z}",
-
-    # helicity along cylinderical s direction
-    "s_helicity": r"\mathbf{u}_{s}\cdot(\nabla\times\mathbf{u})_{s}",
+    
+    # Kinetic helicity and its components
+    "helicity": r"\mathbf{u}\cdot(\nabla\times\mathbf{u})",
+    "axial_helicity": r"u_z\omega_z",
+    "s_helicity": r"u_s\omega_s",
 
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
@@ -132,10 +131,17 @@ def get_field_data(data, field_name):
             data["w_r"] * sin_theta
             + data["w_theta"] * cos_theta
         )
-
+    
     # -------------------------
-    # Helicity components
+    # Kinetic helicity and its components
     # -------------------------
+    if field_name == "helicity":
+        return (
+            data["u_r"] * data["w_r"]
+            + data["u_theta"] * data["w_theta"]
+            + data["u_phi"] * data["w_phi"]
+        )
+    
     if field_name == "axial_helicity":
         uz = get_field_data(data, "u_z")
         omega_z = get_field_data(data, "w_z")
@@ -145,6 +151,8 @@ def get_field_data(data, field_name):
         us = get_field_data(data, "u_s")
         omega_s = get_field_data(data, "w_s")
         return us * omega_s
+
+
 
     raise KeyError(f"Unknown field: {field_name}")
 
@@ -157,35 +165,44 @@ def savefig_field_snapshot(folderFile, field_name, savefig, type="meridional"):
 
 # set colomap for each field
 def cmap_for_field(field_name):
-    if field_name in ["u_r", "u_theta", "u_phi", 
-                      "u_z", "u_s",
-                      "u_phi_zonal_3d", "thermal_wind_r",  "magnetic_wind_r" ]:
+    if field_name in [
+        "u_r", "u_theta", "u_phi",
+        "u_z", "u_s",
+        "u_phi_zonal_3d",
+        "thermal_wind_r", "magnetic_wind_r",
+    ]:
         return "RdBu_r"
+
     elif field_name in ["B_r", "B_theta", "B_phi"]:
         return "PuOr"
+
     elif field_name == "temperature":
         return "gist_heat"
-    elif field_name in [ "curl_u_r",  "curl_u_theta",  "curl_u_phi", "curl_u_axial", "curl_u_s"
-                        "w_r", "w_theta", "w_phi", "w_s", "w_z"
-                        ]:
+
+    elif field_name in [
+        "curl_u_r", "curl_u_theta", "curl_u_phi",
+        "curl_u_axial", "curl_u_s",
+        "w_r", "w_theta", "w_phi", "w_s", "w_z",
+    ]:
         return "PRGn"
-    
-    elif field_name in ["inertia_magnitude", 
-                        "coriolis_magnitude", 
-                        "lorentz_magnitude", 
-                        "buoyancy_magnitude",
-                        "viscous_magnitude"]:
-        return "cividis" 
-    elif field_name in ["axial_helicity",
-                        "s_helicity"]:
-        #return "PiYG"
-        #return "RdBu_r" 
+
+    elif field_name in [
+        "inertia_magnitude",
+        "coriolis_magnitude",
+        "lorentz_magnitude",
+        "buoyancy_magnitude",
+        "viscous_magnitude",
+    ]:
+        return "cividis"
+
+    elif field_name in [
+        "helicity",
+        "axial_helicity",
+        "s_helicity",
+    ]:
         return "seismic"
-     
 
-    #elif field_name == "coriolis_magnitude":
-    #    return "magma"    
-
+    return "RdBu_r"
 
 def _get_color_limits(field, sym_cbar, name=None, q=0.99):
     """

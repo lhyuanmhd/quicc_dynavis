@@ -368,23 +368,107 @@ def plot_snapshot_panel(
     plt.close(fig)
     print(f"[OK] Saved figure: {save_path}")
 
-    # ---------------------------------------------------------
-    # Additional figure: nonaxisymmetric azimuthal velocity
-    # ---------------------------------------------------------
+def plot_zonal_flow_figures(
+    case_dir: Path,
+    data,
+    output_dir: Path,
+    prefix: str,
+    atphi=2/3,
+):
+    """
+    Generate zonal-flow diagnostic figures.
+
+    Fig. 1:
+        Zonal flow <u_phi>_phi:
+        equatorial plane + meridional plane.
+
+    Fig. 2:
+        Nonaxisymmetric azimuthal velocity u_phi - <u_phi>_phi:
+        equatorial plane + meridional plane.
+
+    Assumes data["u_phi"] has shape (Nr, Ntheta, Nphi)
+    on a uniformly spaced phi grid without a duplicated endpoint.
+    """
+    case_dir = Path(case_dir)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    def save_figure(fig, suffix):
+        save_path = output_dir / f"{prefix}_{suffix}.pdf"
+        fig.savefig(
+            save_path,
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0.02,
+        )
+        plt.close(fig)
+        print(f"[OK] Saved figure: {save_path}")
+
+    # ------------------------------------------------------------
+    # Prepare axisymmetric and nonaxisymmetric velocity fields
+    # ------------------------------------------------------------
     u_phi = np.asarray(data["u_phi"])
     zonal_flow = np.mean(u_phi, axis=-1, keepdims=True)
+
+    # Expand the mean to the original 3D shape for the plotting routines.
+    data_zonal = dict(data)
+    data_zonal["u_phi"] = np.broadcast_to(zonal_flow, u_phi.shape)
 
     data_nonaxisym = dict(data)
     data_nonaxisym["u_phi"] = u_phi - zonal_flow
 
-    fig_extra, (ax_eq, ax_mer) = plt.subplots(
+    # ============================================================
+    # Fig. 1: zonal flow
+    # ============================================================
+    fig, (ax_eq, ax_mer) = plt.subplots(
         1, 2,
         figsize=(10, 5),
         gridspec_kw={"wspace": 0.3},
     )
 
     fields_snapshot.plot_equatorial(
-        str(case_dir), data_nonaxisym, "u_phi",
+        str(case_dir),
+        data_zonal,
+        "u_phi",
+        ax=ax_eq,
+        cmap="RdBu_r",
+    )
+    ax_eq.set_title(
+        r"$\langle u_\phi\rangle_\phi$ (equatorial)",
+        fontsize=14,
+        pad=10,
+    )
+
+    fields_snapshot.plot_meridional(
+        str(case_dir),
+        data_zonal,
+        "u_phi",
+        atphi=atphi,
+        phi_average=False,
+        ax=ax_mer,
+        cmap="RdBu_r",
+    )
+    ax_mer.set_title(
+        r"$\langle u_\phi\rangle_\phi$ (meridional)",
+        fontsize=14,
+        pad=10,
+    )
+
+    save_figure(fig, "zonal_flow")
+
+    # ============================================================
+    # Fig. 2: nonaxisymmetric azimuthal velocity
+    # ============================================================
+    fig, (ax_eq, ax_mer) = plt.subplots(
+        1, 2,
+        figsize=(10, 5),
+        gridspec_kw={"wspace": 0.3},
+    )
+
+    fields_snapshot.plot_equatorial(
+        str(case_dir),
+        data_nonaxisym,
+        "u_phi",
         ax=ax_eq,
         cmap="RdBu_r",
     )
@@ -395,7 +479,9 @@ def plot_snapshot_panel(
     )
 
     fields_snapshot.plot_meridional(
-        str(case_dir), data_nonaxisym, "u_phi",
+        str(case_dir),
+        data_nonaxisym,
+        "u_phi",
         atphi=atphi,
         phi_average=False,
         ax=ax_mer,
@@ -407,18 +493,7 @@ def plot_snapshot_panel(
         pad=10,
     )
 
-    extra_save_path = save_path.with_name(
-        f"{save_path.stem}_uphi_nonaxisym{save_path.suffix}"
-    )
-
-    fig_extra.savefig(
-        extra_save_path,
-        dpi=180,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig_extra)
-    print(f"[OK] Saved figure: {extra_save_path}")
+    save_figure(fig, "uphi_nonaxisym")
 
 def plot_helicity_figures(
     case_dir: Path,
@@ -428,37 +503,36 @@ def plot_helicity_figures(
     atphi=2/3,
 ):
     """
-    Generate helicity diagnostic figures.
-
-    Fig. 1:
-        Row 1: u_z, omega_z, u_z*omega_z at a meridional slice
-        Row 2: phi-averaged versions of the same quantities
-
-    Fig. 2:
-        phi-averaged axial helicity <u_z omega_z>_phi
-
-    Fig. 3:
-        phi-averaged cylindrical-s helicity <u_s omega_s>_phi
+    Fig. 1: meridional slices of u_z, omega_z, and h_z.
+    Fig. 2: phi-averaged u_z, omega_z, and h_z.
+    Fig. 3: kinetic helicity and phi-averaged kinetic helicity.
     """
-
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ============================================================
-    # Fig. 1: axial quantities
-    # ============================================================
-    fig, axes = plt.subplots(
-        2, 3,
-        figsize=(15, 10),
-    )
+    def save_figure(fig, suffix):
+        save_path = output_dir / f"{prefix}_{suffix}.pdf"
+        fig.savefig(
+            save_path,
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0.02,
+        )
+        plt.close(fig)
+        print(f"[OK] Saved figure: {save_path}")
 
-    fields = [
-        "u_z",
-        "w_z",
-        "axial_helicity", #helicity
-    ]
+    axial_fields = ("u_z", "w_z", "axial_helicity")
 
-    # ----- Row 1: meridional slice -----
-    for ax, field_name in zip(axes[0], fields):
+    # ============================================================
+    # Fig. 1: meridional slices
+    # ============================================================
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    for ax, field_name, title in zip(
+        axes,
+        axial_fields,
+        (r"$u_z$", r"$\omega_z$", r"$h_z=u_z\omega_z$"),
+    ):
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
@@ -467,9 +541,25 @@ def plot_helicity_figures(
             phi_average=False,
             ax=ax,
         )
+        ax.set_title(title)
 
-    # ----- Row 2: phi averaged -----
-    for ax, field_name in zip(axes[1], fields):
+    fig.subplots_adjust(wspace=0.25)
+    save_figure(fig, "axial_helicity_slice")
+
+    # ============================================================
+    # Fig. 2: phi-averaged axial quantities
+    # ============================================================
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    for ax, field_name, title in zip(
+        axes,
+        axial_fields,
+        (
+            r"$\langle u_z\rangle_\phi$",
+            r"$\langle\omega_z\rangle_\phi$",
+            r"$\langle u_z\omega_z\rangle_\phi$",
+        ),
+    ):
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
@@ -477,124 +567,36 @@ def plot_helicity_figures(
             phi_average=True,
             ax=ax,
         )
+        ax.set_title(title)
 
-    fig.subplots_adjust(
-        wspace=0.20,
-        hspace=0.20,
-    )
-
-    save_path = output_dir / "{}_axial_helicity_panel.pdf".format(prefix)
-
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
-
-    print("[OK] Saved figure: {}".format(save_path))
-
+    fig.subplots_adjust(wspace=0.25)
+    save_figure(fig, "axial_helicity_phi_average")
 
     # ============================================================
-    # Fig. 2: phi-averaged axial helicity
+    # Fig. 3: kinetic helicity, slice and phi average
     # ============================================================
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-    fields_snapshot.plot_meridional(
-        str(case_dir),
-        data,
-        "axial_helicity",
-        phi_average=True,
-        ax=ax,
-    )
+    for ax, phi_average, title in zip(
+        axes,
+        (False, True),
+        (
+            r"$h=\boldsymbol{u}\cdot\boldsymbol{\omega}$",
+            r"$\langle h\rangle_\phi$",
+        ),
+    ):
+        fields_snapshot.plot_meridional(
+            str(case_dir),
+            data,
+            "helicity",
+            atphi=atphi,
+            phi_average=phi_average,
+            ax=ax,
+        )
+        ax.set_title(title)
 
-    save_path = output_dir / "{}_axial_helicity_phi_average.pdf".format(prefix)
-
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
-
-    print("[OK] Saved figure: {}".format(save_path))
-
-
-    # ============================================================
-    # Fig. 3: phi-averaged s-helicity
-    # ============================================================
-    fig, ax = plt.subplots(figsize=(6, 6))
-
-    fields_snapshot.plot_meridional(
-        str(case_dir),
-        data,
-        "s_helicity",
-        phi_average=True,
-        ax=ax,
-    )
-
-    save_path = output_dir / "{}_s_helicity_phi_average.pdf".format(prefix)
-
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
-
-    print("[OK] Saved figure: {}".format(save_path))
-
-
-    #Fig. 4: s-helicity in horizontal plane at i.e. z=0.2
-    zt = 0.2
-    fig, ax = plt.subplots(figsize=(6, 6))
-    fields_snapshot.plot_equatorial(
-        str(case_dir),
-        data,
-        "s_helicity",
-        ax=ax,
-        z=zt
-    )
-
-
-    save_path = output_dir / "{}_s_helicity_horizontal_z={:.2f}.pdf".format(prefix, zt)
-
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
-
-    print("[OK] Saved figure: {}".format(save_path))
-
-
-    #Fig 5: axial helicity in horizontal plane at i.e. z=0.2
-    zt = 0.2
-    fig, ax = plt.subplots(figsize=(6, 6))
-    fields_snapshot.plot_equatorial(
-        str(case_dir),
-        data,
-        "axial_helicity",
-        ax=ax,
-        z=zt
-    )
-
-    save_path = output_dir / "{}_axial_helicity_horizontal_z={:.2f}.pdf".format(prefix, zt)
-    fig.savefig(
-        save_path,
-        dpi=300,
-        bbox_inches="tight",
-        pad_inches=0.02,
-    )
-    plt.close(fig)
-
-    print("[OK] Saved figure: {}".format(save_path))
-
+    fig.subplots_adjust(wspace=0.25)
+    save_figure(fig, "helicity_slice_and_phi_average")
 
 
 # -----------------------------
@@ -770,37 +772,80 @@ def main():
 
     for t in chosen_tags:
         npz_path = _find_vis_fields_npz(run_dir, t)
-        out = fig_dir / "Ek_{}_q{}_Ra{}_{}_{}_snapshots.pdf".format(Ek, q, Ra, run_dir.name, t)
-        
-        if out.exists() and not args.force:
-            print("[SKIP] Output exists (use --force to overwrite): {}".format(out))
-            continue
 
-        data = np.load(npz_path)
-        plot_snapshot_panel(
-            case_dir=case_dir,
-            data=data,
-            save_path=out,
-            atphi=args.atphi,
-            show_grid=(not args.no_grid),
-       )
-        
         prefix = "Ek_{}_q{}_Ra{}_{}_{}".format(
-            Ek,
-            q,
-            Ra,
-            run_dir.name,
-            t,
+            Ek, q, Ra, run_dir.name, t,
         )
+        out = fig_dir / f"{prefix}_snapshots.pdf"
 
-        plot_helicity_figures(
-            case_dir=case_dir,
-            data=data,
-            output_dir=fig_dir,
-            prefix=prefix,
-            atphi=args.atphi,
-    )
+        with np.load(npz_path) as data:
 
+            # ----------------------------------------------------
+            # Main snapshot panel
+            # ----------------------------------------------------
+            if out.exists() and not args.force:
+                print(
+                    "[SKIP] Main figure exists "
+                    f"(use --force to overwrite): {out}"
+                )
+            else:
+                plot_snapshot_panel(
+                    case_dir=case_dir,
+                    data=data,
+                    save_path=out,
+                    atphi=args.atphi,
+                    show_grid=not args.no_grid,
+                )
+
+            # ----------------------------------------------------
+            # Helicity diagnostics
+            # ----------------------------------------------------
+            helicity_outputs = [
+                fig_dir / f"{prefix}_{suffix}.pdf"
+                for suffix in (
+                    "axial_helicity_slice",
+                    "axial_helicity_phi_average",
+                    "helicity_slice_and_phi_average",
+                )
+            ]
+
+            if args.force or not all(
+                path.exists() for path in helicity_outputs
+            ):
+                plot_helicity_figures(
+                    case_dir=case_dir,
+                    data=data,
+                    output_dir=fig_dir,
+                    prefix=prefix,
+                    atphi=args.atphi,
+                )
+            else:
+                print(f"[SKIP] Helicity figures exist: {prefix}")
+
+            # ----------------------------------------------------
+            # Zonal-flow diagnostics
+            # ----------------------------------------------------
+            zonal_outputs = [
+                fig_dir / f"{prefix}_{suffix}.pdf"
+                for suffix in (
+                    "zonal_flow",
+                    "uphi_nonaxisym",
+                )
+            ]
+
+            if args.force or not all(
+                path.exists() for path in zonal_outputs
+            ):
+                plot_zonal_flow_figures(
+                    case_dir=case_dir,
+                    data=data,
+                    output_dir=fig_dir,
+                    prefix=prefix,
+                    atphi=args.atphi,
+                )
+            else:
+                print(f"[SKIP] Zonal-flow figures exist: {prefix}")
+        
 if __name__ == "__main__":
     main()
 
