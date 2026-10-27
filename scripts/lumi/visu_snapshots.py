@@ -625,6 +625,7 @@ def plot_helicity_figures(
             rf"\quad \phi={phi:g}\pi$"
         )
 
+
    
     # ------------------------------------------------------------
     # Phi-averaged signed helicity
@@ -649,6 +650,13 @@ def plot_helicity_figures(
         vmax=mean_limit,
     )
     ax.set_title(r"$\langle h\rangle_\phi$")
+
+
+    for ax in axes[n_panels:]:
+        ax.set_visible(False)
+
+    fig.subplots_adjust(wspace=0.30, hspace=0.30)
+    save_figure(fig, "helicity_phi_slices_and_phi_average")
 
 # -----------------------------
 # Explicit visu-dir mode
