@@ -58,6 +58,7 @@ field_latex = {
     "helicity": r"\mathbf{u}\cdot(\nabla\times\mathbf{u})",
     "axial_helicity": r"u_z\omega_z",
     "s_helicity": r"u_s\omega_s",
+    "helicity_magnitude": r"\left|\mathbf{u}\cdot(\nabla\times\mathbf{u})\right|",
 
     # nonlinear advection
     #"u_dot_grad_u_magnitude": r"\left|E_\eta \mathbf{u}\cdot\nabla\mathbf{u}\right|",
@@ -151,8 +152,9 @@ def get_field_data(data, field_name):
         us = get_field_data(data, "u_s")
         omega_s = get_field_data(data, "w_s")
         return us * omega_s
-
-
+     
+    if field_name == "helicity_magnitude":
+        return np.abs(get_field_data(data, "helicity")) 
 
     raise KeyError(f"Unknown field: {field_name}")
 

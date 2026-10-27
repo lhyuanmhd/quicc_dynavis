@@ -572,31 +572,57 @@ def plot_helicity_figures(
     fig.subplots_adjust(wspace=0.25)
     save_figure(fig, "axial_helicity_phi_average")
 
+    # # ============================================================
+    # # Fig. 3: kinetic helicity, slice and phi average
+    # # ============================================================
+    # fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    # for ax, phi_average, title in zip(
+    #     axes,
+    #     (False, True),
+    #     (
+    #         r"$h=\boldsymbol{u}\cdot\boldsymbol{\omega}$",
+    #         r"$\langle h\rangle_\phi$",
+    #     ),
+    # ):
+    #     fields_snapshot.plot_meridional(
+    #         str(case_dir),
+    #         data,
+    #         "helicity",
+    #         atphi=atphi,
+    #         phi_average=phi_average,
+    #         ax=ax,
+    #     )
+    #     ax.set_title(title)
+    
     # ============================================================
-    # Fig. 3: kinetic helicity, slice and phi average
+    # Fig. 3: helicity slice and phi-averaged helicity magnitude
     # ============================================================
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-    for ax, phi_average, title in zip(
+    for ax, field_name, phi_average, title in zip(
         axes,
+        ("helicity", "helicity_magnitude"),
         (False, True),
         (
-            r"$h=\boldsymbol{u}\cdot\boldsymbol{\omega}$",
-            r"$\langle h\rangle_\phi$",
+            r"$h=\mathbf{u}\cdot\boldsymbol{\omega}$",
+            r"$\langle |h|\rangle_\phi$",
         ),
     ):
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
-            "helicity",
+            field_name,
             atphi=atphi,
             phi_average=phi_average,
             ax=ax,
+            cmap="viridis" if phi_average else "seismic",
+            sym_cbar=not phi_average,
         )
         ax.set_title(title)
 
     fig.subplots_adjust(wspace=0.25)
-    save_figure(fig, "helicity_slice_and_phi_average")
+    save_figure(fig, "helicity_slice_and_phi_average_magnitude")
 
 
 # -----------------------------
