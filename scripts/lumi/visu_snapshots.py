@@ -501,8 +501,10 @@ def plot_helicity_figures(
     output_dir: Path,
     prefix: str,
     atphi=2/3,
+    phi_slices=(0, 1/3, 2/3, 1),  # unit of pi
     helicity_lim=None,
     helicity_magnitude_max=None,
+    helicity_mean_lim=None,
 ):    
     """
     Fig. 1: meridional slices of u_z, omega_z, and h_z.
@@ -573,70 +575,80 @@ def plot_helicity_figures(
 
     fig.subplots_adjust(wspace=0.25)
     save_figure(fig, "axial_helicity_phi_average")
-
-    # # ============================================================
-    # # Fig. 3: kinetic helicity, slice and phi average
-    # # ============================================================
-    # fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-
-    # for ax, phi_average, title in zip(
-    #     axes,
-    #     (False, True),
-    #     (
-    #         r"$h=\boldsymbol{u}\cdot\boldsymbol{\omega}$",
-    #         r"$\langle h\rangle_\phi$",
-    #     ),
-    # ):
-    #     fields_snapshot.plot_meridional(
-    #         str(case_dir),
-    #         data,
-    #         "helicity",
-    #         atphi=atphi,
-    #         phi_average=phi_average,
-    #         ax=ax,
-    #     )
-    #     ax.set_title(title)
     
     # ============================================================
-    # Fig. 3: helicity slice and phi-averaged helicity magnitude
+    # Fig. 3: helicity at several phi + phi-averaged |h|
     # ============================================================
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    phi_values = tuple(phi_slices)
+    if not phi_values:
+        raise ValueError("phi_slices must contain at least one value.")
 
-    for ax, field_name, phi_average, title in zip(
-        axes,
-        ("helicity", "helicity_magnitude"),
-        (False, True),
-        (
-            r"$h=\mathbf{u}\cdot\boldsymbol{\omega}$",
-            r"$\langle |h|\rangle_\phi$",
-        ),
-    ):
-        is_magnitude = field_name == "helicity_magnitude"
+    # Use one common color scale for all helicity slices.
+    if helicity_lim is None:
+        h = fields_snapshot.get_field_data(data, "helicity")
+        slice_limit = float(np.nanmax(np.abs(h)))
+        if slice_limit == 0:
+            slice_limit = 1.0
+    else:
+        slice_limit = float(helicity_lim)
 
-        if is_magnitude:
-            vmin = 0
-            vmax = helicity_magnitude_max
-        else:
-            vmin = -helicity_lim if helicity_lim is not None else None
-            vmax = helicity_lim
+    n_panels = len(phi_values) + 1
+    ncols = min(n_panels, 4)
+    nrows = (n_panels + ncols - 1) // ncols
 
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(5 * ncols, 5 * nrows),
+        squeeze=False,
+    )
+    axes = axes.ravel()
+
+    # ------------------------------------------------------------
+    # Helicity slices
+    # ------------------------------------------------------------
+    for ax, phi in zip(axes, phi_values):
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
-            field_name,
-            atphi=atphi,
-            phi_average=phi_average,
+            "helicity",
+            atphi=phi,
+            phi_average=False,
             ax=ax,
-            cmap="inferno" if is_magnitude else "seismic",
-            sym_cbar=not is_magnitude,
-            vmin=vmin,
-            vmax=vmax,
+            cmap="seismic",
+            sym_cbar=True,
+            vmin=-slice_limit,
+            vmax=slice_limit,
         )
-        ax.set_title(title)
+        ax.set_title(
+            rf"$h=\mathbf{{u}}\cdot\boldsymbol{{\omega}},"
+            rf"\quad \phi={phi:g}\pi$"
+        )
 
-    fig.subplots_adjust(wspace=0.25)
-    save_figure(fig, "helicity_slice_and_phi_average_magnitude")
+   
+    # ------------------------------------------------------------
+    # Phi-averaged signed helicity
+    # ------------------------------------------------------------
+    ax = axes[len(phi_values)]
 
+    mean_limit = (
+        helicity_mean_lim
+        if helicity_mean_lim is not None
+        else slice_limit
+    )
+
+    fields_snapshot.plot_meridional(
+        str(case_dir),
+        data,
+        "helicity",
+        phi_average=True,
+        ax=ax,
+        cmap="seismic",
+        sym_cbar=True,
+        vmin=-mean_limit,
+        vmax=mean_limit,
+    )
+    ax.set_title(r"$\langle h\rangle_\phi$")
 
 # -----------------------------
 # Explicit visu-dir mode
@@ -856,9 +868,9 @@ def main():
                     data=data,
                     output_dir=fig_dir,
                     prefix=prefix,
-                    atphi=args.atphi,
-                    helicity_lim=6e6,              # left
-                    helicity_magnitude_max=1e6,  # right
+                    phi_slices=(0, 0.25, 0.5, 0.75),
+                    helicity_lim=6e6,       # slice：[-7e6, 7e6]
+                    helicity_mean_lim=1e6,  # phi averaged：[-1e6, 1e6]
                 )
             else:
                 print(f"[SKIP] Helicity figures exist: {prefix}")
