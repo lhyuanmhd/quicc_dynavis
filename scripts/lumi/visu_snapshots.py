@@ -876,9 +876,9 @@ def main():
                     data=data,
                     output_dir=fig_dir,
                     prefix=prefix,
-                    phi_slices=(0, 0.25, 0.5, 0.75),
-                    helicity_lim=6e6,       # slice：[-7e6, 7e6]
-                    helicity_mean_lim=5e5,  # phi averaged：[-1e6, 1e6]
+                    phi_slices=(0, 0.75, 1.5),  # unit of pi
+                    helicity_lim=5e6,       # slice：[-7e6, 7e6]
+                    helicity_mean_lim=2e5,  # phi averaged：[-1e6, 1e6]
                 )
             else:
                 print(f"[SKIP] Helicity figures exist: {prefix}")
