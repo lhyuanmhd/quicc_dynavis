@@ -21,6 +21,7 @@ OUTPUT = HERE / "bifurcation_summary.csv"
 import re
 
 
+
 def discover_cases():
     """Index standard bifurcation cases."""
 
@@ -101,6 +102,69 @@ def window_stats(t, y, start, end):
     }
 
 
+def fit_g10_rate(t, g10, t_start, t_end):
+    """
+    Fit ln|g10| = intercept + sigma * t.
+
+    The selected interval must have no polarity crossing
+    and should exhibit an approximately exponential trend.
+    """
+    t = np.asarray(t, dtype=float)
+    g10 = np.asarray(g10, dtype=float)
+
+    mask = (
+        (t >= t_start)
+        & (t <= t_end)
+        & np.isfinite(t)
+        & np.isfinite(g10)
+    )
+
+    t_fit = t[mask]
+    g_fit = g10[mask]
+
+    order = np.argsort(t_fit)
+    t_fit = t_fit[order]
+    g_fit = g_fit[order]
+
+    if len(t_fit) < 8:
+        raise ValueError("Insufficient points for g10 fitting")
+
+    if np.any(g_fit == 0):
+        raise ValueError("g10 reaches zero in fitting window")
+
+    if np.any(np.sign(g_fit[1:]) != np.sign(g_fit[:-1])):
+        raise ValueError(
+            "g10 changes sign: choose a different fitting window"
+        )
+
+    log_g10 = np.log(np.abs(g_fit))
+
+    sigma, intercept = np.polyfit(t_fit, log_g10, 1)
+
+    prediction = sigma * t_fit + intercept
+    residual = log_g10 - prediction
+
+    ss_res = np.sum(residual**2)
+    ss_tot = np.sum((log_g10 - log_g10.mean())**2)
+
+    r_squared = (
+        1.0 - ss_res / ss_tot
+        if ss_tot > 0 else np.nan
+    )
+
+    sxx = np.sum((t_fit - t_fit.mean())**2)
+
+    sigma_fit_se = np.sqrt(
+        ss_res / (len(t_fit) - 2) / sxx
+    )
+
+    return {
+        "sigma_g10": float(sigma),
+        "sigma_fit_se": float(sigma_fit_se),
+        "sigma_r2": float(r_squared),
+        "sigma_npoints": len(t_fit),
+    }
+
 
 def main():
     segments = pd.read_csv(SEGMENTS)
@@ -150,14 +214,27 @@ def main():
             )
 
             cache[key] = {
+                # Magnetic energy
                 "mag": (tmag, emag),
+                "mag_tor": (tmag, emag_tor),
+                "mag_pol": (tmag, emag_pol),
+
+                # Kinetic energy
                 "kin": (tkin, ekin),
+                "kin_tor": (tkin, ekin_tor),
+                "kin_pol": (tkin, ekin_pol),
+
+                # Temperature
                 "tem": (ttem, etem),
+
+                # Dipole diagnostics
                 "fdip": (tdip, fdip),
+                "g10": (tdip, g10),
                 "g10_squared": (tdip, g10**2),
                 "deq_squared": (tdip, g11**2 + h11**2),
                 "tilt": (tdip, dipole_tilt),
             }
+
 
         data = cache[key]
         start = float(row.t_start)
@@ -165,6 +242,13 @@ def main():
 
         mag = window_stats(*data["mag"], start, end)
         kin = window_stats(*data["kin"], start, end)
+
+        mag_tor = window_stats(*data["mag_tor"], start, end)
+        mag_pol = window_stats(*data["mag_pol"], start, end)
+
+        kin_tor = window_stats(*data["kin_tor"], start, end)
+        kin_pol = window_stats(*data["kin_pol"], start, end)
+
         tem = window_stats(*data["tem"], start, end)
         fdip = window_stats(*data["fdip"], start, end)
         tilt = window_stats(*data["tilt"], start, end)
@@ -186,6 +270,32 @@ def main():
 
         thermal_factor = 3.0 / 5.0 * (q * Ra)**2
         T_perb = thermal_factor * tem["mean"]
+
+        
+        fit_start = getattr(row, "fit_start", np.nan)
+        fit_end = getattr(row, "fit_end", np.nan)
+
+        sigma_stats = {
+            "sigma_g10": np.nan,
+            "sigma_fit_se": np.nan,
+            "sigma_r2": np.nan,
+            "sigma_npoints": np.nan,
+        }
+
+        if pd.notna(fit_start) or pd.notna(fit_end):
+            if pd.isna(fit_start) or pd.isna(fit_end):
+                raise ValueError(
+                    f"Both fit_start and fit_end are required: {key}"
+                )
+
+            if not float(fit_start) < float(fit_end):
+                raise ValueError(f"Invalid g10 fitting interval: {key}")
+
+            sigma_stats = fit_g10_rate(
+                *data["g10"],
+                float(fit_start),
+                float(fit_end),
+            )
 
         output_rows.append({
             "branch": row.branch,
@@ -210,6 +320,22 @@ def main():
             "Rm": Rm,
             "Pe": Pe,
 
+            # Magnetic energy decomposition
+            "Emag_tor_mean": mag_tor["mean"],
+            "Emag_pol_mean": mag_pol["mean"],
+            "Emag_tor_std": mag_tor["std"],
+            "Emag_pol_std": mag_pol["std"],
+
+            # Kinetic energy decomposition
+            "Ekin_tor_mean": kin_tor["mean"],
+            "Ekin_pol_mean": kin_pol["mean"],
+            "Ekin_tor_std": kin_tor["std"],
+            "Ekin_pol_std": kin_pol["std"],
+
+            # Optional energy fractions
+            "Emag_tor_fraction": mag_tor["mean"] / mag["mean"],
+            "Ekin_tor_fraction": kin_tor["mean"] / kin["mean"],
+
             # Temperature diagnostics
             "Tem_mean": tem["mean"],
             "Tem_std": tem["std"],
@@ -224,6 +350,11 @@ def main():
             "dipole_tilt_mean": tilt["mean"],
 
             "n_samples": mag["n_samples"],
+
+            "sigma_g10": sigma_stats["sigma_g10"],
+            "sigma_fit_se": sigma_stats["sigma_fit_se"],
+            "sigma_r2": sigma_stats["sigma_r2"],
+            "sigma_npoints": sigma_stats["sigma_npoints"],
         })
 
         print(

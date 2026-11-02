@@ -1,4 +1,4 @@
-branch,E,Ra,q,state,phase,t_start,t_end
+branch,E,Ra,q,state,phase,t_start,t_end,fit_start,fit_end
 q_up_from_ED,1e-5,1000,1.20,AD,pretransition,0.0, 1.5
 q_up_from_ED,1e-5,1000,1.20,ED,saturated,1.5,3.0
 q_up_from_ED,1e-5,1000,1.30,ED,saturated,0.4,1.1
