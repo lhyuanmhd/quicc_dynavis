@@ -216,13 +216,13 @@ def main():
             cache[key] = {
                 # Magnetic energy
                 "mag": (tmag, emag),
-                "mag_tor": (tmag, emag_tor),
-                "mag_pol": (tmag, emag_pol),
+                "mag_tor": (tmag, mag_tor),
+                "mag_pol": (tmag, mag_pol),
 
                 # Kinetic energy
                 "kin": (tkin, ekin),
-                "kin_tor": (tkin, ekin_tor),
-                "kin_pol": (tkin, ekin_pol),
+                "kin_tor": (tkin, kin_tor),
+                "kin_pol": (tkin, kin_pol),
 
                 # Temperature
                 "tem": (ttem, etem),
