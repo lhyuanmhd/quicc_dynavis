@@ -188,10 +188,11 @@ def main():
         if key not in cache:
             run_dirs = find_run_dirs(cases[key])
 
-            tmag, emag, _, _ = F_conc_timeseries(
+            tmag, emag, emag_tor, emag_pol = F_conc_timeseries(
                 run_dirs, "magE"
             )
-            tkin, ekin, _, _ = F_conc_timeseries(
+
+            tkin, ekin, ekin_tor, ekin_pol = F_conc_timeseries(
                 run_dirs, "kinE"
             )
             ttem, etem = F_conc_timeseries(
@@ -216,13 +217,13 @@ def main():
             cache[key] = {
                 # Magnetic energy
                 "mag": (tmag, emag),
-                "mag_tor": (tmag, mag_tor),
-                "mag_pol": (tmag, mag_pol),
+                "mag_tor": (tmag, emag_tor),
+                "mag_pol": (tmag, emag_pol),
 
                 # Kinetic energy
                 "kin": (tkin, ekin),
-                "kin_tor": (tkin, kin_tor),
-                "kin_pol": (tkin, kin_pol),
+                "kin_tor": (tkin, ekin_tor),
+                "kin_pol": (tkin, ekin_pol),
 
                 # Temperature
                 "tem": (ttem, etem),
