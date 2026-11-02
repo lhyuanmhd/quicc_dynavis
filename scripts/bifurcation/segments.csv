@@ -1,5 +1,5 @@
 branch,E,Ra,q,state,phase,t_start,t_end
 q_up_from_ED,1e-5,1000,1.35,ED,saturated,0.5,2.5
 q_down_from_AD,1e-5,1000,1.35,AD,saturated,0.5,2.5
-q_up_from_ED,1e-5,1000,1.75,ED,pretransition,0.1,0.3
-q_up_from_ED,1e-5,1000,1.75,AD,saturated,0.5,0.8
+q_up_from_ED,1e-5,1000,1.75,ED,pretransition,0.5,2.5
+q_up_from_ED,1e-5,1000,1.75,AD,saturated,4.0,5.0
