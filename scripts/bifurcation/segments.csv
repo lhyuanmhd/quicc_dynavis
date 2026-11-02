@@ -1,5 +1,18 @@
 branch,E,Ra,q,state,phase,t_start,t_end
+q_up_from_ED,1e-5,1000,1.20,AD,pretransition,0.0, 1.5
+q_up_from_ED,1e-5,1000,1.20,ED,saturated,1.5,3.0
+q_up_from_ED,1e-5,1000,1.25,ED,saturated,0.2,0.7
+q_up_from_ED,1e-5,1000,1.30,ED,saturated,0.4,1.1
 q_up_from_ED,1e-5,1000,1.35,ED,saturated,0.5,2.5
-q_down_from_AD,1e-5,1000,1.35,AD,saturated,0.5,2.5
+q_up_from_ED,1e-5,1000,1.40,ED,saturated,0.4,1.4
+q_up_from_ED,1e-5,1000,1.45,ED,saturated,0.2,0.8
+q_up_from_ED,1e-5,1000,1.50,ED,saturated,0.25,1.75
+q_up_from_ED,1e-5,1000,1.625,ED,saturated,0.2,1.1
 q_up_from_ED,1e-5,1000,1.75,ED,pretransition,0.5,2.5
 q_up_from_ED,1e-5,1000,1.75,AD,saturated,4.0,5.0
+q_down_from_AD,1e-5,1000,1.35,AD,saturated,0.5,2.5
+q_down_from_AD,1e-5,1000,1.40,AD,saturated,1.4,2.4
+q_down_from_AD,1e-5,1000,1.50,AD,saturated,0.2,2.0
+q_down_from_AD,1e-5,1000,1.50,AD,saturated,0.2,2.0
+q_down_from_AD,1e-5,1000,2.00,AD,saturated,0.1,1.4
+
