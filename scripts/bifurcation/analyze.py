@@ -17,18 +17,35 @@ SEGMENTS = HERE / "segments.csv"
 OUTPUT = HERE / "bifurcation_summary.csv"
 
 
+
+import re
+
+
 def discover_cases():
-    """Index cases using branch, E, Ra and q."""
+    """Index standard bifurcation cases."""
 
     cases = {}
 
     for branch in ("q_up_from_ED", "q_down_from_AD"):
         for path in (ROOT / branch).glob("E*/Ra*/q_*"):
+
+            # Only accept q_1.35, q_1.75, etc.
+            match = re.fullmatch(r"q_(\d+(?:\.\d+)?)", path.name)
+
+            if match is None:
+                print(f"Skipping special case: {path}")
+                continue
+
             E = float(path.parts[-3][1:])
             Ra = float(path.parts[-2][2:])
-            q = float(path.name[2:])
+            q = float(match.group(1))
 
-            cases[(branch, E, Ra, q)] = path
+            key = (branch, E, Ra, q)
+
+            if key in cases:
+                raise ValueError(f"Duplicate case: {key}")
+
+            cases[key] = path
 
     return cases
 
