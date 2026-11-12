@@ -28,8 +28,8 @@ plt.rcParams.update({
 
 DEFAULT_COLORS = {
     "kinetic": "royalblue",
-    "magnetic": "maroon",
-    "dipolarity": "coral",
+    "magnetic": "darkorange",
+    "dipolarity": "red",
     "dipole_angle": "gray",
     "nusselt": "purple",
     "temperature": "brown",
@@ -100,7 +100,8 @@ def create_dipolarity_figure():
     fig, axes_array = plt.subplots(
         4,
         1,
-        figsize=(12, 9),
+        figsize=(4, 7),
+        #figsize=(12, 9),
         sharex=True,
         dpi=180,
         squeeze=False,

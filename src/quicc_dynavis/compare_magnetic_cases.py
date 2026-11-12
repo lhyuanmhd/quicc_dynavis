@@ -17,7 +17,7 @@ DEFAULT_CASE1 = None
 DEFAULT_CASE2 = None
 DEFAULT_LABELS = ("ED-seeded", "AD-seeded")
 
-# Edit these settings to customize the appearance of all three panels.
+# Edit these settings to customize the appearance of all four panels.
 PLOT_STYLE = {
     "font.family": "serif",
     "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
@@ -56,7 +56,6 @@ FIELD_LATEX = {
     "Pm": r"\mathrm{Pm}",
     "Pr": r"\mathrm{Pr}",
 }
-
 
 def _natural_key(path):
     return [
@@ -130,11 +129,13 @@ def load_magnetic_case(case_dir):
 
 def plot_magnetic_panels(
     case_dir1, case_dir2, *, labels=DEFAULT_LABELS,
-    colors=("tab:blue", "tab:orange"), figsize=(10, 8),
+    colors=("tab:blue", "tab:orange"), figsize=(4,7), #(12, 9),
     energy_log=True, time_offsets=(0.0, 0.0), xlim=None,
     title=None, save=None, show=True,
 ):
-    """Compare energy, dipole components and tilt; return fig, axes, datasets.
+    """Compare energy, dipolarity, dipole components and tilt.
+
+    Returns fig, axes, datasets.
 
     Tilt is measured from the positive rotation axis using
     atan2(sqrt(g11**2 + h11**2), g10), in degrees. Time offsets are subtracted
@@ -148,40 +149,52 @@ def plot_magnetic_panels(
         raise ValueError("labels, colors and time_offsets must have two items.")
     datasets = tuple(load_magnetic_case(p) for p in (case_dir1, case_dir2))
     fig, axes = plt.subplots(
-        3, 1, figsize=figsize, sharex=True, constrained_layout=True,
+        4, 1, figsize=figsize, sharex=True, constrained_layout=True,
     )
     for data, label, color, offset in zip(datasets, labels, colors, time_offsets):
         tmag = data["tmag"] - offset
         tdip = data["tdip"] - offset
-        # Use the same color for a case throughout all panels.
+        # Keep one color per case across all four panels.
         axes[0].plot(tmag, data["mag_total"], color=color, lw=1.5, label=label)
-        axes[1].semilogy(
-            tdip, data["g10"], color=color, lw=1.5,
-            label=rf"{label}: $g_{{10}}$",
+        axes[1].plot(tdip, data["fdip"], color=color, lw=1.5, label=label)
+        axes[2].semilogy(
+            tdip, np.abs(data["g10"]), color=color, lw=1.5,
+            label=rf"{label}: $|g_{{10}}|$",
         )
-        axes[1].semilogy(
+        axes[2].semilogy(
             tdip, data["equatorial_dipole"], color=color, ls="--", lw=1.5,
             label=rf"{label}: $\sqrt{{g_{{11}}^2+h_{{11}}^2}}$",
         )
-        axes[2].plot(tdip, data["tilt"], color=color, lw=1.5)
+        axes[3].plot(tdip, data["tilt"], color=color, lw=1.5, label=label)
+
+    # (a) Magnetic energy
     axes[0].set_ylabel(f"${FIELD_LATEX['Emag']}$")
     axes[0].legend(frameon=False)
     if energy_log:
         axes[0].set_yscale("log")
-    axes[1].set_ylabel("Dipole coefficients")
-    axes[1].axhline(0, color="0.5", ls=":", lw=0.8)
-    axes[1].legend(frameon=False, ncol=2)
-    axes[2].set_ylabel(r"Tilt angle ($^\circ$)")
-    axes[2].set_ylim(0, 180)
-    axes[2].set_yticks([0, 45, 90, 135, 180])
-    axes[2].axhline(90, color="0.5", ls=":", lw=0.8)
-    axes[2].set_xlabel(r"$\rm time$")
-    for ax, tag in zip(axes, ("(a)", "(b)", "(c)")):
-        ax.text(0.015, 0.95, tag, transform=ax.transAxes, va="top", fontsize=15)
+
+    # (b) Dipolarity
+    axes[1].set_ylabel(r"$f_{\mathrm{dip}}$")
+    axes[1].set_ylim(0, 1)
+
+    # (c) Axial and equatorial dipole amplitudes
+    axes[2].set_ylabel("Dipole amplitudes")
+    axes[2].legend(frameon=False, ncol=2, fontsize=11)
+
+    # (d) Dipole tilt (measured relative to the positive rotation axis)
+    axes[3].set_ylabel(r"$\theta$ (deg)")
+    axes[3].set_ylim(0, 180)
+    axes[3].set_yticks([0, 45, 90, 135, 180])
+    axes[3].axhline(90, color="0.5", ls=":", lw=0.8)
+    axes[3].set_xlabel(r"$t/\tau_{\eta}$")
+
+    for ax, tag in zip(axes, ("(a)", "(b)", "(c)", "(d)")):
+        ax.text(0.015, 0.95, tag, transform=ax.transAxes,
+                va="top", fontsize=15)
         ax.tick_params(which="major", length=5, width=1.0)
         ax.grid(alpha=0.15, linewidth=0.7)
     if xlim is not None:
-        axes[2].set_xlim(*xlim)
+        axes[3].set_xlim(*xlim)
     if title:
         fig.suptitle(title)
     if save:
@@ -204,7 +217,7 @@ def main(argv=None):
     parser.add_argument("--title")
     parser.add_argument("--xlim", nargs=2, type=float, metavar=("TMIN", "TMAX"))
     parser.add_argument("--time-offsets", nargs=2, type=float, default=(0, 0))
-    parser.add_argument("--figsize", nargs=2, type=float, default=(10, 8))
+    parser.add_argument("--figsize", nargs=2, type=float, default=(12, 9))
     parser.add_argument("--linear-energy", action="store_true")
     parser.add_argument("--no-show", action="store_true", help="Use a headless backend.")
     args = parser.parse_args(argv)
