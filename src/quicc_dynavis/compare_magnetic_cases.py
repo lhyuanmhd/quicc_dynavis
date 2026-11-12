@@ -217,7 +217,7 @@ def main(argv=None):
     parser.add_argument("--title")
     parser.add_argument("--xlim", nargs=2, type=float, metavar=("TMIN", "TMAX"))
     parser.add_argument("--time-offsets", nargs=2, type=float, default=(0, 0))
-    parser.add_argument("--figsize", nargs=2, type=float, default=(12, 9))
+    parser.add_argument("--figsize", nargs=2, type=float, default=(10,9)) #(12, 9))
     parser.add_argument("--linear-energy", action="store_true")
     parser.add_argument("--no-show", action="store_true", help="Use a headless backend.")
     args = parser.parse_args(argv)
