@@ -26,6 +26,8 @@ plt.rcParams.update({
     "legend.fontsize": 14,
 })
 
+
+
 DEFAULT_COLORS = {
     "kinetic": "royalblue",
     "magnetic": "darkorange",
