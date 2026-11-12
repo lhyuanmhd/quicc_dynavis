@@ -129,7 +129,7 @@ def load_magnetic_case(case_dir):
 
 def plot_magnetic_panels(
     case_dir1, case_dir2, *, labels=DEFAULT_LABELS,
-    colors=("tab:blue", "tab:orange"), figsize=(4,7), #(12, 9),
+    colors=("tab:blue", "tab:orange"), figsize=(12, 9),
     energy_log=True, time_offsets=(0.0, 0.0), xlim=None,
     title=None, save=None, show=True,
 ):
