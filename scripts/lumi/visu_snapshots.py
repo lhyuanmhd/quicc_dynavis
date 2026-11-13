@@ -368,6 +368,85 @@ def plot_snapshot_panel(
     plt.close(fig)
     print(f"[OK] Saved figure: {save_path}")
 
+def plot_magnetic_snapshots(
+    case_dir: Path,
+    data,
+    output_dir: Path,
+    prefix: str,
+    atphi=2/3,
+    show_grid=False,
+    figsize=(10, 5),
+):
+    """
+    Plot radial magnetic field B_r:
+
+    Left:  meridional slice at phi = atphi * pi
+    Right: CMB radial magnetic field (Mollweide projection)
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    save_path = output_dir / f"{prefix}_Br_snapshots.pdf"
+
+    fig = plt.figure(figsize=figsize)
+
+    gs = fig.add_gridspec(
+        1, 2,
+        width_ratios=[1, 1.5],
+        wspace=0.25,
+    )
+
+    ax_mer = fig.add_subplot(gs[0, 0])
+    ax_cmb = fig.add_subplot(gs[0, 1], projection="mollweide")
+
+    # --------------------------------------------------
+    # (a) Meridional magnetic field
+    # --------------------------------------------------
+    fields_snapshot.plot_meridional(
+        str(case_dir),
+        data,
+        "B_r",
+        atphi=atphi,
+        phi_average=False,
+        ax=ax_mer,
+        cmap="RdBu_r",
+    )
+
+    ax_mer.set_title(
+        rf"$B_r$ (meridional, $\phi={atphi:g}\pi$)",
+        fontsize=14,
+        pad=10,
+    )
+
+    # --------------------------------------------------
+    # (b) CMB radial magnetic field
+    # --------------------------------------------------
+    fields_snapshot.plot_cmb(
+        str(case_dir),
+        data,
+        "B_r",
+        ax=ax_cmb,
+        show_grid=show_grid,
+        cmap="RdBu_r",
+    )
+
+    ax_cmb.set_title(
+        r"$B_r$ (CMB)",
+        fontsize=14,
+        pad=10,
+    )
+
+    fig.savefig(
+        save_path,
+        dpi=300,
+        bbox_inches="tight",
+        pad_inches=0.02,
+    )
+
+    plt.close(fig)
+
+    print(f"[OK] Saved magnetic snapshots: {save_path}")
+
 def plot_zonal_flow_figures(
     case_dir: Path,
     data,
@@ -884,6 +963,24 @@ def main():
             else:
                 print(f"[SKIP] Helicity figures exist: {prefix}")
 
+            # ----------------------------------------------------
+            # Magnetic field snapshots: Br meridional + CMB
+            # ----------------------------------------------------
+            magnetic_out = fig_dir / f"{prefix}_Br_snapshots.pdf"
+
+            if args.force or not magnetic_out.exists():
+                plot_magnetic_snapshots(
+                    case_dir=case_dir,
+                    data=data,
+                    output_dir=fig_dir,
+                    prefix=prefix,
+                    atphi=args.atphi,
+                    show_grid=not args.no_grid,
+                    figsize=(10, 5),
+                )
+            else:
+                print(f"[SKIP] Magnetic snapshots exist: {magnetic_out}")
+                
             # ----------------------------------------------------
             # Zonal-flow diagnostics
             # ----------------------------------------------------
