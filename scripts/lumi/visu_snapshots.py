@@ -432,7 +432,6 @@ def plot_magnetic_snapshots(
         show_grid=False,
         cmap="RdBu_r",
     )
-
     # Force-disable grid/tick labels
     ax_cmb.grid(False)
     ax_cmb.set_xticklabels([])
@@ -606,11 +605,22 @@ def plot_helicity_figures(
     prefix: str,
     atphi=2/3,
     phi_slices=(0, 1/3, 2/3, 1),
+
+    # Fig. 1: meridional slices
+    wz_lim=None,
+    axial_helicity_lim=None,
+
+    # Fig. 2: phi-averaged fields
+    wz_mean_lim=None,
+    axial_helicity_mean_lim=None,
+
+    # Fig. 3: kinetic helicity
     helicity_lim=None,
     helicity_magnitude_max=None,
     helicity_mean_lim=None,
+
     suffix_tag="",
-):     
+):    
     """
     Fig. 1: meridional slices of u_z, omega_z, and h_z.
     Fig. 2: phi-averaged u_z, omega_z, and h_z.
@@ -641,11 +651,14 @@ def plot_helicity_figures(
     # ============================================================
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    for ax, field_name, title in zip(
-        axes,
-        axial_fields,
-        (r"$u_z$", r"$\omega_z$", r"$h_z=u_z\omega_z$"),
-    ):
+    fig1_fields = (
+        ("u_z", r"$u_z$", None),
+        ("w_z", r"$\omega_z$", wz_lim),
+        ("axial_helicity", r"$h_z=u_z\omega_z$", axial_helicity_lim),
+    )
+
+    for ax, (field_name, title, limit) in zip(axes, fig1_fields):
+
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
@@ -653,7 +666,12 @@ def plot_helicity_figures(
             atphi=atphi,
             phi_average=False,
             ax=ax,
+            cmap="seismic",
+            sym_cbar=True,
+            vmin=-limit if limit is not None else None,
+            vmax=limit if limit is not None else None,
         )
+
         ax.set_title(title)
 
     fig.subplots_adjust(wspace=0.25)
@@ -664,26 +682,35 @@ def plot_helicity_figures(
     # ============================================================
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    for ax, field_name, title in zip(
-        axes,
-        axial_fields,
+    fig2_fields = (
+        ("u_z", r"$\langle u_z\rangle_\phi$", None),
+        ("w_z", r"$\langle\omega_z\rangle_\phi$", wz_mean_lim),
         (
-            r"$\langle u_z\rangle_\phi$",
-            r"$\langle\omega_z\rangle_\phi$",
+            "axial_helicity",
             r"$\langle u_z\omega_z\rangle_\phi$",
+            axial_helicity_mean_lim,
         ),
-    ):
+    )
+
+    for ax, (field_name, title, limit) in zip(axes, fig2_fields):
+
         fields_snapshot.plot_meridional(
             str(case_dir),
             data,
             field_name,
             phi_average=True,
             ax=ax,
+            cmap="seismic",
+            sym_cbar=True,
+            vmin=-limit if limit is not None else None,
+            vmax=limit if limit is not None else None,
         )
+
         ax.set_title(title)
 
     fig.subplots_adjust(wspace=0.25)
     save_figure(fig, "axial_helicity_phi_average")
+
     
     # ============================================================
     # Fig. 3: helicity at several phi + phi-averaged |h|
@@ -995,8 +1022,19 @@ def main():
                     output_dir=fig_dir,
                     prefix=prefix,
                     phi_slices=(0, 0.75, 1.5),
+
+                    # Fig. 1
+                    wz_lim=1e6,
+                    axial_helicity_lim=1e7,
+
+                    # Fig. 2
+                    wz_mean_lim=2e5,
+                    axial_helicity_mean_lim=2e6,
+
+                    # Fig. 3
                     helicity_lim=1e7,
                     helicity_mean_lim=5e6,
+
                     suffix_tag="limited",
                 )
             else:
@@ -1012,8 +1050,14 @@ def main():
                     output_dir=fig_dir,
                     prefix=prefix,
                     phi_slices=(0, 0.75, 1.5),
+
+                    wz_lim=None,
+                    axial_helicity_lim=None,
+                    wz_mean_lim=None,
+                    axial_helicity_mean_lim=None,
                     helicity_lim=None,
                     helicity_mean_lim=None,
+
                     suffix_tag="auto",
                 )
             else:
