@@ -377,13 +377,11 @@ def plot_magnetic_snapshots(
     prefix: str,
     atphi=2/3,
     show_grid=False,
-    figsize=(11, 4.8),
+    figsize=(12, 5),
 ):
     """
-    Plot radial magnetic field B_r:
-
-    Left:  meridional slice at phi = atphi * pi
-    Right: CMB radial magnetic field (Mollweide projection)
+    Plot B_r in meridional plane and at CMB.
+    Match the visual heights of the two panels.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -392,17 +390,19 @@ def plot_magnetic_snapshots(
 
     fig = plt.figure(figsize=figsize)
 
-    gs = fig.add_gridspec(
-        1, 2,
-        width_ratios=[1.0, 1.85],   # narrower CMB panel than before
-        wspace=0.22,
+    # --------------------------------------------------
+    # Manual axes layout
+    # [left, bottom, width, height] in figure coordinates
+    # --------------------------------------------------
+    ax_mer = fig.add_axes([0.04, 0.13, 0.30, 0.72])
+
+    ax_cmb = fig.add_axes(
+        [0.43, 0.13, 0.53, 0.72],
+        projection="mollweide",
     )
 
-    ax_mer = fig.add_subplot(gs[0, 0])
-    ax_cmb = fig.add_subplot(gs[0, 1], projection="mollweide")
-
     # --------------------------------------------------
-    # (a) Meridional magnetic field
+    # (a) Meridional B_r
     # --------------------------------------------------
     fields_snapshot.plot_meridional(
         str(case_dir),
@@ -414,15 +414,15 @@ def plot_magnetic_snapshots(
         cmap="RdBu_r",
     )
 
+    ax_mer.set_aspect("equal", adjustable="box")
     ax_mer.set_title(
-        rf"$B_r$ (meridional, $\phi={atphi:g}\pi$)",
+        rf"$B_r$ (meridional, $\phi={atphi:.2f}\pi$)",
         fontsize=14,
         pad=10,
     )
-    ax_mer.set_aspect("equal", adjustable="box")
 
     # --------------------------------------------------
-    # (b) CMB radial magnetic field
+    # (b) CMB B_r
     # --------------------------------------------------
     fields_snapshot.plot_cmb(
         str(case_dir),
@@ -432,32 +432,17 @@ def plot_magnetic_snapshots(
         show_grid=False,
         cmap="RdBu_r",
     )
-    # Force-disable grid/tick labels
+
+    # Remove grid and coordinate labels
     ax_cmb.grid(False)
-    ax_cmb.set_xticklabels([])
-    ax_cmb.set_yticklabels([])
+    ax_cmb.set_xticks([])
+    ax_cmb.set_yticks([])
 
     ax_cmb.set_title(
         r"$B_r$ (CMB)",
         fontsize=14,
         pad=10,
     )
-
-    # --------------------------------------------------
-    # Align panel heights more closely
-    # --------------------------------------------------
-    fig.canvas.draw()
-
-    pos_mer = ax_mer.get_position()
-    pos_cmb = ax_cmb.get_position()
-
-    # Keep the CMB panel vertically aligned with meridional panel
-    ax_cmb.set_position([
-        pos_cmb.x0,
-        pos_mer.y0,
-        pos_cmb.width,
-        pos_mer.height,
-    ])
 
     fig.savefig(
         save_path,
@@ -467,9 +452,8 @@ def plot_magnetic_snapshots(
     )
 
     plt.close(fig)
-
     print(f"[OK] Saved magnetic snapshots: {save_path}")
-
+    
 def plot_zonal_flow_figures(
     case_dir: Path,
     data,
