@@ -334,8 +334,8 @@ def plot_snapshot_panel(
     fields_snapshot.plot_equatorial(
         str(case_dir), data, "w_z",
         ax=ax02,
-        vmin=-1e4,
-        vmax=1e4,
+        vmin=-1e5,
+        vmax=1e5,
     )
     
     fields_snapshot.plot_equatorial(
@@ -416,7 +416,8 @@ def plot_magnetic_snapshots(
 
     ax_mer.set_aspect("equal", adjustable="box")
     ax_mer.set_title(
-        rf"$B_r$ (meridional, $\phi={atphi:.2f}\pi$)",
+        #rf"$B_r$ (meridional, $\phi={atphi:.2f}\pi$)",
+        rf"$B_r$",
         fontsize=14,
         pad=10,
     )
@@ -439,7 +440,8 @@ def plot_magnetic_snapshots(
     ax_cmb.set_yticks([])
 
     ax_cmb.set_title(
-        r"$B_r$ (CMB)",
+        #r"$B_r$ (CMB)",
+        r"$B_r$",
         fontsize=14,
         pad=10,
     )
@@ -453,7 +455,7 @@ def plot_magnetic_snapshots(
 
     plt.close(fig)
     print(f"[OK] Saved magnetic snapshots: {save_path}")
-    
+
 def plot_zonal_flow_figures(
     case_dir: Path,
     data,
@@ -591,10 +593,12 @@ def plot_helicity_figures(
     phi_slices=(0, 1/3, 2/3, 1),
 
     # Fig. 1: meridional slices
+    uz_lim=None,
     wz_lim=None,
     axial_helicity_lim=None,
 
     # Fig. 2: phi-averaged fields
+    uz_mean_lim=None,
     wz_mean_lim=None,
     axial_helicity_mean_lim=None,
 
@@ -636,7 +640,7 @@ def plot_helicity_figures(
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     fig1_fields = (
-        ("u_z", r"$u_z$", None),
+        ("u_z", r"$u_z$", uz_lim),
         ("w_z", r"$\omega_z$", wz_lim),
         ("axial_helicity", r"$h_z=u_z\omega_z$", axial_helicity_lim),
     )
@@ -667,7 +671,7 @@ def plot_helicity_figures(
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
     fig2_fields = (
-        ("u_z", r"$\langle u_z\rangle_\phi$", None),
+        ("u_z", r"$\langle u_z\rangle_\phi$", uz_mean_lim),
         ("w_z", r"$\langle\omega_z\rangle_\phi$", wz_mean_lim),
         (
             "axial_helicity",
@@ -1008,15 +1012,17 @@ def main():
                     phi_slices=(0, 0.75, 1.5),
 
                     # Fig. 1
+                    uz_lim=5e1, 
                     wz_lim=1e6,
                     axial_helicity_lim=1e7,
 
                     # Fig. 2
-                    wz_mean_lim=2e5,
+                    uz_mean_lim=5e1,
+                    wz_mean_lim=1e5,
                     axial_helicity_mean_lim=2e6,
 
                     # Fig. 3
-                    helicity_lim=1e7,
+                    helicity_lim=2e7,
                     helicity_mean_lim=5e6,
 
                     suffix_tag="limited",
