@@ -334,8 +334,10 @@ def plot_snapshot_panel(
     fields_snapshot.plot_equatorial(
         str(case_dir), data, "w_z",
         ax=ax02,
+        vmin=-1e4,
+        vmax=1e4,
     )
-
+    
     fields_snapshot.plot_equatorial(
         str(case_dir), data, "T",
         ax=ax10,
@@ -375,7 +377,7 @@ def plot_magnetic_snapshots(
     prefix: str,
     atphi=2/3,
     show_grid=False,
-    figsize=(10, 5),
+    figsize=(11, 4.8),
 ):
     """
     Plot radial magnetic field B_r:
@@ -392,8 +394,8 @@ def plot_magnetic_snapshots(
 
     gs = fig.add_gridspec(
         1, 2,
-        width_ratios=[1, 1.5],
-        wspace=0.25,
+        width_ratios=[1.0, 1.85],   # narrower CMB panel than before
+        wspace=0.22,
     )
 
     ax_mer = fig.add_subplot(gs[0, 0])
@@ -417,6 +419,7 @@ def plot_magnetic_snapshots(
         fontsize=14,
         pad=10,
     )
+    ax_mer.set_aspect("equal", adjustable="box")
 
     # --------------------------------------------------
     # (b) CMB radial magnetic field
@@ -426,15 +429,36 @@ def plot_magnetic_snapshots(
         data,
         "B_r",
         ax=ax_cmb,
-        show_grid=show_grid,
+        show_grid=False,
         cmap="RdBu_r",
     )
+
+    # Force-disable grid/tick labels
+    ax_cmb.grid(False)
+    ax_cmb.set_xticklabels([])
+    ax_cmb.set_yticklabels([])
 
     ax_cmb.set_title(
         r"$B_r$ (CMB)",
         fontsize=14,
         pad=10,
     )
+
+    # --------------------------------------------------
+    # Align panel heights more closely
+    # --------------------------------------------------
+    fig.canvas.draw()
+
+    pos_mer = ax_mer.get_position()
+    pos_cmb = ax_cmb.get_position()
+
+    # Keep the CMB panel vertically aligned with meridional panel
+    ax_cmb.set_position([
+        pos_cmb.x0,
+        pos_mer.y0,
+        pos_cmb.width,
+        pos_mer.height,
+    ])
 
     fig.savefig(
         save_path,
@@ -574,17 +598,19 @@ def plot_zonal_flow_figures(
 
     save_figure(fig, "uphi_nonaxisym")
     
+  
 def plot_helicity_figures(
     case_dir: Path,
     data,
     output_dir: Path,
     prefix: str,
     atphi=2/3,
-    phi_slices=(0, 1/3, 2/3, 1),  # unit of pi
+    phi_slices=(0, 1/3, 2/3, 1),
     helicity_lim=None,
     helicity_magnitude_max=None,
     helicity_mean_lim=None,
-):    
+    suffix_tag="",
+):     
     """
     Fig. 1: meridional slices of u_z, omega_z, and h_z.
     Fig. 2: phi-averaged u_z, omega_z, and h_z.
@@ -592,9 +618,13 @@ def plot_helicity_figures(
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
+    
     def save_figure(fig, suffix):
-        save_path = output_dir / f"{prefix}_{suffix}.pdf"
+        if suffix_tag:
+            save_path = output_dir / f"{prefix}_{suffix}_{suffix_tag}.pdf"
+        else:
+            save_path = output_dir / f"{prefix}_{suffix}.pdf"
+
         fig.savefig(
             save_path,
             dpi=300,
@@ -939,30 +969,55 @@ def main():
             # ----------------------------------------------------
             # Helicity diagnostics
             # ----------------------------------------------------
-            helicity_outputs = [
-                fig_dir / f"{prefix}_{suffix}.pdf"
-                for suffix in (
-                    "axial_helicity_slice",
-                    "axial_helicity_phi_average",
-                    "helicity_slice_and_phi_average",
-                )
+            helicity_suffixes = (
+                "axial_helicity_slice",
+                "axial_helicity_phi_average",
+                "helicity_phi_slices_and_phi_average",
+            )
+
+            helicity_outputs_limited = [
+                fig_dir / f"{prefix}_{suffix}_limited.pdf"
+                for suffix in helicity_suffixes
             ]
 
-            if args.force or not all(
-                path.exists() for path in helicity_outputs
-            ):
+            helicity_outputs_auto = [
+                fig_dir / f"{prefix}_{suffix}_auto.pdf"
+                for suffix in helicity_suffixes
+            ]
+
+            # -------------------------
+            # Version 1: limited ranges
+            # -------------------------
+            if args.force or not all(path.exists() for path in helicity_outputs_limited):
                 plot_helicity_figures(
                     case_dir=case_dir,
                     data=data,
                     output_dir=fig_dir,
                     prefix=prefix,
-                    phi_slices=(0, 0.75, 1.5),  # unit of pi
-                    helicity_lim=5e6,       # slice：[-7e6, 7e6]
-                    helicity_mean_lim=2e5,  # phi averaged：[-1e6, 1e6]
+                    phi_slices=(0, 0.75, 1.5),
+                    helicity_lim=1e7,
+                    helicity_mean_lim=5e6,
+                    suffix_tag="limited",
                 )
             else:
-                print(f"[SKIP] Helicity figures exist: {prefix}")
+                print(f"[SKIP] Limited helicity figures exist: {prefix}")
 
+            # -------------------------
+            # Version 2: automatic ranges
+            # -------------------------
+            if args.force or not all(path.exists() for path in helicity_outputs_auto):
+                plot_helicity_figures(
+                    case_dir=case_dir,
+                    data=data,
+                    output_dir=fig_dir,
+                    prefix=prefix,
+                    phi_slices=(0, 0.75, 1.5),
+                    helicity_lim=None,
+                    helicity_mean_lim=None,
+                    suffix_tag="auto",
+                )
+            else:
+                print(f"[SKIP] Auto-range helicity figures exist: {prefix}")
             # ----------------------------------------------------
             # Magnetic field snapshots: Br meridional + CMB
             # ----------------------------------------------------
@@ -980,7 +1035,7 @@ def main():
                 )
             else:
                 print(f"[SKIP] Magnetic snapshots exist: {magnetic_out}")
-                
+
             # ----------------------------------------------------
             # Zonal-flow diagnostics
             # ----------------------------------------------------
