@@ -114,7 +114,16 @@ def get_field_data(data, field_name):
     # -------------------------
     # Derived vorticity
     # -------------------------
-    if field_name == "w_z" or field_name == "curl_u_axial":
+    if field_name in ("w_z", "curl_u_axial"):
+
+        # Prefer precomputed axial vorticity
+        if "curl_u_axial" in data:
+            return data["curl_u_axial"]
+
+        if "w_z" in data:
+            return data["w_z"]
+
+        # Fallback: compute from spherical components
         cos_theta = np.cos(theta)[None, :, None]
         sin_theta = np.sin(theta)[None, :, None]
 
@@ -123,8 +132,17 @@ def get_field_data(data, field_name):
             - data["w_theta"] * sin_theta
         )
 
-    if field_name == "w_s" or field_name == "curl_u_s":
-       
+
+    if field_name in ("w_s", "curl_u_s"):
+
+        # Prefer precomputed cylindrical radial vorticity
+        if "curl_u_s" in data:
+            return data["curl_u_s"]
+
+        if "w_s" in data:
+            return data["w_s"]
+
+        # Fallback: compute from spherical components
         sin_theta = np.sin(theta)[None, :, None]
         cos_theta = np.cos(theta)[None, :, None]
 

@@ -163,6 +163,11 @@ def extract_fields_with_curl(
             #out["curl_u_theta"] = w_theta
             #out["curl_u_phi"] = w_phi
 
+            # Save vorticity components for fields_snapshot.py
+            out["w_r"] = w_r
+            out["w_theta"] = w_theta
+            out["w_phi"] = w_phi
+
         # Optional: magnetic curl
         if include_magnetic_curl:
             cBr     = f["/magnetic_curl/magnetic_curl_r"][:]
