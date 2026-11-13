@@ -1012,7 +1012,7 @@ def main():
                     phi_slices=(0, 0.75, 1.5),
 
                     # Fig. 1
-                    uz_lim=5e1, 
+                    uz_lim=6e2, 
                     wz_lim=1e6,
                     axial_helicity_lim=1e7,
 
