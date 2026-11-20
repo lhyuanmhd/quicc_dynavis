@@ -1018,7 +1018,7 @@ def main():
 
                     # Fig. 2
                     uz_mean_lim=5e1,
-                    wz_mean_lim=1e5,
+                    wz_mean_lim=2e4,
                     axial_helicity_mean_lim=2e6,
 
                     # Fig. 3
